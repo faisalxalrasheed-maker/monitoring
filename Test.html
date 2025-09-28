@@ -1,58 +1,49 @@
 
 <html>
 <head>
-    <title>URL Monitor Test</title>
+    <title>URL Monitor Pro - Working Version</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 </head>
-<body style="font-family: Arial; padding: 20px; background: #f0f8ff;">
+<body style="font-family: Arial; padding: 10px; background: #f0f8ff;">
+
+<div style="max-width: 800px; margin: 0 auto; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
 
 <h1 style="text-align: center; color: #2196F3;">🔍 URL Monitor Pro</h1>
 
-<div style="text-align: center; margin: 30px;">
-    <button onclick="testAddUrl()" style="background: #4CAF50; color: white; padding: 20px 30px; border: none; border-radius: 8px; font-size: 18px; cursor: pointer; margin: 10px;">
+<div style="text-align: center; margin: 20px;">
+    <button onclick="addUrl()" style="background: #4CAF50; color: white; padding: 15px 25px; border: none; border-radius: 8px; font-size: 16px; cursor: pointer; margin: 5px;">
         + Add URL
     </button>
-    <button onclick="testSettings()" style="background: #2196F3; color: white; padding: 20px 30px; border: none; border-radius: 8px; font-size: 18px; cursor: pointer; margin: 10px;">
+    <button onclick="showSettings()" style="background: #2196F3; color: white; padding: 15px 25px; border: none; border-radius: 8px; font-size: 16px; cursor: pointer; margin: 5px;">
         ⚙️ Settings
+    </button>
+    <button onclick="inspectWebsite()" style="background: #9C27B0; color: white; padding: 15px 25px; border: none; border-radius: 8px; font-size: 16px; cursor: pointer; margin: 5px;">
+        🔎 Inspector
     </button>
 </div>
 
-<div id="result" style="margin: 30px; padding: 20px; background: white; border-radius: 8px; min-height: 100px;">
-    <p>Click the buttons above to test functionality</p>
+<!-- Stats Dashboard -->
+<div style="display: flex; gap: 15px; margin: 20px 0; flex-wrap: wrap;">
+    <div style="background: #f5f5f5; padding: 15px; border-radius: 8px; text-align: center; flex: 1; min-width: 100px;">
+        <div style="color: #666; font-size: 14px;">Total URLs</div>
+        <div style="font-size: 24px; font-weight: bold;" id="totalCount">0</div>
+    </div>
+    <div style="background: #f5f5f5; padding: 15px; border-radius: 8px; text-align: center; flex: 1; min-width: 100px;">
+        <div style="color: #666; font-size: 14px;">Online</div>
+        <div style="font-size: 24px; font-weight: bold; color: #4CAF50;" id="onlineCount">0</div>
+    </div>
+    <div style="background: #f5f5f5; padding: 15px; border-radius: 8px; text-align: center; flex: 1; min-width: 100px;">
+        <div style="color: #666; font-size: 14px;">Offline</div>
+        <div style="font-size: 24px; font-weight: bold; color: #f44336;" id="offlineCount">0</div>
+    </div>
+    <div style="background: #f5f5f5; padding: 15px; border-radius: 8px; text-align: center; flex: 1; min-width: 100px;">
+        <div style="color: #666; font-size: 14px;">SSL Alerts</div>
+        <div style="font-size: 24px; font-weight: bold; color: #FF9800;" id="sslCount">0</div>
+    </div>
 </div>
 
-<script>
-function testAddUrl() {
-    document.getElementById('result').innerHTML = '<h2>Add URL Function Works!</h2><p>URL input would appear here</p>';
-    
-    let url = prompt('Enter a website URL to monitor (e.g., google.com):');
-    if (url) {
-        if (!url.includes('http')) {
-            url = 'https://' + url;
-        }
-        document.getElementById('result').innerHTML = '<h2>✅ URL Added Successfully!</h2><p><strong>' + url + '</strong></p><p>This URL would now be monitored every 10 seconds.</p>';
-    }
-}
+<!-- URL List -->
+<div id="urlList" style="margin: 20px 0;"></div>
 
-function testSettings() {
-    document.getElementById('result').innerHTML = `
-        <h2>⚙️ Settings Panel</h2>
-        <p><label><input type="checkbox" checked> Sound Notifications</label></p>
-        <p><label><input type="checkbox" checked> Browser Notifications</label></p>
-        <p><label>Monitor Interval: <input type="number" value="10" min="5" max="60"> seconds</label></p>
-        <p><label><input type="checkbox" checked> SSL Certificate Checking</label></p>
-        <button onclick="saveSettings()" style="background: #4CAF50; color: white; padding: 10px 20px; border: none; border-radius: 5px; margin-top: 10px;">Save Settings</button>
-    `;
-}
-
-function saveSettings() {
-    document.getElementById('result').innerHTML = '<h2>✅ Settings Saved!</h2><p>Your monitoring preferences have been updated.</p>';
-}
-
-// Test if JavaScript is working
-console.log('JavaScript is working!');
-alert('URL Monitor loaded successfully! JavaScript is working on your tablet.');
-</script>
-
-</body>
-</html>
+<!-- Status Bar -->
+<div style="background: #e8f5e8; padding: 15px;
