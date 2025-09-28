@@ -1,87 +1,139 @@
 
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>URL Monitor Pro</title>
-    <link rel="stylesheet" href="css/styles.css">
-    <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#2196F3">
-</head>
-<body>
-    <div class="app-container">
-        <header class="header">
-            <h1>🔍 URL Monitor Pro</h1>
-            <div class="header-controls">
-                <button id="addUrlBtn" class="btn-primary">+ Add URL</button>
-                <button id="settingsBtn" class="btn-secondary">⚙️ Settings</button>
-                <button id="inspectorBtn" class="btn-secondary">🔎 Inspector</button>
-                <div class="status-indicator">
-                    <span id="connectionStatus" class="status-online">●</span>
-                    <span>Auto-refresh: <span id="autoRefreshStatus">ON</span></span>
-                </div>
-            </div>
-        </header>
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
 
-        <div class="stats-container">
-            <div class="stat-card">
-                <h3>Total URLs</h3>
-                <span id="totalUrls">0</span>
-            </div>
-            <div class="stat-card">
-                <h3>Online</h3>
-                <span id="onlineUrls" class="text-success">0</span>
-            </div>
-            <div class="stat-card">
-                <h3>Offline</h3>
-                <span id="offlineUrls" class="text-danger">0</span>
-            </div>
-            <div class="stat-card">
-                <h3>SSL Alerts</h3>
-                <span id="sslAlerts" class="text-warning">0</span>
-            </div>
-        </div>
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+    padding: 10px;
+}
 
-        <div class="url-list" id="urlList">
-            <!-- URLs will be added dynamically -->
-        </div>
+.app-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 15px;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+    overflow: hidden;
+}
 
-        <div id="addUrlModal" class="modal hidden">
-            <div class="modal-content">
-                <span class="close" id="closeModal">&times;</span>
-                <h2>Add New URL</h2>
-                <input type="url" id="newUrlInput" placeholder="https://example.com" class="input-field">
-                <input type="text" id="urlNameInput" placeholder="Display Name (optional)" class="input-field">
-                <button id="addUrlConfirm" class="btn-primary">Add URL</button>
-            </div>
-        </div>
+.header {
+    background: linear-gradient(135deg, #2196F3, #21CBF3);
+    color: white;
+    padding: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+}
 
-        <div id="settingsPanel" class="panel hidden">
-            <div class="panel-header">
-                <h2>⚙️ Settings</h2>
-                <button id="closeSettings" class="btn-close">×</button>
-            </div>
-            <div id="settingsContent" class="settings-content"></div>
-        </div>
+.header h1 {
+    font-size: 1.8rem;
+    font-weight: 700;
+}
 
-        <div id="inspectorPanel" class="panel hidden">
-            <div class="panel-header">
-                <h2>🔍 Auto Inspector</h2>
-                <button id="closeInspector" class="btn-close">×</button>
-            </div>
-            <div class="inspector-content">
-                <input type="url" id="inspectUrl" placeholder="Enter website URL to inspect" class="input-field">
-                <button id="startInspection" class="btn-primary">Start Inspection</button>
-                <div id="inspectionProgress" class="progress-bar hidden">
-                    <div class="progress-fill"></div>
-                </div>
-                <div id="inspectionResults" class="inspection-results"></div>
-            </div>
-        </div>
-    </div>
+.header-controls {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+}
 
-    <script>
-        // Complete URL Monitor App
-        class URLMonitorApp {
-            constructor() {
-                this.urls =
+.status-indicator {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 0.9rem;
+    background: rgba(255,255,255,0.2);
+    padding: 8px 15px;
+    border-radius: 20px;
+    margin-left: 15px;
+}
+
+.status-online {
+    color: #4CAF50;
+    font-size: 1.5rem;
+    animation: pulse 2s infinite;
+}
+
+.status-offline {
+    color: #f44336;
+    font-size: 1.5rem;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+.btn-primary, .btn-secondary, .btn-danger, .btn-success {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    font-size: 0.9rem;
+}
+
+.btn-primary {
+    background: #4CAF50;
+    color: white;
+}
+
+.btn-primary:hover {
+    background: #45a049;
+    transform: translateY(-2px);
+}
+
+.btn-secondary {
+    background: rgba(255,255,255,0.2);
+    color: white;
+    border: 1px solid rgba(255,255,255,0.3);
+}
+
+.btn-secondary:hover {
+    background: rgba(255,255,255,0.3);
+}
+
+.btn-danger {
+    background: #f44336;
+    color: white;
+}
+
+.btn-success {
+    background: #4CAF50;
+    color: white;
+}
+
+.btn-close {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+    color: #666;
+    padding: 5px;
+}
+
+.stats-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+    padding: 20px;
+    background: #f8f9fa;
+}
+
+.stat-card {
+    background: white;
+    padding: 20px;
+    border-radius: 10px;
+    text-align: center;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    transition: transform 0.3s ease;
+}
+
+.stat-card:hover {
+    transform: translateY(-
