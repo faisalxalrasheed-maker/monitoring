@@ -1,35 +1,78 @@
 
 <html>
 <head>
-    <title>URL Monitor Pro - Complete</title>
+    <title>URL Monitor Pro</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 </head>
-<body style="font-family: Arial; padding: 10px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh;">
+<body style="font-family: Arial; padding: 20px; background: lightblue;">
 
-<div style="max-width: 1000px; margin: 0 auto; background: rgba(255,255,255,0.95); padding: 20px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.2);">
+<h1 style="text-align: center; color: #2196F3;">🔍 URL Monitor Pro</h1>
 
-<h1 style="text-align: center; color: #2196F3; margin-bottom: 30px;">🔍 URL Monitor Pro</h1>
+<div style="text-align: center; margin: 30px;">
+    <button onclick="addUrl()" style="background: green; color: white; padding: 20px; border: none; font-size: 18px; margin: 10px; border-radius: 5px;">
+        + Add URL
+    </button>
 
-<!-- Control Buttons -->
-<div style="text-align: center; margin-bottom: 30px;">
-    <button onclick="addUrl()" style="background: #4CAF50; color: white; padding: 15px 25px; border: none; font-size: 16px; margin: 5px; border-radius: 8px; cursor: pointer;">+ Add URL</button>
-    <button onclick="showSettings()" style="background: #2196F3; color: white; padding: 15px 25px; border: none; font-size: 16px; margin: 5px; border-radius: 8px; cursor: pointer;">⚙️ Settings</button>
-    <button onclick="showInspector()" style="background: #9C27B0; color: white; padding: 15px 25px; border: none; font-size: 16px; margin: 5px; border-radius: 8px; cursor: pointer;">🔎 Inspector</button>
-    <button onclick="exportData()" style="background: #FF9800; color: white; padding: 15px 25px; border: none; font-size: 16px; margin: 5px; border-radius: 8px; cursor: pointer;">📤 Export</button>
+    <button onclick="showSettings()" style="background: blue; color: white; padding: 20px; border: none; font-size: 18px; margin: 10px; border-radius: 5px;">
+        ⚙️ Settings
+    </button>
+
+    <button onclick="showInspector()" style="background: purple; color: white; padding: 20px; border: none; font-size: 18px; margin: 10px; border-radius: 5px;">
+        🔎 Inspector
+    </button>
 </div>
 
 <!-- Stats Dashboard -->
-<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; margin-bottom: 30px;">
-    <div style="background: white; padding: 20px; border-radius: 10px; text-align: center; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
-        <h3 style="margin: 0 0 10px 0; color: #666; font-size: 14px;">Total URLs</h3>
-        <span style="font-size: 28px; font-weight: bold;" id="totalUrls">0</span>
+<div style="background: white; padding: 20px; margin: 20px; border-radius: 10px;">
+    <h2>Dashboard</h2>
+    <div style="display: flex; gap: 20px; flex-wrap: wrap;">
+        <div style="background: #f5f5f5; padding: 15px; border-radius: 5px; text-align: center; flex: 1; min-width: 100px;">
+            <div style="color: #666; font-size: 14px;">Total URLs</div>
+            <div style="font-size: 24px; font-weight: bold;" id="totalUrls">0</div>
+        </div>
+        <div style="background: #f5f5f5; padding: 15px; border-radius: 5px; text-align: center; flex: 1; min-width: 100px;">
+            <div style="color: #666; font-size: 14px;">Online</div>
+            <div style="font-size: 24px; font-weight: bold; color: green;" id="onlineUrls">0</div>
+        </div>
+        <div style="background: #f5f5f5; padding: 15px; border-radius: 5px; text-align: center; flex: 1; min-width: 100px;">
+            <div style="color: #666; font-size: 14px;">Offline</div>
+            <div style="font-size: 24px; font-weight: bold; color: red;" id="offlineUrls">0</div>
+        </div>
     </div>
-    <div style="background: white; padding: 20px; border-radius: 10px; text-align: center; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
-        <h3 style="margin: 0 0 10px 0; color: #666; font-size: 14px;">Online</h3>
-        <span style="font-size: 28px; font-weight: bold; color: #4CAF50;" id="onlineUrls">0</span>
-    </div>
-    <div style="background: white; padding: 20px; border-radius: 10px; text-align: center; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
-        <h3 style="margin: 0 0 10px 0; color: #666; font-size: 14px;">Offline</h3>
-        <span style="font-size: 28px; font-weight: bold; color: #f44336;" id="offlineUrls">0</span>
-    </div>
-    <div style="
+</div>
+
+<!-- URL List -->
+<div id="output" style="background: white; margin: 20px; padding: 20px; border-radius: 10px; min-height: 100px;">
+    <h3>URL Monitoring Results</h3>
+    <p>Click "Add URL" to start monitoring websites</p>
+</div>
+
+<script>
+// Global variables
+var urls = [];
+var settings = {
+    interval: 10,
+    soundEnabled: true,
+    notifications: true,
+    sslWarning: 30
+};
+
+// Load saved data
+function loadData() {
+    try {
+        var saved = localStorage.getItem('monitor-urls');
+        if (saved) {
+            urls = JSON.parse(saved);
+            updateDisplay();
+        }
+    } catch(e) {
+        console.log('Could not load saved data');
+    }
+}
+
+// Save data
+function saveData() {
+    try {
+        localStorage.setItem('monitor-urls', JSON.stringify(urls));
+    } catch(e) {
+        console.log('Coul
