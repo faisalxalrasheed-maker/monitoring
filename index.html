@@ -46,7 +46,6 @@
             <!-- URLs will be added dynamically -->
         </div>
 
-        <!-- Add URL Modal -->
         <div id="addUrlModal" class="modal hidden">
             <div class="modal-content">
                 <span class="close" id="closeModal">&times;</span>
@@ -57,18 +56,14 @@
             </div>
         </div>
 
-        <!-- Settings Panel -->
         <div id="settingsPanel" class="panel hidden">
             <div class="panel-header">
                 <h2>⚙️ Settings</h2>
                 <button id="closeSettings" class="btn-close">×</button>
             </div>
-            <div id="settingsContent" class="settings-content">
-                <!-- Settings will be loaded here -->
-            </div>
+            <div id="settingsContent" class="settings-content"></div>
         </div>
 
-        <!-- Inspector Panel -->
         <div id="inspectorPanel" class="panel hidden">
             <div class="panel-header">
                 <h2>🔍 Auto Inspector</h2>
@@ -84,3 +79,9 @@
             </div>
         </div>
     </div>
+
+    <script>
+        // Complete URL Monitor App
+        class URLMonitorApp {
+            constructor() {
+                this.urls =
