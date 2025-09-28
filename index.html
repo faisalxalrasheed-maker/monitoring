@@ -79,6 +79,7 @@
     <div class="stat"><div class="label">Offline</div><div class="value danger" id="offline">0</div></div>
     <div class="stat"><div class="label">24h Uptime</div><div class="value" id="uptime24">0%</div></div>
     <div class="stat"><div class="label">Avg RT (24h)</div><div class="value" id="avgRt24">—</div></div>
+    <div class="stat"><div class="label">Spikes (24h)</div><div class="value warn" id="spikes24">0</div></div>
   </div>
 
   <div class="section">
@@ -174,6 +175,10 @@
     const cutoff = now() - 24 * 60 * 60 * 1000;
     item.history = (item.history || []).filter(h => h.t >= cutoff);
   }
+  function pruneSpikes(item) {
+    const cutoff = now() - 24 * 60 * 60 * 1000;
+    item.spikes = (item.spikes || []).filter(ts => ts >= cutoff);
+  }
   function addHistory(item, status, rt) {
     item.history = item.history || [];
     pruneHistory(item);
@@ -183,6 +188,34 @@
     const nums = arr.filter(n => typeof n === 'number' && !isNaN(n));
     if (!nums.length) return null;
     return nums.reduce((a,b)=>a+b,0)/nums.length;
+  }
+
+  // Spike detection parameters
+  const SPIKE_MIN_DELTA_MS = 200; // must exceed baseline by at least this much
+  const SPIKE_FACTOR = 2.0;       // and be at least this multiple of baseline
+  const SPIKE_BASELINE_SAMPLES = 5; // average of last N successful RTs
+
+  function detectSpike(item, currentRt) {
+    if (!(typeof currentRt === 'number' && currentRt > 0)) return false;
+    const hist = (item.history || []).slice().reverse(); // newest first
+    const rts = [];
+    for (const h of hist) {
+      if (h.status === 'online' && typeof h.rt === 'number' && h.rt > 0) {
+        rts.push(h.rt);
+        if (rts.length >= SPIKE_BASELINE_SAMPLES) break;
+      }
+    }
+    if (rts.length < Math.max(3, Math.min(5, SPIKE_BASELINE_SAMPLES))) return false; // need enough baseline
+    const baseline = average(rts);
+    if (baseline == null) return false;
+    const isSpike = (currentRt >= baseline * SPIKE_FACTOR) && (currentRt - baseline >= SPIKE_MIN_DELTA_MS);
+    return isSpike;
+  }
+
+  function recordSpike(item) {
+    item.spikes = item.spikes || [];
+    pruneSpikes(item);
+    item.spikes.push(now());
   }
 
   // =============== Checkers ===============
@@ -243,9 +276,18 @@
       } else {
         result = await pingFavicon(item.url);
       }
+
       item.status = result.ok ? 'online' : 'offline';
       item.lastChecked = now();
       item.responseTimeMs = result.rt ?? null;
+
+      // Detect spike before adding current sample to history (baseline uses previous samples)
+      if (item.status === 'online' && typeof item.responseTimeMs === 'number') {
+        if (detectSpike(item, item.responseTimeMs)) {
+          recordSpike(item);
+        }
+      }
+
       addHistory(item, item.status, item.responseTimeMs);
     } catch (e) {
       item.status = 'offline';
@@ -276,7 +318,6 @@
     const origin = new URL(baseUrl).origin;
     const discovered = new Set();
 
-    // Helper: fetch text via proxy
     async function fetchText(u) {
       const base = settings.proxyUrl;
       const urlParam = base.includes('{url}') ? base.replace('{url}', encodeURIComponent(u)) : base + encodeURIComponent(u);
@@ -285,13 +326,11 @@
       return txt;
     }
 
-    // Try homepage
     try {
       const html = await fetchText(baseUrl);
       extractLinks(html, origin, discovered);
     } catch {}
 
-    // Try robots.txt
     try {
       const robots = await fetchText(origin + '/robots.txt');
       const sitemaps = (robots.match(/sitemap:\s*(.+)/ig) || []).map(x => x.split(':')[1] ? x.split(':').slice(1).join(':').trim() : x.replace(/sitemap:\s*/i,'').trim());
@@ -301,26 +340,23 @@
       }
     } catch {}
 
-    // Try sitemap.xml default if none found
     if (discovered.size === 0) {
       try {
         await fetchAndParseSitemap(origin + '/sitemap.xml', origin, discovered);
       } catch {}
     }
 
-    // Fallback: add base if nothing
     if (discovered.size === 0) {
       discovered.add(baseUrl);
     }
 
-    // Add up to max
     const max = settings.maxInspectorEndpoints || 50;
     const finalList = [...discovered].slice(0, max);
 
     let added = 0;
     for (const u of finalList) {
       if (!urls.some(x => x.url === u)) {
-        urls.push({ id: Date.now() + Math.random(), url: u, status: 'checking', lastChecked: null, responseTimeMs: null, history: [] });
+        urls.push({ id: Date.now() + Math.random(), url: u, status: 'checking', lastChecked: null, responseTimeMs: null, history: [], spikes: [] });
         added++;
       }
     }
@@ -377,7 +413,7 @@
     const normalized = normalizeUrl(input);
     if (!normalized) { alert('Invalid URL'); return; }
     if (urls.some(u => u.url === normalized)) { alert('Already added.'); return; }
-    urls.push({ id: Date.now(), url: normalized, status: 'checking', lastChecked: null, responseTimeMs: null, history: [] });
+    urls.push({ id: Date.now(), url: normalized, status: 'checking', lastChecked: null, responseTimeMs: null, history: [], spikes: [] });
     persistUrls();
     render();
     check(urls[urls.length - 1]);
@@ -419,14 +455,20 @@
   }
 
   function computeGlobalStats() {
-    const allHist = urls.flatMap(u => (u.history || []).filter(h => h.t >= now() - 24*60*60*1000));
+    const cutoff = now() - 24*60*60*1000;
+    const allHist = urls.flatMap(u => (u.history || []).filter(h => h.t >= cutoff));
     const up = allHist.filter(h => h.status === 'online').length;
     const total = allHist.length;
     const uptimePct = total ? Math.round((up / total) * 100) : 0;
     const avgRt = average(allHist.map(h => h.rt));
+    const spikes24 = urls.reduce((acc, u) => {
+      const count = (u.spikes || []).filter(ts => ts >= cutoff).length;
+      return acc + count;
+    }, 0);
     return {
       uptimePct,
       avgRt: avgRt != null ? Math.round(avgRt) : null,
+      spikes24
     };
   }
 
@@ -436,14 +478,18 @@
     const offlineEl = document.getElementById('offline');
     const uptime24El = document.getElementById('uptime24');
     const avgRt24El = document.getElementById('avgRt24');
+    const spikes24El = document.getElementById('spikes24');
+
     totalEl.textContent = String(urls.length);
     let on = 0, off = 0;
     urls.forEach(u => { if (u.status === 'online') on++; else if (u.status === 'offline') off++; });
     onlineEl.textContent = String(on);
     offlineEl.textContent = String(off);
+
     const g = computeGlobalStats();
     uptime24El.textContent = g.uptimePct + '%';
     avgRt24El.textContent = g.avgRt != null ? (g.avgRt + ' ms') : '—';
+    spikes24El.textContent = String(g.spikes24);
 
     const listEl = document.getElementById('urlList');
     if (urls.length === 0) {
@@ -453,6 +499,7 @@
 
     const html = urls.map(u => {
       pruneHistory(u);
+      pruneSpikes(u);
       const color =
         u.status === 'online' ? '#4caf50' :
         u.status === 'offline' ? '#e53935' :
@@ -474,6 +521,8 @@
         return (rt != null && !isNaN(rt)) ? Math.round(rt) + ' ms' : '—';
       })();
 
+      const spikeCount = (u.spikes || []).length;
+
       return `
       <div class="row">
         <div class="dot" style="background:${color}"></div>
@@ -485,6 +534,7 @@
             • RT: <span class="${u.responseTimeMs != null ? 'success' : ''}">${rt}</span>
             • 24h Uptime: <span>${uptimePct}%</span>
             • 24h Avg RT: <span>${avgRt}</span>
+            • Spikes (24h): <span class="warn" title="Sudden response time increases">${spikeCount}</span>
           </div>
         </div>
         <div>${renderTimeline(u.history || [])}</div>
@@ -543,29 +593,8 @@
   if (urls.length) setTimeout(checkAll, 200);
 
   // =============== Notes ===============
-  // For accurate HTTP checks and Auto Inspector, set Check Mode = "HTTP via Proxy"
-  // and provide a Proxy URL, e.g.:
-  //   https://your-host/check?url=
-  // or
-  //   https://your-host/check?url={url}
-  //
-  // Example proxy (Node/Express) response format:
-  // { ok: boolean, status: number, rt: number, finalUrl?: string }
-  //
-  // Minimal Node/Express proxy (place elsewhere, not in this HTML):
-  //   app.get('/check', async (req, res) => {
-  //     const target = req.query.url;
-  //     const start = Date.now();
-  //     let r, ok=false, status=0, finalUrl=null;
-  //     try {
-  //       try { r = await fetch(target, { method: 'HEAD', redirect: 'follow' }); }
-  //       catch { r = await fetch(target, { method: 'GET', redirect: 'follow' }); await r.arrayBuffer().catch(()=>{}); }
-  //       status = r.status; finalUrl = r.url; ok = r.ok;
-  //     } catch {}
-  //     const rt = Date.now() - start;
-  //     res.setHeader('Access-Control-Allow-Origin', '*');
-  //     res.json({ ok, status, rt, finalUrl });
-  //   });
+  // Spike definition can be tuned with:
+  //   SPIKE_MIN_DELTA_MS, SPIKE_FACTOR, SPIKE_BASELINE_SAMPLES
 </script>
 </body>
 </html>
