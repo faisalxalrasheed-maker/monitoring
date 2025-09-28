@@ -1,37 +1,79 @@
 
 <html>
 <head>
-    <title>URL Monitor Pro</title>
+    <title>URL Monitor</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <style>
-        body { font-family: Arial, sans-serif; background: #667eea; padding: 20px; margin: 0; }
-        .container { max-width: 1000px; margin: 0 auto; background: white; border-radius: 10px; padding: 20px; }
-        .header { background: #2196F3; color: white; padding: 20px; border-radius: 10px; margin-bottom: 20px; text-align: center; }
-        .stats { display: flex; gap: 20px; margin-bottom: 20px; flex-wrap: wrap; }
-        .stat { background: #f5f5f5; padding: 15px; border-radius: 8px; text-align: center; flex: 1; min-width: 120px; }
-        .stat h3 { margin: 0 0 10px 0; font-size: 14px; color: #666; }
-        .stat span { font-size: 24px; font-weight: bold; }
-        .green { color: #4CAF50; }
-        .red { color: #f44336; }
-        .orange { color: #FF9800; }
-        button { background: #4CAF50; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; margin: 5px; }
-        button:hover { background: #45a049; }
-        .btn-secondary { background: #2196F3; }
-        .btn-danger { background: #f44336; }
-        input { width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ddd; border-radius: 5px; box-sizing: border-box; }
-        .url-item { background: #f9f9f9; padding: 15px; margin: 10px 0; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; }
-        .url-info { flex: 1; min-width: 200px; }
-        .url-name { font-weight: bold; margin-bottom: 5px; }
-        .url-address { color: #666; font-size: 14px; word-break: break-all; }
-        .url-meta { font-size: 12px; color: #888; margin-top: 5px; }
-        .url-status { font-weight: bold; margin: 10px; }
-        .status-up { color: #4CAF50; }
-        .status-down { color: #f44336; }
-        .status-checking { color: #FF9800; }
-        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; }
-        .modal-content { background: white; margin: 10% auto; padding: 20px; width: 90%; max-width: 500px; border-radius: 10px; position: relative; }
-        .show { display: flex; align-items: center; justify-content: center; }
-        .close { position: absolute; top: 10px; right: 15px; font-size: 28px; font-weight: bold; cursor: pointer; }
-        .url-list { max-height: 400px; overflow-y: auto; }
-        .inspector-results { max-height: 300px; overflow-y: auto; margin-top: 20px; }
-        .endpoint-item { background: #f0f0f0; padding: 10px; margin: 5px 0; border-
+</head>
+<body style="font-family: Arial; background: lightblue; padding: 10px; margin: 0;">
+
+<div style="background: white; padding: 20px; border-radius: 10px; max-width: 800px; margin: 0 auto;">
+    
+    <h1 style="color: #2196F3; text-align: center;">🔍 URL Monitor Pro</h1>
+    
+    <div style="text-align: center; margin: 20px 0;">
+        <button onclick="addUrl()" style="background: green; color: white; padding: 10px 20px; border: none; border-radius: 5px; margin: 5px; cursor: pointer;">Add URL</button>
+        <button onclick="showSettings()" style="background: blue; color: white; padding: 10px 20px; border: none; border-radius: 5px; margin: 5px; cursor: pointer;">Settings</button>
+    </div>
+
+    <div style="display: flex; gap: 20px; margin: 20px 0; flex-wrap: wrap;">
+        <div style="background: #f5f5f5; padding: 15px; border-radius: 5px; text-align: center; flex: 1; min-width: 100px;">
+            <div style="color: #666; font-size: 14px;">Total</div>
+            <div style="font-size: 24px; font-weight: bold;" id="total">0</div>
+        </div>
+        <div style="background: #f5f5f5; padding: 15px; border-radius: 5px; text-align: center; flex: 1; min-width: 100px;">
+            <div style="color: #666; font-size: 14px;">Online</div>
+            <div style="font-size: 24px; font-weight: bold; color: green;" id="online">0</div>
+        </div>
+        <div style="background: #f5f5f5; padding: 15px; border-radius: 5px; text-align: center; flex: 1; min-width: 100px;">
+            <div style="color: #666; font-size: 14px;">Offline</div>
+            <div style="font-size: 24px; font-weight: bold; color: red;" id="offline">0</div>
+        </div>
+    </div>
+
+    <div id="urlList"></div>
+
+</div>
+
+<script>
+let urls = [];
+
+function addUrl() {
+    let url = prompt("Enter URL (e.g., google.com):");
+    if (url) {
+        if (!url.startsWith('http')) {
+            url = 'https://' + url;
+        }
+        
+        let urlObj = {
+            id: Date.now(),
+            url: url,
+            name: url,
+            status: 'checking'
+        };
+        
+        urls.push(urlObj);
+        updateDisplay();
+        checkUrl(urlObj);
+    }
+}
+
+function checkUrl(urlObj) {
+    let img = new Image();
+    let startTime = Date.now();
+    
+    img.onload = function() {
+        urlObj.status = 'up';
+        urlObj.responseTime = Date.now() - startTime;
+        updateDisplay();
+    };
+    
+    img.onerror = function() {
+        // Try with fetch as backup
+        fetch(urlObj.url + '/favicon.ico', {mode: 'no-cors'})
+        .then(() => {
+            urlObj.status = 'up';
+            urlObj.responseTime = Date.now() - startTime;
+            updateDisplay();
+        })
+        .catch(() => {
+            urlObj.status = 'down
