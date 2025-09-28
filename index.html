@@ -1,201 +1,209 @@
 
 <html>
 <head>
-  <meta charset="utf-8" />
-  <title>URL Monitor Pro</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+ <meta charset="utf-8" />
+ <title>URL Monitor Pro</title>
+ <meta name="viewport" content="width=device-width, initial-scale=1.0">
+ <style>
+ :root {
+ --primary: #2196F3;
+ --success: #2e7d32;
+ --danger: #d32f2f;
+ --warn: #f9a825;
+ --muted: #666;
+ --bg: #e3f2fd;
+ --panel: #fff;
+ --chip: #f5f5f5;
+ --border: #eee;
+ }
+ body { font-family: Arial, sans-serif; padding: 20px; background: var(--bg); }
+ .wrap { max-width: 1100px; margin: 0 auto; background: var(--panel); padding: 20px; border-radius: 12px; box-shadow: 0 6px 16px rgba(0,0,0,0.06); }
+ h1 { text-align: center; color: var(--primary); margin: 0 0 10px; }
+ .actions { text-align: center; margin: 18px 0 24px; display:flex; gap:10px; justify-content:center; flex-wrap:wrap; }
+ button { cursor: pointer; }
+ .btn { padding: 12px 16px; border: none; font-size: 14px; border-radius: 6px; }
+ .btn-primary { background: var(--primary); color: #fff; }
+ .btn-green { background: #2e7d32; color: #fff; }
+ .btn-purple { background: #6a1b9a; color: #fff; }
+ .btn-red { background: #e53935; color: #fff; }
+ .btn-gray { background: #9e9e9e; color: #fff; }
+ .stats { display: flex; gap: 15px; margin: 10px 0 20px; flex-wrap: wrap; }
+ .stat { background: var(--chip); padding: 14px; border-radius: 10px; text-align: center; flex: 1 1 180px; }
+ .stat .label { color: var(--muted); }
+ .stat .value { font-size: 24px; font-weight: bold; }
+ .grid { display: grid; gap: 12px; }
+ .row { display:flex; align-items:center; gap:12px; padding:12px; border:1px solid var(--border); border-radius:10px; }
+ .dot { width:12px; height:12px; border-radius:50%; }
+ .url { font-weight:600; word-break: break-all; }
+ .sub { color: var(--muted); font-size: 12px; margin-top: 4px; }
+ .right { margin-left:auto; display:flex; gap:8px; }
+ .timeline { width: 240px; height: 28px; }
+ .chip { background:#eef7ff; color:#1976d2; border:1px solid #cfe8ff; padding:3px 6px; border-radius:999px; font-size:11px; font-weight:600; }
+ .section { background:#f9f9f9; padding: 16px; border-radius: 10px; }
+ .header { display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; }
+ .flex { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+ .grow { flex: 1 1 auto; }
+ .small { font-size: 12px; color: var(--muted); }
+ .danger { color: var(--danger); }
+ .success { color: var(--success); }
+ .warn { color: var(--warn); }
+ /* Modal */
+ .modal-backdrop { position:fixed; inset:0; var(--danger); }
+ .success { color: var(--success); }
+ .warn { color: var(--warn); }
+ /* Modal */
+ .modal-backdrop { position:fixed; inset:0; background:rgba(0,0,0,0.35); display:none; align-items:center; justify-content:center; }
+ .modal { background:#fff; width: 560px; max-width: 92vw; border-radius:12px; overflow:hidden; }
+ .modal header { padding:12px 16px; border-bottom:1px solid var(--border); font-weight:700; }
+ .modal .body { padding:14px 16px; display:grid; gap:12px; }
+ .modal .rowx { display:grid; grid-template-columns: 170px 1fr; gap:10px; align-items:center; }
+ .modal .rowx input, .modal .rowx select { width: 100%; padding:8px; border:1px solid #ddd; border-radius:6px; }
+ .modal footer { display:flex; gap:10px; justify-content:flex-end; padding:12px 16px; border-top:1px solid var(--border); }
+ @media (max-width: 600px) {
+ .timeline { width: 100%; }
+ .row { flex-wrap: wrap; }
+ .right { width: 100%; justify-content: flex-end; }
+ }
+ </style>
 </head>
-<body style="font-family: Arial; padding: 20px; background: lightblue;">
+<body>
+<div class="wrap">
+ <h1>🔍 URL Monitor Pro</h1>
 
-<div style="max-width: 800px; margin: 0 auto; background: white; padding: 20px; border-radius: 10px;">
-  <h1 style="text-align: center; color: #2196F3;">🔍 URL Monitor Pro</h1>
-  
-  <div style="text-align: center; margin: 30px 0;">
-    <button onclick="addURL()" style="background: green; color: white; padding: 15px 20px; border: none; font-size: 16px; margin: 8px; border-radius: 5px;">+ Add URL</button>
-    <button onclick="showSettings()" style="background: blue; color: white; padding: 15px 20px; border: none; font-size: 16px; margin: 8px; border-radius: 5px;">⚙️ Settings</button>
-    <button onclick="startInspector()" style="background: purple; color: white; padding: 15px 20px; border: none; font-size: 16px; margin: 8px; border-radius: 5px;">🔎 Inspector</button>
-  </div>
-  
-  <div style="display: flex; gap: 15px; margin: 20px 0; flex-wrap: wrap;">
-    <div style="background: #f5f5f5; padding: 15px; border-radius: 8px; text-align: center; flex: 1;">
-      <div style="color: #666;">Total</div>
-      <div style="font-size: 24px; font-weight: bold;" id="total">0</div>
-    </div>
-    <div style="background: #f5f5f5; padding: 15px; border-radius: 8px; text-align: center; flex: 1;">
-      <div style="color: #666;">Online</div>
-      <div style="font-size: 24px; font-weight: bold; color: green;" id="online">0</div>
-    </div>
-    <div style="background: #f5f5f5; padding: 15px; border-radius: 8px; text-align: center; flex: 1;">
-      <div style="color: #666;">Offline</div>
-      <div style="font-size: 24px; font-weight: bold; color: red;" id="offline">0</div>
-    </div>
-  </div>
-  
-  <div style="background: #f9f9f9; padding: 20px; border-radius: 10px;">
-    <h3>Monitored URLs</h3>
-    <div id="urlList">No URLs added yet</div>
-  </div>
+ <div class="actions">
+ <button class="btn btn-green" onclick="addURL()">+ Add URL</button>
+ <button class="btn btn-primary" onclick="showSettings()">⚙️ Settings</button>
+ <button class="btn btn-purple" onclick="startInspector()">🔎 Auto Inspector</button>
+ <button class="btn btn-gray" onclick="checkAll()">▶️ Check All Now</button>
+ </div>
+
+ <div class="stats">
+ <div class="stat"><div class="label">Total</div><div class="value" id="total">0</div></div>
+ <div class="stat"><div class="label">Online</div><div class="value success" id="online">0</div></div>
+ <div class="stat"><div class="label">Offline</div><div class="value danger" id="offline">0</div></div>
+ <div class="stat"><div class="label">24h Uptime</div><div class="value" id="uptime24">0%</div></div>
+ <div class="stat"><div class="label">Avg RT (24h)</div><div class="value" id="avgRt24">—</div></div>
+ </div>
+
+ <div class="section">
+ <div class="header">
+ <h3 style="margin:0;">Monitored URLs</h3>
+ <div class="small">History retained for last 24 hours</div>
+ </div>
+ <div id="urlList" class="grid">No URLs added yet</div>
+ </div>
+</div>
+
+<!-- Settings Modal -->
+<div id="modal" class="modal-backdrop" onclick="backdropClose(event)">
+ <div class="modal" role="dialog" aria-modal="true" lass="modal-backdrop" onclick="backdropClose(event)">
+ <div class="modal" role="dialog" aria-modal="true" aria-labelledby="settingsTitle" onclick="event.stopPropagation()">
+ <header id="settingsTitle">Settings</header>
+ <div class="body">
+ <div class="rowx">
+ <label>Check Mode</label>
+ <select id="mode">
+ <option value="favicon">Favicon Ping (no proxy)</option>
+ <option value="proxy">HTTP via Proxy (accurate)</option>
+ </select>
+ </div>
+ <div class="rowx">
+ <label>Proxy URL</label>
+ <input id="proxyUrl" placeholder="https://your-domain/check?url=" />
+ </div>
+ <div class="rowx">
+ <label>Check Interval (sec)</label>
+ <input id="interval" type="number" min="10" value="60" />
+ </div>
+ <div class="rowx">
+ <label>Timeout (ms)</label>
+ <input id="timeout" type="number" min="1000" value="8000" />
+ </div>
+ <div class="rowx">
+ <label>Max Endpoints (Inspector)</label>
+ <input id="maxEndpoints" type="number" min="5" value="50" />
+ </div>
+ </div>
+ <footer>
+ <button class="btn btn-gray" onclick="hideSettings()">Cancel</button>
+ <button class="btn btn-primary" onclick="saveSettings()">Save</button>
+ </footer>
+ </div>
 </div>
 
 <script>
-  const urls = [];
+ // =============== State & Persistence ===============
+ const DEFAULT_SETTINGS = {
+ mode: 'favicon', // 'favicon' | 'proxy'
+ proxyUrl: '', // e.g. https://your-proxy.example.com/check?url=
+ intervalSec: 60,
+ timeoutMs: 8000,
+ maxInspectorEndpoints: 50,
+ };
 
-  function normalizeUrl(input) {
-    let u = input.trim();
-    if (!/^https?:\/\//i.test(u)) {
-      u = 'https://' + u;
-    }
-    try {
-      return new URL(u).toString();
-    } catch {
-      return null;
-    }
-  }
+ let settings = loadSettings();
+ let urls = loadUrls();
+ let timer = null;
 
-  function addURL() {
-    const input = prompt('Enter URL (e.g. google.com or https://example.com/path):');
-    if (!input) return;
+ function loadSettings() {
+ try {
+ const s = JSON.parse(localStorage.getItem('ump_settings') || 'null');
+ return Object.assign({}, DEFAULT_SETTINGS, s || {});
+ } catch { return { ...DEFAULT_SETTINGS }; }
+ }
+ function saveSettingsToStorage() {
+ localStorage.setItem('ump_settings', JSON.stringify(settings));
+ }
+ function loadUrls() {
+ try {
+ const list = JSON.parse(localStorage.getItem('ump_urls') || '[]');
+ return Array.isArray(list) ? list : [];
+ } catch { return []; }
+ }
+ function persistUrls() {
+ localStorage.setItem('ump_urls', JSON.stringify(urls));
+ }
 
-    const normalized = normalizeUrl(input);
-    if (!normalized) {
-      alert('Invalid URL');
-      return;
-    }
+ // =============== Utilities ===============
+ function normalizeUrl(input) {
+ let u = (input || '').trim();
+ if (!u) return null;
+ if (!/^https?:\/\//i.test(u)) u = 'https://' + u;
+ try { return new URL(u).toString(); } catch { return null; }
+ }
+ function escapeHtml(s) {
+ return String(s).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+ }
+ function now() { return Date.now(); }
+ function pruneHistory(item) {
+ const cutoff = now() - 24 * 60 * 60 * 1000;
+ item.history = (item.history || []).filter(h => h.t >= cutoff);
+ }
+ function addHistory(item, status, rt) {
+ item.history = item.history || [];
+ pruneHistory(item);
+ item.history.push({ t: now(), status, rt: (typeof rt === 'number' ? rt : null) });
+ }
+ function average(arr) {
+ const nums = arr.filter(n => typeof n === 'number' && !isNaN(n));
+ if (!nums.length) return null;
+ return nums.reduce((a,b)=>a+b,0)/nums.length;
+ }
 
-    const item = { id: Date.now(), url: normalized, status: 'checking', lastChecked: null };
-    urls.push(item);
-    display();
-    check(item);
-  }
+ // =============== Checkers ===============
+ function pingFavicon(url, timeoutMs) {
+ return new Promise((resolve, reject) => {
+ let origin;
+ try { origin = new URL(url).origin; } catch (e) { reject(e); return; }
+ const href = origin + '/favicon.ico?ts=' + Date.now();
+ const img = new Image();
+ const start = performance.now();
+ const timer = setTimeout(() => {
+ cleanup(); reject(new Error('timeout'));
+ }, timeoutMs || settings.timeoutMs);
 
-  // Cross-origin friendly "ping": try to load the site's favicon
-  function pingFavicon(url, timeoutMs = 8000) {
-    return new Promise((resolve, reject) => {
-      let origin;
-      try {
-        origin = new URL(url).origin;
-      } catch (e) {
-        reject(e);
-        return;
-      }
-
-      const img = new Image();
-      const href = origin + '/favicon.ico?ts=' + Date.now();
-
-      const timer = setTimeout(() => {
-        cleanup();
-        reject(new Error('timeout'));
-      }, timeoutMs);
-
-      function cleanup() {
-        clearTimeout(timer);
-        img.onload = null;
-        img.onerror = null;
-      }
-
-      img.onload = () => { cleanup(); resolve(true); };
-      img.onerror = () => { cleanup(); reject(new Error('error')); };
-      img.src = href;
-    });
-  }
-
-  function check(item) {
-    item.status = 'checking';
-    display();
-
-    pingFavicon(item.url)
-      .then(() => {
-        item.status = 'online';
-        item.lastChecked = new Date();
-        display();
-      })
-      .catch(() => {
-        item.status = 'offline';
-        item.lastChecked = new Date();
-        display();
-      });
-  }
-
-  function display() {
-    const listEl = document.getElementById('urlList');
-    const totalEl = document.getElementById('total');
-    const onlineEl = document.getElementById('online');
-    const offlineEl = document.getElementById('offline');
-
-    if (urls.length === 0) {
-      listEl.textContent = 'No URLs added yet';
-      totalEl.textContent = '0';
-      onlineEl.textContent = '0';
-      offlineEl.textContent = '0';
-      return;
-    }
-
-    let onlineCount = 0;
-    let offlineCount = 0;
-
-    const html = urls.map(u => {
-      if (u.status === 'online') onlineCount++;
-      if (u.status === 'offline') offlineCount++;
-
-      const color =
-        u.status === 'online' ? 'green' :
-        u.status === 'offline' ? 'red' :
-        '#999';
-
-      const last = u.lastChecked
-        ? new Date(u.lastChecked).toLocaleTimeString()
-        : '—';
-
-      return `
-        <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; padding:12px; border:1px solid #eee; border-radius:8px; margin-bottom:10px;">
-          <div style="min-width: 12px; min-height: 12px; border-radius: 50%; background:${color};"></div>
-          <div style="flex:1;">
-            <div style="font-weight:600;">${escapeHtml(u.url)}</div>
-            <div style="color:#666; font-size:12px;">Status: <span style="color:${color}; font-weight:600;">${u.status}</span> • Last checked: ${last}</div>
-          </div>
-          <div style="display:flex; gap:8px;">
-            <button onclick="checkById(${u.id})" style="padding:6px 10px; border:none; background:#2196F3; color:white; border-radius:4px;">Check</button>
-            <button onclick="removeById(${u.id})" style="padding:6px 10px; border:none; background:#e53935; color:white; border-radius:4px;">Remove</button>
-          </div>
-        </div>
-      `;
-    }).join('');
-
-    listEl.innerHTML = html;
-    totalEl.textContent = String(urls.length);
-    onlineEl.textContent = String(onlineCount);
-    offlineEl.textContent = String(offlineCount);
-  }
-
-  function escapeHtml(s) {
-    return s.replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
-  }
-
-  function checkById(id) {
-    const item = urls.find(u => u.id === id);
-    if (item) check(item);
-  }
-
-  function removeById(id) {
-    const idx = urls.findIndex(u => u.id === id);
-    if (idx >= 0) {
-      urls.splice(idx, 1);
-      display();
-    }
-  }
-
-  // Optional: periodic re-check (every 60s)
-  setInterval(() => {
-    urls.forEach(u => check(u));
-  }, 60000);
-
-  // Button stubs to avoid errors
-  function showSettings() {
-    alert('Settings dialog not implemented yet.');
-  }
-  function startInspector() {
-    alert('Inspector not implemented yet.');
-  }
-</script>
-</body>
-</html>
+ function cleanup() {
+ clearTimeout(timer);
+ img.onload = null;
+ img.onerror = null;
+ eturn;
