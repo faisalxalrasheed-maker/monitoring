@@ -1,51 +1,62 @@
 
 <html>
 <head>
-    <title>URL Monitor - Debug Version</title>
+    <title>URL Monitor Debug</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 </head>
 <body style="font-family: Arial; padding: 10px; background: lightblue;">
 
 <div style="max-width: 800px; margin: 0 auto; background: white; padding: 20px; border-radius: 10px;">
     
-    <h1 style="text-align: center; color: #2196F3;">🐛 URL Monitor - Debug Mode</h1>
+    <h1 style="text-align: center; color: #2196F3;">🐛 Debug Mode</h1>
     
-    <!-- Debug Console -->
-    <div style="background: #000; color: #0f0; padding: 15px; border-radius: 5px; margin: 20px 0; font-family: Courier, monospace; font-size: 11px; height: 150px; overflow-y: auto; border: 2px solid #333;" id="debugLog">
-        <div style="color: yellow;">[DEBUG] Console started...</div>
+    <div style="background: #000; color: #0f0; padding: 10px; font-family: monospace; font-size: 12px; height: 200px; overflow-y: auto; border: 1px solid #333; margin: 20px 0;" id="debugConsole">
+        <div style="color: yellow;">[START] Debug console loaded</div>
     </div>
     
-    <!-- Test Buttons -->
-    <div style="text-align: center; margin: 20px 0; border: 2px dashed #ccc; padding: 15px;">
-        <h3>Test Buttons (onclick method)</h3>
-        <button onclick="test1()" style="background: green; color: white; padding: 15px; border: none; font-size: 16px; margin: 8px; border-radius: 5px; cursor: pointer;">Test 1: Add URL</button>
-        <button onclick="test2()" style="background: blue; color: white; padding: 15px; border: none; font-size: 16px; margin: 8px; border-radius: 5px; cursor: pointer;">Test 2: Settings</button>
-        <button onclick="test3()" style="background: purple; color: white; padding: 15px; border: none; font-size: 16px; margin: 8px; border-radius: 5px; cursor: pointer;">Test 3: Inspector</button>
+    <div style="text-align: center; margin: 20px 0;">
+        <button onclick="testAddURL()" style="background: green; color: white; padding: 20px; border: none; font-size: 18px; margin: 10px; border-radius: 5px; cursor: pointer;">🧪 Test Add URL</button>
+        <button onclick="testSettings()" style="background: blue; color: white; padding: 20px; border: none; font-size: 18px; margin: 10px; border-radius: 5px; cursor: pointer;">🧪 Test Settings</button>
+        <button onclick="testBrowser()" style="background: orange; color: white; padding: 20px; border: none; font-size: 18px; margin: 10px; border-radius: 5px; cursor: pointer;">🧪 Test Browser</button>
     </div>
     
-    <!-- Alternative Buttons -->
-    <div style="text-align: center; margin: 20px 0; border: 2px dashed orange; padding: 15px;">
-        <h3>Test Buttons (event listener method)</h3>
-        <button id="btn1" style="background: #FF5722; color: white; padding: 15px; border: none; font-size: 16px; margin: 8px; border-radius: 5px; cursor: pointer;">Alt 1: Add URL</button>
-        <button id="btn2" style="background: #607D8B; color: white; padding: 15px; border: none; font-size: 16px; margin: 8px; border-radius: 5px; cursor: pointer;">Alt 2: Settings</button>
-        <button id="btn3" style="background: #795548; color: white; padding: 15px; border: none; font-size: 16px; margin: 8px; border-radius: 5px; cursor: pointer;">Alt 3: Inspector</button>
-    </div>
-    
-    <!-- Browser Info -->
-    <div style="background: #f0f0f0; padding: 15px; margin: 20px 0; border-radius: 5px; font-size: 12px;">
-        <h4>Browser Information:</h4>
-        <div id="browserInfo">Loading...</div>
-    </div>
-    
-    <!-- Results -->
-    <div id="results" style="background: #f9f9f9; padding: 20px; border-radius: 10px; margin-top: 20px;">
-        <h3>Test Results</h3>
-        <div>Click any button above to test functionality...</div>
+    <div id="results" style="background: #f0f0f0; padding: 20px; border-radius: 10px;">
+        <h3>Test Results:</h3>
+        <div id="output">Click buttons above to run tests...</div>
     </div>
     
 </div>
 
 <script>
-// Debug logging function
-function log(message, type) {
-    type = type || '
+var debugConsole = document.getElementById('debugConsole');
+
+function log(message) {
+    var timestamp = new Date().toLocaleTimeString();
+    var logEntry = document.createElement('div');
+    logEntry.innerHTML = '[' + timestamp + '] ' + message;
+    debugConsole.appendChild(logEntry);
+    debugConsole.scrollTop = debugConsole.scrollHeight;
+    console.log('[DEBUG] ' + message);
+}
+
+function testAddURL() {
+    log('testAddURL() function called');
+    
+    try {
+        log('Testing prompt function...');
+        var url = prompt('Enter URL for testing:');
+        log('Prompt returned: ' + url);
+        
+        if (url) {
+            log('Processing URL: ' + url);
+            if (!url.includes('http')) {
+                url = 'https://' + url;
+                log('Added https: ' + url);
+            }
+            
+            document.getElementById('output').innerHTML = '<div style="background: #e8f5e8; padding: 10px; border-radius: 5px; margin: 10px 0;"><strong>✅ SUCCESS</strong><br>URL: ' + url + '<br>Status: Would be monitored</div>';
+            log('SUCCESS: URL processed successfully');
+            
+        } else {
+            log('No URL entered');
+            document.
