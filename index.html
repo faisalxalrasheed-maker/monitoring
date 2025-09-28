@@ -1,11 +1,12 @@
+
 <html>
 <head>
   <meta charset="utf-8" />
-  <title>URL Monitor Pro+</title>
+  <title>URL Monitor Pro</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
     :root { --primary: #2196F3; --success: #2e7d32; --danger: #d32f2f; --warn: #f9a825; --muted: #666; --bg: #e3f2fd; --panel: #fff; --chip: #f5f5f5; --border: #eee; }
-    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; padding: 20px; background: var(--bg); color: #333; margin:0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; padding: 20px; background: var(--bg); color: #333; margin: 0; }
     .wrap { max-width: 1100px; margin: 0 auto; background: var(--panel); padding: 20px; border-radius: 12px; box-shadow: 0 6px 16px rgba(0,0,0,0.06); }
     h1 { text-align: center; color: var(--primary); margin: 0 0 10px; }
     .actions { text-align: center; margin: 18px 0 24px; display:flex; gap:10px; justify-content:center; flex-wrap:wrap; }
@@ -15,6 +16,7 @@
     .btn-green { background: #2e7d32; color: #fff; }
     .btn-purple { background: #6a1b9a; color: #fff; }
     .btn-gray { background: #9e9e9e; color: #fff; }
+    .btn:disabled { background: #ccc; cursor: not-allowed; }
     .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; margin: 10px 0 20px; }
     .stat { background: var(--chip); padding: 14px; border-radius: 10px; text-align: center; }
     .stat .label { color: var(--muted); }
@@ -23,43 +25,39 @@
     .row { display:flex; align-items:center; gap:12px; padding:12px; border:1px solid var(--border); border-radius:10px; }
     .dot { width:12px; height:12px; border-radius:50%; flex-shrink:0; }
     .url { font-weight:600; word-break: break-all; }
-    .sub { color: var(--muted); font-size: 12px; margin-top: 4px; display:flex; flex-wrap:wrap; gap: 0 12px; }
+    .sub { color: var(--muted); font-size: 12px; margin-top: 4px; }
     .right { margin-left:auto; display:flex; gap:8px; align-items:center; }
-    .timeline { width: 180px; height: 28px; }
+    .timeline { width: 240px; height: 28px; }
     .chip { background:#eef7ff; color:#1976d2; border:1px solid #cfe8ff; padding:3px 6px; border-radius:999px; font-size:11px; font-weight:600; }
-    .section { background:#f9f9f9; padding: 16px; border-radius: 10px; margin-top: 20px; }
-    .header { display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; }
+    .section { background:#f9f9f9; padding: 16px; border-radius: 10px; margin-top:20px; }
     .small { font-size: 12px; color: var(--muted); }
     .danger { color: var(--danger); }
     .success { color: var(--success); }
     .warn { color: var(--warn); }
     .modal-backdrop { position:fixed; inset:0; background:rgba(0,0,0,0.35); display:none; align-items:center; justify-content:center; z-index: 100; }
-    .modal { background:#fff; width: 560px; max-width: 92vw; border-radius:12px; overflow:hidden; }
-    .modal header { padding:12px 16px; border-bottom:1px solid var(--border); font-weight:700; }
-    .modal .body { padding:14px 16px; display:grid; gap:12px; }
-    .modal .rowx { display:grid; grid-template-columns: 170px 1fr; gap:10px; align-items:center; }
+    .modal { background:#fff; width: 640px; max-width: 92vw; border-radius:12px; overflow:hidden; display:flex; flex-direction:column; max-height: 85vh; }
+    .modal header { padding:12px 16px; border-bottom:1px solid var(--border); font-weight:700; flex-shrink: 0; }
+    .modal .body { padding:14px 16px; overflow-y: auto; }
+    .modal .rowx { display:grid; grid-template-columns: 170px 1fr; gap:10px; align-items:center; margin-bottom: 12px; }
+    .modal .rowx:last-child { margin-bottom: 0; }
     .modal .rowx input, .modal .rowx select { width: 100%; padding:8px; border:1px solid #ddd; border-radius:6px; }
-    .modal footer { display:flex; gap:10px; justify-content:flex-end; padding:12px 16px; border-top:1px solid var(--border); }
-    /* Dashboard */
-    .dashboard-grid { display: grid; grid-template-columns: repeat(24, 1fr); gap: 4px; height: 120px; align-items: flex-end; padding: 10px 0; }
-    .dash-bar { background: var(--primary); opacity: 0.7; position: relative; border-radius: 2px 2px 0 0; transition: opacity 0.2s; }
-    .dash-bar:hover { opacity: 1; }
-    .dash-bar .tooltip { position: absolute; bottom: 105%; left: 50%; transform: translateX(-50%); background: #333; color: #fff; padding: 6px 10px; border-radius: 6px; font-size: 12px; white-space: nowrap; visibility: hidden; opacity: 0; transition: opacity 0.2s; z-index: 10; }
-    .dash-bar:hover .tooltip { visibility: visible; opacity: 1; }
-    .dash-uptime { background: var(--success); }
-    .dash-labels { display: grid; grid-template-columns: repeat(6, 1fr); font-size: 11px; color: var(--muted); text-align: center; padding-left: calc(100% / 24 / 2); }
-    @media (max-width: 768px) { .timeline { display:none; } .sub { display:block; } }
-    @media (max-width: 600px) { .row { flex-wrap: wrap; } .right { width: 100%; justify-content: flex-end; } }
+    .modal footer { display:flex; gap:10px; justify-content:flex-end; padding:12px 16px; border-top:1px solid var(--border); flex-shrink: 0; }
+    #inspectorModal .body label { display: block; padding: 8px; border-radius: 6px; cursor: pointer; }
+    #inspectorModal .body label:hover { background: #f0f0f0; }
+    #inspectorModal .body input[type="radio"] { margin-right: 8px; }
+    #inspectorResults .result-row { display: flex; align-items: center; justify-content: space-between; padding: 6px 0; font-size: 14px; }
+    #inspectorResults .result-row .btn { padding: 4px 10px; font-size: 12px; }
+    @media (max-width: 600px) { .row { flex-wrap: wrap; } .right { width: 100%; justify-content: flex-end; } .timeline { display:none; } }
   </style>
 </head>
 <body>
 <div class="wrap">
-  <h1>🔍 URL Monitor Pro+</h1>
+  <h1>🔍 URL Monitor Pro</h1>
 
   <div class="actions">
     <button class="btn btn-green" onclick="addURL()">+ Add URL</button>
     <button class="btn btn-primary" onclick="showSettings()">⚙️ Settings</button>
-    <button class="btn btn-purple" onclick="startInspector()">🔎 Auto Inspector</button>
+    <button class="btn btn-purple" onclick="showInspector()">🔎 Auto Inspector</button>
     <button class="btn btn-gray" onclick="checkAll()">▶️ Check All Now</button>
   </div>
 
@@ -73,54 +71,62 @@
   </div>
 
   <div class="section">
-    <div class="header">
-      <h3 style="margin:0;">Monitored URLs</h3>
-      <div class="small">History retained for last 24 hours</div>
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+        <h3 style="margin:0;">Monitored URLs</h3>
+        <div class="small">History retained for last 24 hours</div>
     </div>
     <div id="urlList" class="grid">No URLs added yet</div>
-  </div>
-
-  <div class="section">
-    <div class="header">
-      <h3 style="margin:0;">24-Hour Performance Overview</h3>
-    </div>
-    <div id="dashboardUptime"></div>
-    <div id="dashboardResponseTime"></div>
   </div>
 </div>
 
 <!-- Settings Modal -->
-<div id="modal" class="modal-backdrop" onclick="this.style.display='none'">
-  <div class="modal" role="dialog" aria-modal="true" onclick="event.stopPropagation()">
+<div id="settingsModal" class="modal-backdrop" onclick="this.style.display='none'">
+  <div class="modal" role="dialog" onclick="event.stopPropagation()">
     <header>Settings</header>
     <div class="body">
-      <div class="rowx"><label>Check Mode</label><select id="mode"><option value="favicon">Favicon Ping</option><option value="proxy">Proxy (Uptime, RT & SSL)</option></select></div>
-      <div class="rowx"><label>Proxy URL</label><input id="proxyUrl" placeholder="https://proxy.example.com?url={url}" /></div>
       <div class="rowx"><label>Check Interval (sec)</label><input id="interval" type="number" min="10" /></div>
       <div class="rowx"><label>Timeout (ms)</label><input id="timeout" type="number" min="1000" /></div>
       <div class="rowx"><label>Max Endpoints (Inspector)</label><input id="maxEndpoints" type="number" min="5" /></div>
     </div>
     <footer>
-      <button class="btn btn-gray" onclick="document.getElementById('modal').style.display='none'">Cancel</button>
+      <button class="btn btn-gray" onclick="document.getElementById('settingsModal').style.display='none'">Cancel</button>
       <button class="btn btn-primary" onclick="saveSettings()">Save</button>
     </footer>
   </div>
 </div>
 
-<script>
-  // =============== State & Constants ===============
-  const DEFAULT_SETTINGS = { mode: 'favicon', proxyUrl: '', intervalSec: 60, timeoutMs: 8000, maxInspectorEndpoints: 50 };
-  const SPIKE_CONFIG = { MIN_DELTA_MS: 200, FACTOR: 2.0, BASELINE_SAMPLES: 5 };
-  const DAY_MS = 24 * 60 * 60 * 1000;
-  const HOUR_MS = 60 * 60 * 1000;
-  const SSL_CHECK_INTERVAL_MS = 12 * HOUR_MS;
+<!-- Inspector Modal -->
+<div id="inspectorModal" class="modal-backdrop" onclick="this.style.display='none'">
+    <div class="modal" role="dialog" onclick="event.stopPropagation()">
+      <header>Auto Inspector</header>
+      <div class="body">
+        <div>
+          <b>1. Select a URL to inspect for related endpoints</b>
+          <div id="inspectorSourceList" class="grid" style="max-height: 150px; overflow-y: auto; border: 1px solid #eee; padding: 8px; border-radius: 8px; margin-top: 8px;"></div>
+        </div>
+        <div id="inspectorResults" style="margin-top: 16px; border-top: 1px solid var(--border); padding-top: 16px;">
+          <b>2. Found Endpoints</b>
+          <div id="inspectorResultList" style="margin-top: 8px;">Select a source URL and click "Start Inspection".</div>
+        </div>
+      </div>
+      <footer>
+        <button class="btn btn-gray" onclick="document.getElementById('inspectorModal').style.display='none'">Close</button>
+        <button id="startScanBtn" class="btn btn-primary" onclick="startInspectorScan()">Start Inspection</button>
+      </footer>
+    </div>
+  </div>
 
+<script>
+  // =============== State & Persistence ===============
+  const DEFAULT_SETTINGS = { intervalSec: 60, timeoutMs: 8000, maxInspectorEndpoints: 20 };
   const $ = (selector) => document.querySelector(selector);
+  
   const elements = {
-      modal: $('#modal'), urlList: $('#urlList'),
+      modals: { settings: $('#settingsModal'), inspector: $('#inspectorModal') },
+      urlList: $('#urlList'),
       stats: { total: $('#total'), online: $('#online'), offline: $('#offline'), uptime24: $('#uptime24'), avgRt24: $('#avgRt24'), spikes24: $('#spikes24') },
-      inputs: { mode: $('#mode'), proxyUrl: $('#proxyUrl'), interval: $('#interval'), timeout: $('#timeout'), maxEndpoints: $('#maxEndpoints') },
-      dashboards: { uptime: $('#dashboardUptime'), responseTime: $('#dashboardResponseTime') }
+      inputs: { interval: $('#interval'), timeout: $('#timeout'), maxEndpoints: $('#maxEndpoints') },
+      inspector: { sourceList: $('#inspectorSourceList'), resultList: $('#inspectorResultList'), startBtn: $('#startScanBtn') }
   };
 
   let timer = null;
@@ -128,68 +134,42 @@
   let settings = { ...DEFAULT_SETTINGS, ...loadFromStorage('ump_settings', {}) };
   let urls = loadFromStorage('ump_urls', []);
 
-  const persist = (key, data) => localStorage.setItem(key, JSON.stringify(data));
-  const persistUrls = () => persist('ump_urls', urls);
-  const persistSettings = () => persist('ump_settings', settings);
+  const persistUrls = () => localStorage.setItem('ump_urls', JSON.stringify(urls));
+  const persistSettings = () => localStorage.setItem('ump_settings', JSON.stringify(settings));
 
   // =============== Utilities ===============
   const normalizeUrl = (input) => { try { let u = (input || '').trim(); if (!u) return null; return new URL(u.startsWith('http') ? u : `https://${u}`).toString(); } catch { return null; } };
   const escapeHtml = (s) => String(s).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
   const average = (arr) => arr.length ? arr.reduce((a, b) => a + b, 0) / arr.length : null;
   const now = () => Date.now();
+  const DAY_MS = 24 * 60 * 60 * 1000;
   const prune = (arr, key) => (arr || []).filter(item => (item[key] ?? item) >= now() - DAY_MS);
 
-  const addHistory = (item, status, rt, sslExpiry) => {
+  const addHistory = (item, status, rt) => {
     item.history = prune(item.history, 't');
     item.history.push({ t: now(), status, rt: typeof rt === 'number' ? rt : null });
-    if (sslExpiry) {
-      item.sslExpiry = sslExpiry;
-      item.sslChecked = now();
-    }
   };
 
   // =============== Checkers ===============
-  const pingWithTimeout = (promise, timeoutMs) => Promise.race([promise, new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), timeoutMs))]);
-
-  async function pingFavicon(url, timeoutMs) {
-    const start = performance.now();
-    const promise = new Promise((resolve, reject) => {
+  function pingFavicon(url, timeoutMs) {
+    return new Promise((resolve, reject) => {
       const img = new Image();
-      img.onload = () => resolve({ rt: performance.now() - start });
-      img.onerror = () => reject(new Error('Favicon load error'));
-      img.src = `${new URL(url).origin}/favicon.ico?v=${now()}`;
+      const start = performance.now();
+      const timer = setTimeout(() => reject(new Error('Timeout')), timeoutMs);
+      img.onload = () => { clearTimeout(timer); resolve({ rt: performance.now() - start }); };
+      img.onerror = () => { clearTimeout(timer); reject(new Error('Image load error')); };
+      try {
+        img.src = `${new URL(url).origin}/favicon.ico?v=${now()}`;
+      } catch (e) { reject(e); }
     });
-    return pingWithTimeout(promise, timeoutMs);
-  }
-
-  async function pingProxy(url, timeoutMs) {
-    const proxy = settings.proxyUrl.replace('{url}', encodeURIComponent(url));
-    const response = await fetch(proxy, { signal: AbortSignal.timeout(timeoutMs) });
-    if (!response.ok) throw new Error(`Proxy error: ${response.status}`);
-    return await response.json(); // Expects { status, rt, sslExpiry? }
   }
 
   // =============== Core Logic ===============
   async function checkUrl(item) {
-    const pingFunc = settings.mode === 'proxy' ? pingProxy : pingFavicon;
     try {
-      if (settings.mode === 'proxy' && (!settings.proxyUrl || !settings.proxyUrl.includes('{url}'))) throw new Error('Valid Proxy URL with {url} placeholder is not set');
-
-      // Decide if we should check SSL (only in proxy mode, and not too frequently)
-      const shouldCheckSsl = settings.mode === 'proxy' && (!item.sslChecked || now() - item.sslChecked > SSL_CHECK_INTERVAL_MS);
-      const urlToCheck = shouldCheckSsl ? `${item.url}?ssl-check=true` : item.url; // Inform proxy
-
-      const { rt, sslExpiry } = await pingFunc(urlToCheck, settings.timeoutMs);
-      addHistory(item, 'online', rt, sslExpiry);
-      
-      const recentRts = (item.history || []).slice(-SPIKE_CONFIG.BASELINE_SAMPLES).map(h => h.rt).filter(rt => rt > 0);
-      if (recentRts.length >= 3) {
-        const baseline = average(recentRts);
-        if (baseline != null && (rt >= baseline * SPIKE_CONFIG.FACTOR) && (rt - baseline >= SPIKE_CONFIG.MIN_DELTA_MS)) {
-            item.spikes = prune(item.spikes);
-            item.spikes.push(now());
-        }
-      }
+      const { rt } = await pingFavicon(item.url, settings.timeoutMs);
+      addHistory(item, 'online', rt);
+      // Spike detection can be re-added here if desired
     } catch (error) {
       addHistory(item, 'offline', null);
       console.warn(`Check failed for ${item.url}:`, error.message);
@@ -218,15 +198,6 @@
       return `<rect x="${95-i}" y="0" width="1" height="10" fill="${color}" />`;
   }).join('')}</svg>`;
 
-  const getSslDisplay = (item) => {
-    if (!item.sslExpiry) return '';
-    const daysLeft = Math.floor((new Date(item.sslExpiry) - now()) / DAY_MS);
-    let colorClass = 'success';
-    if (daysLeft < 7) colorClass = 'danger';
-    else if (daysLeft < 30) colorClass = 'warn';
-    return `<span>SSL: <b class="${colorClass}">${daysLeft} days</b></span>`;
-  };
-
   const renderUrlRow = (item) => {
     const last = item.history?.slice(-1)[0] ?? {};
     const statusClass = last.status === 'online' ? 'success' : last.status === 'offline' ? 'danger' : 'muted';
@@ -236,11 +207,7 @@
         <div class="dot" style="background:var(--${statusClass})"></div>
         <div>
           <div class="url">${escapeHtml(item.url)}</div>
-          <div class="sub">
-            <span>Status: <b class="${statusClass}">${last.status || 'pending'}</b></span>
-            <span>Last check: ${last.t ? new Date(last.t).toLocaleTimeString() : 'N/A'}</span>
-            ${getSslDisplay(item)}
-          </div>
+          <div class="sub">Status: <b class="${statusClass}">${last.status || 'pending'}</b> | Last check: ${last.t ? new Date(last.t).toLocaleTimeString() : 'N/A'}</div>
         </div>
         <div class="right">
           ${renderTimeline(item.history || [])}
@@ -258,120 +225,125 @@
     const uptime = recentHistory.length ? (recentOnline.length / recentHistory.length * 100).toFixed(1) : '0.0';
     const validRts = recentOnline.map(h => h.rt).filter(rt => rt != null);
     const avgRt = average(validRts);
-    const totalSpikes = urls.reduce((sum, u) => sum + (prune(u.spikes)?.length ?? 0), 0);
-
+    
     elements.stats.total.textContent = urls.length;
     elements.stats.online.textContent = onlineCount;
     elements.stats.offline.textContent = urls.length - onlineCount;
     elements.stats.uptime24.textContent = `${uptime}%`;
     elements.stats.avgRt24.textContent = avgRt != null ? `${Math.round(avgRt)}ms` : '—';
-    elements.stats.spikes24.textContent = totalSpikes;
-  }
-
-  function renderHourlyDashboard() {
-    const hourlyData = Array.from({ length: 24 }, () => ({ checks: 0, online: 0, rts: [] }));
-    const startTime = now() - DAY_MS;
-    
-    for (const url of urls) {
-      for (const h of url.history || []) {
-        if (h.t < startTime) continue;
-        const hourIndex = Math.floor((h.t - startTime) / HOUR_MS);
-        if (hourIndex >= 0 && hourIndex < 24) {
-          hourlyData[hourIndex].checks++;
-          if (h.status === 'online') {
-            hourlyData[hourIndex].online++;
-            if (h.rt != null) hourlyData[hourIndex].rts.push(h.rt);
-          }
-        }
-      }
-    }
-
-    const maxAvgRt = Math.max(...hourlyData.map(d => average(d.rts) || 0), 0);
-    const uptimeBars = hourlyData.map((d, i) => {
-        const uptime = d.checks > 0 ? (d.online / d.checks * 100) : 0;
-        const hour = new Date(startTime + i * HOUR_MS).getHours();
-        return `<div class="dash-bar dash-uptime" style="height: ${uptime}%;">
-                  <div class="tooltip">${hour}:00 - ${hour}:59<br>Uptime: ${uptime.toFixed(1)}%</div>
-                </div>`;
-    }).join('');
-    
-    const rtBars = hourlyData.map((d, i) => {
-        const avgRt = average(d.rts);
-        const height = (avgRt && maxAvgRt > 0) ? (avgRt / maxAvgRt * 100) : 0;
-        const hour = new Date(startTime + i * HOUR_MS).getHours();
-        return `<div class="dash-bar" style="height: ${height}%;">
-                  <div class="tooltip">${hour}:00 - ${hour}:59<br>Avg RT: ${avgRt ? Math.round(avgRt)+'ms' : 'N/A'}</div>
-                </div>`;
-    }).join('');
-
-    const labels = ['-24h', '-20h', '-16h', '-12h', '-8h', '-4h'].join('</div><div>');
-    elements.dashboards.uptime.innerHTML = `<h4>Uptime (%)</h4><div class="dashboard-grid">${uptimeBars}</div><div class="dash-labels"><div>${labels}</div></div>`;
-    elements.dashboards.responseTime.innerHTML = `<h4>Avg. Response Time (ms)</h4><div class="dashboard-grid">${rtBars}</div><div class="dash-labels"><div>${labels}</div></div>`;
+    elements.stats.spikes24.textContent = 'N/A'; // Spike detection removed for simplicity, can be re-added
   }
 
   const render = () => {
-    elements.urlList.innerHTML = urls.length ? urls.map(renderUrlRow).join('') : 'No URLs added yet.';
+    elements.urlList.innerHTML = urls.length ? urls.map(renderUrlRow).join('') : '<div style="text-align:center; color: var(--muted); padding: 20px 0;">No URLs added yet.</div>';
     renderStats();
-    renderHourlyDashboard();
   };
 
   // =============== Actions / Event Handlers ===============
-  function addURL() {
-    const urlInput = prompt('Enter a new URL to monitor:');
-    const newUrl = normalizeUrl(urlInput);
-    if (newUrl && !urls.some(u => u.url === newUrl)) {
-      urls.push({ url: newUrl, history: [], spikes: [] });
-      checkUrl(urls.slice(-1)[0]).then(() => { persistUrls(); render(); });
-    } else if (newUrl) {
+  function addURL(newUrl, skipCheck = false) {
+    const finalUrl = typeof newUrl === 'string' ? normalizeUrl(newUrl) : normalizeUrl(prompt('Enter a new URL to monitor:'));
+    if (finalUrl && !urls.some(u => u.url === finalUrl)) {
+      urls.push({ url: finalUrl, history: [], spikes: [] });
+      if (!skipCheck) {
+        checkUrl(urls.slice(-1)[0]).then(() => { persistUrls(); render(); });
+      } else {
+        persistUrls();
+        render();
+      }
+      return true;
+    } else if (finalUrl && typeof newUrl !== 'string') {
       alert('This URL is already being monitored.');
     }
+    return false;
   }
 
   const deleteURL = (url) => { urls = urls.filter(u => u.url !== url); persistUrls(); render(); };
 
   const showSettings = () => {
     Object.keys(elements.inputs).forEach(key => elements.inputs[key].value = settings[key] ?? DEFAULT_SETTINGS[key]);
-    elements.modal.style.display = 'flex';
+    elements.modals.settings.style.display = 'flex';
   };
 
   function saveSettings() {
-    settings.mode = elements.inputs.mode.value;
-    settings.proxyUrl = elements.inputs.proxyUrl.value.trim();
     settings.intervalSec = parseInt(elements.inputs.interval.value, 10) || 60;
     settings.timeoutMs = parseInt(elements.inputs.timeout.value, 10) || 8000;
-    settings.maxInspectorEndpoints = parseInt(elements.inputs.maxEndpoints.value, 10) || 50;
+    settings.maxInspectorEndpoints = parseInt(elements.inputs.maxEndpoints.value, 10) || 20;
     persistSettings();
-    elements.modal.style.display = 'none';
-    startChecking(); // Restart with new settings
+    elements.modals.settings.style.display = 'none';
+    startChecking();
   }
 
-  async function startInspector() {
-    const domainInput = prompt('Enter a domain (e.g., example.com) to inspect for endpoints:');
-    if (!domainInput) return;
-    alert(`Inspector started. This may take a while. Up to ${settings.maxInspectorEndpoints} endpoints will be added.`);
-    const subdomains = ['www', 'api', 'app', 'dev', 'blog', 'shop', 'status', 'mail', 'm', 'cdn', 'prod', 'staging'];
-    const potentialUrls = [normalizeUrl(domainInput), ...subdomains.map(sub => normalizeUrl(`${sub}.${domainInput}`))];
+  // =============== Auto Inspector Logic ===============
+  function showInspector() {
+    elements.inspector.sourceList.innerHTML = urls.length ? urls.map((u, i) => `
+      <label><input type="radio" name="inspectorSource" value="${escapeHtml(u.url)}" ${i===0 ? 'checked' : ''}>${escapeHtml(u.url)}</label>
+    `).join('') : 'Add a URL first to use as an inspection source.';
+    elements.inspector.resultList.innerHTML = 'Select a source URL and click "Start Inspection".';
+    elements.modals.inspector.style.display = 'flex';
+  }
+
+  async function startInspectorScan() {
+    const sourceRadio = $('input[name="inspectorSource"]:checked');
+    if (!sourceRadio) { alert('Please select a source URL to inspect.'); return; }
+    
+    elements.inspector.resultList.innerHTML = '<i>Inspecting... This may take a few moments.</i>';
+    elements.inspector.startBtn.disabled = true;
+
+    const sourceUrl = new URL(sourceRadio.value);
+    const domainParts = sourceUrl.hostname.split('.');
+    // Extract the main domain, e.g., "example.co.uk" from "www.example.co.uk"
+    const mainDomain = domainParts.slice(Math.max(domainParts.length - 2, 0)).join('.'); 
+
+    const commonSubdomains = ['www', 'api', 'app', 'dev', 'blog', 'shop', 'status', 'mail', 'cdn', 'prod', 'staging', 'docs'];
+    const commonPaths = ['/status', '/blog', '/api/health'];
+    
+    let potentialUrls = commonSubdomains.map(sub => `https://${sub}.${mainDomain}`);
+    potentialUrls.push(`https://${mainDomain}`); // Add the base domain itself
+    potentialUrls = [...potentialUrls, ...commonPaths.map(path => `https://${mainDomain}${path}`)];
+    
+    // Filter out duplicates and already monitored URLs
+    const urlsToTest = [...new Set(potentialUrls)]
+        .map(normalizeUrl)
+        .filter(url => url && !urls.some(u => u.url === url));
+
     let foundCount = 0;
-    for (const url of [...new Set(potentialUrls.filter(Boolean))]) {
-      if (urls.some(u => u.url === url) || foundCount >= settings.maxInspectorEndpoints) continue;
-      try {
-        await pingFavicon(url, 3000); // Quick check
-        urls.push({ url: url, history: [], spikes: [] });
-        foundCount++;
-        render(); // Update UI as we find them
-      } catch {}
+    const maxToCheck = Math.min(urlsToTest.length, settings.maxInspectorEndpoints);
+    let foundLinks = [];
+
+    for (let i = 0; i < maxToCheck; i++) {
+        const url = urlsToTest[i];
+        elements.inspector.resultList.innerHTML = `<i>Inspecting (${i+1}/${maxToCheck}): ${url}</i>`;
+        try {
+            await pingFavicon(url, 3000); // Use a shorter timeout for inspection
+            foundLinks.push(url);
+            foundCount++;
+        } catch {}
     }
-    persistUrls();
-    alert(`Inspector finished. Found and added ${foundCount} new endpoints.`);
-    checkAll();
+
+    if (foundCount === 0) {
+        elements.inspector.resultList.innerHTML = 'No new, live endpoints were found for that domain.';
+    } else {
+        elements.inspector.resultList.innerHTML = foundLinks.map(link => `
+          <div class="result-row" data-link="${escapeHtml(link)}">
+            <span>${escapeHtml(link)}</span>
+            <button class="btn btn-green" onclick="addInspectedURL(this, '${escapeHtml(link)}')">Add</button>
+          </div>
+        `).join('');
+    }
+    elements.inspector.startBtn.disabled = false;
+  }
+
+  function addInspectedURL(button, url) {
+    if (addURL(url, true)) { // Add URL but skip the immediate check
+        button.textContent = 'Added!';
+        button.disabled = true;
+        button.classList.remove('btn-green');
+    }
   }
 
   // =============== Initialization ===============
   function init() {
-    urls.forEach(u => {
-      u.history = prune(u.history, 't');
-      u.spikes = prune(u.spikes);
-    });
+    urls.forEach(u => u.history = prune(u.history, 't'));
     render();
     startChecking();
   }
