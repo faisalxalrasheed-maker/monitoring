@@ -11,8 +11,9 @@
     <h1 style="color: #2196F3; text-align: center;">🔍 URL Monitor Pro</h1>
     
     <div style="text-align: center; margin: 20px 0;">
-        <button onclick="addUrl()" style="background: green; color: white; padding: 10px 20px; border: none; border-radius: 5px; margin: 5px; cursor: pointer;">Add URL</button>
-        <button onclick="showSettings()" style="background: blue; color: white; padding: 10px 20px; border: none; border-radius: 5px; margin: 5px; cursor: pointer;">Settings</button>
+        <button onclick="addUrl()" style="background: green; color: white; padding: 15px 25px; border: none; border-radius: 5px; margin: 5px; cursor: pointer; font-size: 16px;">Add URL</button>
+        <button onclick="showSettings()" style="background: blue; color: white; padding: 15px 25px; border: none; border-radius: 5px; margin: 5px; cursor: pointer; font-size: 16px;">Settings</button>
+        <button onclick="startInspection()" style="background: purple; color: white; padding: 15px 25px; border: none; border-radius: 5px; margin: 5px; cursor: pointer; font-size: 16px;">Inspector</button>
     </div>
 
     <div style="display: flex; gap: 20px; margin: 20px 0; flex-wrap: wrap;">
@@ -30,50 +31,32 @@
         </div>
     </div>
 
-    <div id="urlList"></div>
+    <div id="urlList" style="margin-top: 20px;"></div>
+
+    <div style="margin-top: 30px; padding: 15px; background: #f0f0f0; border-radius: 5px;">
+        <h3>Status: <span id="monitorStatus" style="color: green;">Monitoring Active</span></h3>
+        <p>Auto-refresh: Every 10 seconds</p>
+        <p>Last updated: <span id="lastUpdate">Never</span></p>
+    </div>
 
 </div>
 
 <script>
-let urls = [];
+// Global variables
+let urls = JSON.parse(localStorage.getItem('monitor-urls') || '[]');
+let settings = {
+    interval: 10000, // 10 seconds
+    soundEnabled: true,
+    notifications: true
+};
+let monitorInterval = null;
 
-function addUrl() {
-    let url = prompt("Enter URL (e.g., google.com):");
-    if (url) {
-        if (!url.startsWith('http')) {
-            url = 'https://' + url;
-        }
-        
-        let urlObj = {
-            id: Date.now(),
-            url: url,
-            name: url,
-            status: 'checking'
-        };
-        
-        urls.push(urlObj);
-        updateDisplay();
-        checkUrl(urlObj);
-    }
+// Initialize app
+function init() {
+    updateDisplay();
+    startMonitoring();
+    console.log('URL Monitor started successfully!');
 }
 
-function checkUrl(urlObj) {
-    let img = new Image();
-    let startTime = Date.now();
-    
-    img.onload = function() {
-        urlObj.status = 'up';
-        urlObj.responseTime = Date.now() - startTime;
-        updateDisplay();
-    };
-    
-    img.onerror = function() {
-        // Try with fetch as backup
-        fetch(urlObj.url + '/favicon.ico', {mode: 'no-cors'})
-        .then(() => {
-            urlObj.status = 'up';
-            urlObj.responseTime = Date.now() - startTime;
-            updateDisplay();
-        })
-        .catch(() => {
-            urlObj.status = 'down
+// Add URL function
+function ad
