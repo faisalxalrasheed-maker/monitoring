@@ -10,27 +10,27 @@
     <h1 style="text-align: center; color: #2196F3;">🔍 URL Monitor Pro</h1>
     
     <div style="text-align: center; margin: 30px 0;">
-        <button onclick="addURL()" style="background: green; color: white; padding: 15px 20px; border: none; font-size: 16px; margin: 8px; border-radius: 5px; cursor: pointer;">+ Add URL</button>
-        <button onclick="showSettings()" style="background: blue; color: white; padding: 15px 20px; border: none; font-size: 16px; margin: 8px; border-radius: 5px; cursor: pointer;">⚙️ Settings</button>
-        <button onclick="startInspector()" style="background: purple; color: white; padding: 15px 20px; border: none; font-size: 16px; margin: 8px; border-radius: 5px; cursor: pointer;">🔎 Inspector</button>
+        <button onclick="addURL()" style="background: green; color: white; padding: 15px 20px; border: none; font-size: 16px; margin: 8px; border-radius: 5px;">+ Add URL</button>
+        <button onclick="showSettings()" style="background: blue; color: white; padding: 15px 20px; border: none; font-size: 16px; margin: 8px; border-radius: 5px;">⚙️ Settings</button>
+        <button onclick="startInspector()" style="background: purple; color: white; padding: 15px 20px; border: none; font-size: 16px; margin: 8px; border-radius: 5px;">🔎 Inspector</button>
     </div>
     
     <div style="display: flex; gap: 15px; margin: 20px 0; flex-wrap: wrap;">
-        <div style="background: #f5f5f5; padding: 15px; border-radius: 8px; text-align: center; flex: 1; min-width: 100px;">
+        <div style="background: #f5f5f5; padding: 15px; border-radius: 8px; text-align: center; flex: 1;">
             <div style="color: #666;">Total</div>
             <div style="font-size: 24px; font-weight: bold;" id="total">0</div>
         </div>
-        <div style="background: #f5f5f5; padding: 15px; border-radius: 8px; text-align: center; flex: 1; min-width: 100px;">
+        <div style="background: #f5f5f5; padding: 15px; border-radius: 8px; text-align: center; flex: 1;">
             <div style="color: #666;">Online</div>
             <div style="font-size: 24px; font-weight: bold; color: green;" id="online">0</div>
         </div>
-        <div style="background: #f5f5f5; padding: 15px; border-radius: 8px; text-align: center; flex: 1; min-width: 100px;">
+        <div style="background: #f5f5f5; padding: 15px; border-radius: 8px; text-align: center; flex: 1;">
             <div style="color: #666;">Offline</div>
             <div style="font-size: 24px; font-weight: bold; color: red;" id="offline">0</div>
         </div>
     </div>
     
-    <div id="results" style="background: #f9f9f9; padding: 20px; border-radius: 10px;">
+    <div style="background: #f9f9f9; padding: 20px; border-radius: 10px;">
         <h3>Monitored URLs</h3>
         <div id="urlList">No URLs added yet</div>
     </div>
@@ -40,25 +40,31 @@
 var urls = [];
 
 function addURL() {
-    var url = prompt('Enter URL:');
+    var url = prompt('Enter URL (e.g. google.com):');
     if (url) {
         if (!url.includes('http')) url = 'https://' + url;
-        urls.push({id: Date.now(), url: url, status: 'checking'});
-        updateDisplay();
-        testURL(url);
+        var newUrl = {id: Date.now(), url: url, status: 'checking'};
+        urls.push(newUrl);
+        display();
+        check(newUrl);
     }
 }
 
-function testURL(url) {
-    var img = new Image();
-    img.onload = function() {
-        updateURLStatus(url, 'online');
-    };
-    img.onerror = function() {
-        updateURLStatus(url, 'offline');
-    };
-    img.src = url + '/favicon.ico?' + Date.now();
+function check(urlObj) {
+    fetch(urlObj.url, {mode: 'no-cors'})
+    .then(() => {
+        urlObj.status = 'online';
+        display();
+    })
+    .catch(() => {
+        urlObj.status = 'offline';
+        display();
+    });
 }
 
-function updateURLStatus(url, status) {
-    for (
+function display() {
+    var html = '';
+    var onlineCount = 0;
+    var offlineCount = 0;
+    
+    for (var i = 0; i
