@@ -1,7 +1,7 @@
 
 <html>
 <head>
-    <title>URL Monitor</title>
+    <title>URL Monitor Pro</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 </head>
 <body style="font-family: Arial; background: lightblue; padding: 10px; margin: 0;">
@@ -11,52 +11,34 @@
     <h1 style="color: #2196F3; text-align: center;">🔍 URL Monitor Pro</h1>
     
     <div style="text-align: center; margin: 20px 0;">
-        <button onclick="addUrl()" style="background: green; color: white; padding: 15px 25px; border: none; border-radius: 5px; margin: 5px; cursor: pointer; font-size: 16px;">Add URL</button>
-        <button onclick="showSettings()" style="background: blue; color: white; padding: 15px 25px; border: none; border-radius: 5px; margin: 5px; cursor: pointer; font-size: 16px;">Settings</button>
-        <button onclick="startInspection()" style="background: purple; color: white; padding: 15px 25px; border: none; border-radius: 5px; margin: 5px; cursor: pointer; font-size: 16px;">Inspector</button>
+        <button onclick="addUrl()" style="background: green; color: white; padding: 15px 25px; border: none; border-radius: 5px; margin: 5px; cursor: pointer; font-size: 16px;">+ Add URL</button>
+        <button onclick="showSettings()" style="background: blue; color: white; padding: 15px 25px; border: none; border-radius: 5px; margin: 5px; cursor: pointer; font-size: 16px;">⚙️ Settings</button>
+        <button onclick="startInspection()" style="background: purple; color: white; padding: 15px 25px; border: none; border-radius: 5px; margin: 5px; cursor: pointer; font-size: 16px;">🔎 Inspector</button>
     </div>
 
-    <div style="display: flex; gap: 20px; margin: 20px 0; flex-wrap: wrap;">
-        <div style="background: #f5f5f5; padding: 15px; border-radius: 5px; text-align: center; flex: 1; min-width: 100px;">
-            <div style="color: #666; font-size: 14px;">Total</div>
-            <div style="font-size: 24px; font-weight: bold;" id="total">0</div>
+    <div style="display: flex; gap: 15px; margin: 20px 0; flex-wrap: wrap;">
+        <div style="background: #f5f5f5; padding: 15px; border-radius: 5px; text-align: center; flex: 1; min-width: 80px;">
+            <div style="color: #666; font-size: 12px;">Total</div>
+            <div style="font-size: 20px; font-weight: bold;" id="total">0</div>
         </div>
-        <div style="background: #f5f5f5; padding: 15px; border-radius: 5px; text-align: center; flex: 1; min-width: 100px;">
-            <div style="color: #666; font-size: 14px;">Online</div>
-            <div style="font-size: 24px; font-weight: bold; color: green;" id="online">0</div>
+        <div style="background: #f5f5f5; padding: 15px; border-radius: 5px; text-align: center; flex: 1; min-width: 80px;">
+            <div style="color: #666; font-size: 12px;">Online</div>
+            <div style="font-size: 20px; font-weight: bold; color: green;" id="online">0</div>
         </div>
-        <div style="background: #f5f5f5; padding: 15px; border-radius: 5px; text-align: center; flex: 1; min-width: 100px;">
-            <div style="color: #666; font-size: 14px;">Offline</div>
-            <div style="font-size: 24px; font-weight: bold; color: red;" id="offline">0</div>
+        <div style="background: #f5f5f5; padding: 15px; border-radius: 5px; text-align: center; flex: 1; min-width: 80px;">
+            <div style="color: #666; font-size: 12px;">Offline</div>
+            <div style="font-size: 20px; font-weight: bold; color: red;" id="offline">0</div>
+        </div>
+        <div style="background: #f5f5f5; padding: 15px; border-radius: 5px; text-align: center; flex: 1; min-width: 80px;">
+            <div style="color: #666; font-size: 12px;">SSL Alerts</div>
+            <div style="font-size: 20px; font-weight: bold; color: orange;" id="sslAlerts">0</div>
         </div>
     </div>
 
     <div id="urlList" style="margin-top: 20px;"></div>
 
-    <div style="margin-top: 30px; padding: 15px; background: #f0f0f0; border-radius: 5px;">
-        <h3>Status: <span id="monitorStatus" style="color: green;">Monitoring Active</span></h3>
-        <p>Auto-refresh: Every 10 seconds</p>
-        <p>Last updated: <span id="lastUpdate">Never</span></p>
-    </div>
-
-</div>
-
-<script>
-// Global variables
-let urls = JSON.parse(localStorage.getItem('monitor-urls') || '[]');
-let settings = {
-    interval: 10000, // 10 seconds
-    soundEnabled: true,
-    notifications: true
-};
-let monitorInterval = null;
-
-// Initialize app
-function init() {
-    updateDisplay();
-    startMonitoring();
-    console.log('URL Monitor started successfully!');
-}
-
-// Add URL function
-function ad
+    <div style="margin-top: 20px; padding: 15px; background: #e8f5e8; border-radius: 5px; text-align: center;">
+        <span style="color: green; font-size: 18px;">●</span>
+        <strong>Status: Monitoring Active</strong>
+        <br>
+        <small>Auto-refresh every 10 seconds | Last
