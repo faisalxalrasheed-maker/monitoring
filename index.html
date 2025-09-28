@@ -2,7 +2,7 @@
 <html>
 <head>
   <meta charset="utf-8" />
-  <title>URL Monitor Pro</title>
+  <title>URL Monitor Pro (Secure)</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
     :root { --primary: #2196F3; --success: #2e7d32; --danger: #d32f2f; --warn: #f9a825; --muted: #666; --bg: #e3f2fd; --panel: #fff; --chip: #f5f5f5; --border: #eee; }
@@ -15,6 +15,7 @@
     .btn-primary { background: var(--primary); color: #fff; }
     .btn-green { background: #2e7d32; color: #fff; }
     .btn-purple { background: #6a1b9a; color: #fff; }
+    .btn-red { background: #d32f2f; color: #fff; }
     .btn-gray { background: #9e9e9e; color: #fff; }
     .btn:disabled { background: #ccc; cursor: not-allowed; }
     .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; margin: 10px 0 20px; }
@@ -38,7 +39,7 @@
     .modal { background:#fff; width: 640px; max-width: 92vw; border-radius:12px; overflow:hidden; display:flex; flex-direction:column; max-height: 85vh; }
     .modal header { padding:12px 16px; border-bottom:1px solid var(--border); font-weight:700; flex-shrink: 0; }
     .modal .body { padding:14px 16px; overflow-y: auto; }
-    .modal .rowx { display:grid; grid-template-columns: 170px 1fr; gap:10px; align-items:center; margin-bottom: 12px; }
+    .modal .rowx { display:grid; grid-template-columns: 100px 1fr; gap:10px; align-items:center; margin-bottom: 12px; }
     .modal .rowx:last-child { margin-bottom: 0; }
     .modal .rowx input, .modal .rowx select { width: 100%; padding:8px; border:1px solid #ddd; border-radius:6px; }
     .modal footer { display:flex; gap:10px; justify-content:flex-end; padding:12px 16px; border-top:1px solid var(--border); flex-shrink: 0; }
@@ -47,36 +48,57 @@
     #inspectorModal .body input[type="radio"] { margin-right: 8px; }
     #inspectorResults .result-row { display: flex; align-items: center; justify-content: space-between; padding: 6px 0; font-size: 14px; }
     #inspectorResults .result-row .btn { padding: 4px 10px; font-size: 12px; }
+    #appContainer { display: none; }
+    #loginModal { display: flex; }
     @media (max-width: 600px) { .row { flex-wrap: wrap; } .right { width: 100%; justify-content: flex-end; } .timeline { display:none; } }
   </style>
 </head>
 <body>
-<div class="wrap">
-  <h1>🔍 URL Monitor Pro</h1>
 
-  <div class="actions">
-    <button class="btn btn-green" onclick="addURL()">+ Add URL</button>
-    <button class="btn btn-primary" onclick="showSettings()">⚙️ Settings</button>
-    <button class="btn btn-purple" onclick="showInspector()">🔎 Auto Inspector</button>
-    <button class="btn btn-gray" onclick="checkAll()">▶️ Check All Now</button>
-  </div>
-
-  <div class="stats">
-    <div class="stat"><div class="label">Total</div><div class="value" id="total">0</div></div>
-    <div class="stat"><div class="label">Online</div><div class="value success" id="online">0</div></div>
-    <div class="stat"><div class="label">Offline</div><div class="value danger" id="offline">0</div></div>
-    <div class="stat"><div class="label">24h Uptime</div><div class="value" id="uptime24">0%</div></div>
-    <div class="stat"><div class="label">Avg RT (24h)</div><div class="value" id="avgRt24">—</div></div>
-    <div class="stat"><div class="label">Spikes (24h)</div><div class="value warn" id="spikes24">0</div></div>
-  </div>
-
-  <div class="section">
-    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-        <h3 style="margin:0;">Monitored URLs</h3>
-        <div class="small">History retained for last 24 hours</div>
+<!-- Login Screen -->
+<div id="loginModal" class="modal-backdrop">
+    <div class="modal" style="width: 400px;">
+      <header>Login to URL Monitor</header>
+      <div class="body">
+        <div class="rowx"><label for="username">Username</label><input id="username" type="text" /></div>
+        <div class="rowx"><label for="password">Password</label><input id="password" type="password" /></div>
+        <p id="loginError" class="danger" style="text-align:center; margin:0; display:none;"></p>
+      </div>
+      <footer>
+        <button class="btn btn-primary" style="width:100%;" onclick="handleLogin()">Login</button>
+      </footer>
     </div>
-    <div id="urlList" class="grid">No URLs added yet</div>
-  </div>
+</div>
+
+<!-- Main Application -->
+<div id="appContainer">
+    <div class="wrap">
+    <h1>🔍 URL Monitor Pro</h1>
+
+    <div class="actions">
+        <button class="btn btn-green" onclick="addURL()">+ Add URL</button>
+        <button class="btn btn-primary" onclick="showSettings()">⚙️ Settings</button>
+        <button class="btn btn-purple" onclick="showInspector()">🔎 Auto Inspector</button>
+        <button class="btn btn-gray" onclick="checkAll()">▶️ Check All Now</button>
+        <button class="btn btn-red" onclick="handleLogout()">🔒 Logout</button>
+    </div>
+
+    <div class="stats">
+        <div class="stat"><div class="label">Total</div><div class="value" id="total">0</div></div>
+        <div class="stat"><div class="label">Online</div><div class="value success" id="online">0</div></div>
+        <div class="stat"><div class="label">Offline</div><div class="value danger" id="offline">0</div></div>
+        <div class="stat"><div class="label">24h Uptime</div><div class="value" id="uptime24">0%</div></div>
+        <div class="stat"><div class="label">Avg RT (24h)</div><div class="value" id="avgRt24">—</div></div>
+    </div>
+
+    <div class="section">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+            <h3 style="margin:0;">Monitored URLs</h3>
+            <div class="small">History retained for last 24 hours</div>
+        </div>
+        <div id="urlList" class="grid">No URLs added yet</div>
+    </div>
+    </div>
 </div>
 
 <!-- Settings Modal -->
@@ -84,9 +106,9 @@
   <div class="modal" role="dialog" onclick="event.stopPropagation()">
     <header>Settings</header>
     <div class="body">
-      <div class="rowx"><label>Check Interval (sec)</label><input id="interval" type="number" min="10" /></div>
-      <div class="rowx"><label>Timeout (ms)</label><input id="timeout" type="number" min="1000" /></div>
-      <div class="rowx"><label>Max Endpoints (Inspector)</label><input id="maxEndpoints" type="number" min="5" /></div>
+      <div class="rowx" style="grid-template-columns: 170px 1fr;"><label>Check Interval (sec)</label><input id="interval" type="number" min="10" /></div>
+      <div class="rowx" style="grid-template-columns: 170px 1fr;"><label>Timeout (ms)</label><input id="timeout" type="number" min="1000" /></div>
+      <div class="rowx" style="grid-template-columns: 170px 1fr;"><label>Max Endpoints (Inspector)</label><input id="maxEndpoints" type="number" min="5" /></div>
     </div>
     <footer>
       <button class="btn btn-gray" onclick="document.getElementById('settingsModal').style.display='none'">Cancel</button>
@@ -122,20 +144,50 @@
   const $ = (selector) => document.querySelector(selector);
   
   const elements = {
+      appContainer: $('#appContainer'),
+      login: { modal: $('#loginModal'), username: $('#username'), password: $('#password'), error: $('#loginError') },
       modals: { settings: $('#settingsModal'), inspector: $('#inspectorModal') },
       urlList: $('#urlList'),
-      stats: { total: $('#total'), online: $('#online'), offline: $('#offline'), uptime24: $('#uptime24'), avgRt24: $('#avgRt24'), spikes24: $('#spikes24') },
+      stats: { total: $('#total'), online: $('#online'), offline: $('#offline'), uptime24: $('#uptime24'), avgRt24: $('#avgRt24') },
       inputs: { interval: $('#interval'), timeout: $('#timeout'), maxEndpoints: $('#maxEndpoints') },
       inspector: { sourceList: $('#inspectorSourceList'), resultList: $('#inspectorResultList'), startBtn: $('#startScanBtn') }
   };
 
   let timer = null;
-  const loadFromStorage = (key, fallback) => { try { return JSON.parse(localStorage.getItem(key)) || fallback; } catch { return fallback; } };
-  let settings = { ...DEFAULT_SETTINGS, ...loadFromStorage('ump_settings', {}) };
-  let urls = loadFromStorage('ump_urls', []);
+  let settings, urls; // Will be initialized after login
 
+  const loadFromStorage = (key, fallback) => { try { return JSON.parse(localStorage.getItem(key)) || fallback; } catch { return fallback; } };
   const persistUrls = () => localStorage.setItem('ump_urls', JSON.stringify(urls));
   const persistSettings = () => localStorage.setItem('ump_settings', JSON.stringify(settings));
+
+  // =============== Authentication ===============
+  const CREDENTIALS = { user: 'Faisal', pass: '456456f' };
+
+  function handleLogin() {
+    const user = elements.login.username.value;
+    const pass = elements.login.password.value;
+    if (user === CREDENTIALS.user && pass === CREDENTIALS.pass) {
+        sessionStorage.setItem('isAuthenticated', 'true');
+        elements.login.modal.style.display = 'none';
+        elements.appContainer.style.display = 'block';
+        initializeApp();
+    } else {
+        elements.login.error.textContent = 'Invalid credentials. Please try again.';
+        elements.login.error.style.display = 'block';
+    }
+  }
+
+  function handleLogout() {
+    sessionStorage.removeItem('isAuthenticated');
+    location.reload();
+  }
+
+  // Auto-login if session is active
+  if (sessionStorage.getItem('isAuthenticated') === 'true') {
+    elements.login.modal.style.display = 'none';
+    elements.appContainer.style.display = 'block';
+    initializeApp();
+  }
 
   // =============== Utilities ===============
   const normalizeUrl = (input) => { try { let u = (input || '').trim(); if (!u) return null; return new URL(u.startsWith('http') ? u : `https://${u}`).toString(); } catch { return null; } };
@@ -158,9 +210,7 @@
       const timer = setTimeout(() => reject(new Error('Timeout')), timeoutMs);
       img.onload = () => { clearTimeout(timer); resolve({ rt: performance.now() - start }); };
       img.onerror = () => { clearTimeout(timer); reject(new Error('Image load error')); };
-      try {
-        img.src = `${new URL(url).origin}/favicon.ico?v=${now()}`;
-      } catch (e) { reject(e); }
+      try { img.src = `${new URL(url).origin}/favicon.ico?v=${now()}`; } catch (e) { reject(e); }
     });
   }
 
@@ -169,7 +219,6 @@
     try {
       const { rt } = await pingFavicon(item.url, settings.timeoutMs);
       addHistory(item, 'online', rt);
-      // Spike detection can be re-added here if desired
     } catch (error) {
       addHistory(item, 'offline', null);
       console.warn(`Check failed for ${item.url}:`, error.message);
@@ -184,10 +233,7 @@
 
   const startChecking = () => {
     stopChecking();
-    if (settings.intervalSec > 0) {
-      checkAll();
-      timer = setInterval(checkAll, settings.intervalSec * 1000);
-    }
+    if (settings.intervalSec > 0) { checkAll(); timer = setInterval(checkAll, settings.intervalSec * 1000); }
   };
   const stopChecking = () => clearInterval(timer);
 
@@ -231,7 +277,6 @@
     elements.stats.offline.textContent = urls.length - onlineCount;
     elements.stats.uptime24.textContent = `${uptime}%`;
     elements.stats.avgRt24.textContent = avgRt != null ? `${Math.round(avgRt)}ms` : '—';
-    elements.stats.spikes24.textContent = 'N/A'; // Spike detection removed for simplicity, can be re-added
   }
 
   const render = () => {
@@ -247,8 +292,7 @@
       if (!skipCheck) {
         checkUrl(urls.slice(-1)[0]).then(() => { persistUrls(); render(); });
       } else {
-        persistUrls();
-        render();
+        persistUrls(); render();
       }
       return true;
     } else if (finalUrl && typeof newUrl !== 'string') {
@@ -273,7 +317,6 @@
     startChecking();
   }
 
-  // =============== Auto Inspector Logic ===============
   function showInspector() {
     elements.inspector.sourceList.innerHTML = urls.length ? urls.map((u, i) => `
       <label><input type="radio" name="inspectorSource" value="${escapeHtml(u.url)}" ${i===0 ? 'checked' : ''}>${escapeHtml(u.url)}</label>
@@ -291,36 +334,29 @@
 
     const sourceUrl = new URL(sourceRadio.value);
     const domainParts = sourceUrl.hostname.split('.');
-    // Extract the main domain, e.g., "example.co.uk" from "www.example.co.uk"
     const mainDomain = domainParts.slice(Math.max(domainParts.length - 2, 0)).join('.'); 
 
     const commonSubdomains = ['www', 'api', 'app', 'dev', 'blog', 'shop', 'status', 'mail', 'cdn', 'prod', 'staging', 'docs'];
     const commonPaths = ['/status', '/blog', '/api/health'];
     
     let potentialUrls = commonSubdomains.map(sub => `https://${sub}.${mainDomain}`);
-    potentialUrls.push(`https://${mainDomain}`); // Add the base domain itself
+    potentialUrls.push(`https://${mainDomain}`);
     potentialUrls = [...potentialUrls, ...commonPaths.map(path => `https://${mainDomain}${path}`)];
     
-    // Filter out duplicates and already monitored URLs
-    const urlsToTest = [...new Set(potentialUrls)]
-        .map(normalizeUrl)
-        .filter(url => url && !urls.some(u => u.url === url));
+    const urlsToTest = [...new Set(potentialUrls)].map(normalizeUrl).filter(url => url && !urls.some(u => u.url === url));
 
-    let foundCount = 0;
-    const maxToCheck = Math.min(urlsToTest.length, settings.maxInspectorEndpoints);
     let foundLinks = [];
-
+    const maxToCheck = Math.min(urlsToTest.length, settings.maxInspectorEndpoints);
     for (let i = 0; i < maxToCheck; i++) {
         const url = urlsToTest[i];
         elements.inspector.resultList.innerHTML = `<i>Inspecting (${i+1}/${maxToCheck}): ${url}</i>`;
         try {
-            await pingFavicon(url, 3000); // Use a shorter timeout for inspection
+            await pingFavicon(url, 3000);
             foundLinks.push(url);
-            foundCount++;
         } catch {}
     }
 
-    if (foundCount === 0) {
+    if (foundLinks.length === 0) {
         elements.inspector.resultList.innerHTML = 'No new, live endpoints were found for that domain.';
     } else {
         elements.inspector.resultList.innerHTML = foundLinks.map(link => `
@@ -334,7 +370,7 @@
   }
 
   function addInspectedURL(button, url) {
-    if (addURL(url, true)) { // Add URL but skip the immediate check
+    if (addURL(url, true)) {
         button.textContent = 'Added!';
         button.disabled = true;
         button.classList.remove('btn-green');
@@ -342,13 +378,20 @@
   }
 
   // =============== Initialization ===============
-  function init() {
+  function initializeApp() {
+    // Load data only after successful authentication
+    settings = { ...DEFAULT_SETTINGS, ...loadFromStorage('ump_settings', {}) };
+    urls = loadFromStorage('ump_urls', []);
+    
+    // Add event listener for login form submission on Enter key
+    elements.login.password.addEventListener('keyup', (event) => {
+        if (event.key === 'Enter') handleLogin();
+    });
+
     urls.forEach(u => u.history = prune(u.history, 't'));
     render();
     startChecking();
   }
-
-  init();
 </script>
 </body>
 </html>
