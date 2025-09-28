@@ -1,31 +1,97 @@
 
 <html>
 <head>
-    <title>URL Monitor Pro - Complete</title>
+    <title>URL Monitor Debug</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 </head>
-<body style="font-family: Arial; padding: 10px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh;">
+<body style="font-family: Arial; padding: 20px; background: #f0f8ff;">
 
-<div style="max-width: 1000px; margin: 0 auto; background: rgba(255,255,255,0.95); padding: 20px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.2);">
+<h1 style="text-align: center; color: #2196F3;">🔍 URL Monitor Debug</h1>
 
-<div style="background: linear-gradient(135deg, #2196F3, #21CBF3); color: white; padding: 20px; border-radius: 10px; margin-bottom: 20px;">
-    <h1 style="margin: 0; text-align: center;">🔍 URL Monitor Pro</h1>
-    <div style="text-align: center; margin-top: 15px;">
-        <button onclick="addUrl()" style="background: rgba(255,255,255,0.2); color: white; padding: 12px 20px; border: 1px solid rgba(255,255,255,0.3); border-radius: 8px; font-size: 14px; cursor: pointer; margin: 5px;">+ Add URL</button>
-        <button onclick="showSettings()" style="background: rgba(255,255,255,0.2); color: white; padding: 12px 20px; border: 1px solid rgba(255,255,255,0.3); border-radius: 8px; font-size: 14px; cursor: pointer; margin: 5px;">⚙️ Settings</button>
-        <button onclick="showInspector()" style="background: rgba(255,255,255,0.2); color: white; padding: 12px 20px; border: 1px solid rgba(255,255,255,0.3); border-radius: 8px; font-size: 14px; cursor: pointer; margin: 5px;">🔎 Inspector</button>
+<div style="background: yellow; padding: 15px; margin: 20px 0; border-radius: 5px;">
+    <strong>Debug Console:</strong>
+    <div id="debug" style="background: white; padding: 10px; margin: 10px 0; border-radius: 3px; font-family: monospace; font-size: 12px; max-height: 200px; overflow-y: auto;">
+        Starting debug...
     </div>
 </div>
 
-<!-- Stats Dashboard -->
-<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; margin-bottom: 20px;">
-    <div style="background: white; padding: 20px; border-radius: 10px; text-align: center; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
-        <h3 style="margin: 0 0 10px 0; color: #666; font-size: 14px;">Total URLs</h3>
-        <span style="font-size: 28px; font-weight: bold;" id="totalUrls">0</span>
-    </div>
-    <div style="background: white; padding: 20px; border-radius: 10px; text-align: center; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
-        <h3 style="margin: 0 0 10px 0; color: #666; font-size: 14px;">Online</h3>
-        <span style="font-size: 28px; font-weight: bold; color: #4CAF50;" id="onlineUrls">0</span>
-    </div>
-    <div style="background: white; padding: 20px; border-radius: 10px; text-align: center; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
-        <h3 style="margin: 0 0
+<div style="text-align: center; margin: 30px;">
+    <button id="addBtn" onclick="debugAddUrl()" style="background: #4CAF50; color: white; padding: 20px 30px; border: none; border-radius: 8px; font-size: 18px; cursor: pointer; margin: 10px;">
+        + Add URL (Debug)
+    </button>
+    
+    <button onclick="testPrompt()" style="background: #FF9800; color: white; padding: 20px 30px; border: none; border-radius: 8px; font-size: 18px; cursor: pointer; margin: 10px;">
+        Test Prompt
+    </button>
+</div>
+
+<div style="background: white; padding: 20px; border-radius: 10px; margin: 20px 0;">
+    <h3>Saved URLs:</h3>
+    <div id="urlDisplay">None</div>
+</div>
+
+<script>
+let debugOutput = document.getElementById('debug');
+let urlList = [];
+
+function log(message) {
+    console.log(message);
+    debugOutput.innerHTML += new Date().toLocaleTimeString() + ': ' + message + '<br>';
+    debugOutput.scrollTop = debugOutput.scrollHeight;
+}
+
+function testPrompt() {
+    log('Testing prompt function...');
+    try {
+        let result = prompt('Test prompt - enter anything:');
+        log('Prompt result: ' + result);
+        if (result) {
+            log('Prompt working correctly');
+        } else {
+            log('Prompt returned null/empty');
+        }
+    } catch(e) {
+        log('ERROR in prompt: ' + e.message);
+    }
+}
+
+function debugAddUrl() {
+    log('=== debugAddUrl() called ===');
+    
+    try {
+        log('Step 1: Function started');
+        
+        log('Step 2: Calling prompt...');
+        let url = prompt('Enter website URL (e.g., google.com):');
+        log('Step 3: Prompt returned: ' + url);
+        
+        if (!url) {
+            log('Step 4: No URL entered, stopping');
+            return;
+        }
+        
+        log('Step 5: Processing URL: ' + url);
+        
+        // Add https if needed
+        if (!url.startsWith('http://') && !url.startsWith('https://')) {
+            url = 'https://' + url;
+            log('Step 6: Added https: ' + url);
+        }
+        
+        log('Step 7: Creating URL object');
+        let urlObj = {
+            id: Date.now(),
+            url: url,
+            name: url,
+            status: 'checking',
+            added: new Date().toLocaleString()
+        };
+        
+        log('Step 8: Adding to list');
+        urlList.push(urlObj);
+        
+        log('Step 9: Saving to localStorage');
+        try {
+            localStorage.setItem('debug-urls', JSON.stringify(urlList));
+            log('Step 10: Saved successfully');
+        } catch(
