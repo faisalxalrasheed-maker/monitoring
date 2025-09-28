@@ -2,11 +2,11 @@
 <html>
 <head>
   <meta charset="utf-8" />
-  <title>URL Monitor Pro</title>
+  <title>URL Monitor Pro+</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
     :root { --primary: #2196F3; --success: #2e7d32; --danger: #d32f2f; --warn: #f9a825; --muted: #666; --bg: #e3f2fd; --panel: #fff; --chip: #f5f5f5; --border: #eee; }
-    body { font-family: Arial, sans-serif; padding: 20px; background: var(--bg); color: #333; margin:0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; padding: 20px; background: var(--bg); color: #333; margin:0; }
     .wrap { max-width: 1100px; margin: 0 auto; background: var(--panel); padding: 20px; border-radius: 12px; box-shadow: 0 6px 16px rgba(0,0,0,0.06); }
     h1 { text-align: center; color: var(--primary); margin: 0 0 10px; }
     .actions { text-align: center; margin: 18px 0 24px; display:flex; gap:10px; justify-content:center; flex-wrap:wrap; }
@@ -16,38 +16,46 @@
     .btn-green { background: #2e7d32; color: #fff; }
     .btn-purple { background: #6a1b9a; color: #fff; }
     .btn-gray { background: #9e9e9e; color: #fff; }
-    .stats { display: flex; gap: 15px; margin: 10px 0 20px; flex-wrap: wrap; }
-    .stat { background: var(--chip); padding: 14px; border-radius: 10px; text-align: center; flex: 1 1 180px; }
+    .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; margin: 10px 0 20px; }
+    .stat { background: var(--chip); padding: 14px; border-radius: 10px; text-align: center; }
     .stat .label { color: var(--muted); }
     .stat .value { font-size: 24px; font-weight: bold; }
     .grid { display: grid; gap: 12px; }
     .row { display:flex; align-items:center; gap:12px; padding:12px; border:1px solid var(--border); border-radius:10px; }
     .dot { width:12px; height:12px; border-radius:50%; flex-shrink:0; }
     .url { font-weight:600; word-break: break-all; }
-    .sub { color: var(--muted); font-size: 12px; margin-top: 4px; }
+    .sub { color: var(--muted); font-size: 12px; margin-top: 4px; display:flex; flex-wrap:wrap; gap: 0 12px; }
     .right { margin-left:auto; display:flex; gap:8px; align-items:center; }
-    .timeline { width: 240px; height: 28px; }
+    .timeline { width: 180px; height: 28px; }
     .chip { background:#eef7ff; color:#1976d2; border:1px solid #cfe8ff; padding:3px 6px; border-radius:999px; font-size:11px; font-weight:600; }
-    .section { background:#f9f9f9; padding: 16px; border-radius: 10px; }
+    .section { background:#f9f9f9; padding: 16px; border-radius: 10px; margin-top: 20px; }
     .header { display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; }
-    .flex { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
     .small { font-size: 12px; color: var(--muted); }
     .danger { color: var(--danger); }
     .success { color: var(--success); }
     .warn { color: var(--warn); }
-    .modal-backdrop { position:fixed; inset:0; background:rgba(0,0,0,0.35); display:none; align-items:center; justify-content:center; }
+    .modal-backdrop { position:fixed; inset:0; background:rgba(0,0,0,0.35); display:none; align-items:center; justify-content:center; z-index: 100; }
     .modal { background:#fff; width: 560px; max-width: 92vw; border-radius:12px; overflow:hidden; }
     .modal header { padding:12px 16px; border-bottom:1px solid var(--border); font-weight:700; }
     .modal .body { padding:14px 16px; display:grid; gap:12px; }
     .modal .rowx { display:grid; grid-template-columns: 170px 1fr; gap:10px; align-items:center; }
     .modal .rowx input, .modal .rowx select { width: 100%; padding:8px; border:1px solid #ddd; border-radius:6px; }
     .modal footer { display:flex; gap:10px; justify-content:flex-end; padding:12px 16px; border-top:1px solid var(--border); }
-    @media (max-width: 600px) { .timeline { width: 100%; } .row { flex-wrap: wrap; } .right { width: 100%; justify-content: flex-end; } }
+    /* Dashboard */
+    .dashboard-grid { display: grid; grid-template-columns: repeat(24, 1fr); gap: 4px; height: 120px; align-items: flex-end; padding: 10px 0; }
+    .dash-bar { background: var(--primary); opacity: 0.7; position: relative; border-radius: 2px 2px 0 0; transition: opacity 0.2s; }
+    .dash-bar:hover { opacity: 1; }
+    .dash-bar .tooltip { position: absolute; bottom: 105%; left: 50%; transform: translateX(-50%); background: #333; color: #fff; padding: 6px 10px; border-radius: 6px; font-size: 12px; white-space: nowrap; visibility: hidden; opacity: 0; transition: opacity 0.2s; z-index: 10; }
+    .dash-bar:hover .tooltip { visibility: visible; opacity: 1; }
+    .dash-uptime { background: var(--success); }
+    .dash-labels { display: grid; grid-template-columns: repeat(6, 1fr); font-size: 11px; color: var(--muted); text-align: center; padding-left: calc(100% / 24 / 2); }
+    @media (max-width: 768px) { .timeline { display:none; } .sub { display:block; } }
+    @media (max-width: 600px) { .row { flex-wrap: wrap; } .right { width: 100%; justify-content: flex-end; } }
   </style>
 </head>
 <body>
 <div class="wrap">
-  <h1>🔍 URL Monitor Pro</h1>
+  <h1>🔍 URL Monitor Pro+</h1>
 
   <div class="actions">
     <button class="btn btn-green" onclick="addURL()">+ Add URL</button>
@@ -72,15 +80,23 @@
     </div>
     <div id="urlList" class="grid">No URLs added yet</div>
   </div>
+
+  <div class="section">
+    <div class="header">
+      <h3 style="margin:0;">24-Hour Performance Overview</h3>
+    </div>
+    <div id="dashboardUptime"></div>
+    <div id="dashboardResponseTime"></div>
+  </div>
 </div>
 
 <!-- Settings Modal -->
 <div id="modal" class="modal-backdrop" onclick="this.style.display='none'">
-  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="settingsTitle" onclick="event.stopPropagation()">
-    <header id="settingsTitle">Settings</header>
+  <div class="modal" role="dialog" aria-modal="true" onclick="event.stopPropagation()">
+    <header>Settings</header>
     <div class="body">
-      <div class="rowx"><label>Check Mode</label><select id="mode"><option value="favicon">Favicon Ping (no proxy)</option><option value="proxy">HTTP via Proxy (accurate)</option></select></div>
-      <div class="rowx"><label>Proxy URL</label><input id="proxyUrl" placeholder="https://your-domain/check?url=" /></div>
+      <div class="rowx"><label>Check Mode</label><select id="mode"><option value="favicon">Favicon Ping</option><option value="proxy">Proxy (Uptime, RT & SSL)</option></select></div>
+      <div class="rowx"><label>Proxy URL</label><input id="proxyUrl" placeholder="https://proxy.example.com?url={url}" /></div>
       <div class="rowx"><label>Check Interval (sec)</label><input id="interval" type="number" min="10" /></div>
       <div class="rowx"><label>Timeout (ms)</label><input id="timeout" type="number" min="1000" /></div>
       <div class="rowx"><label>Max Endpoints (Inspector)</label><input id="maxEndpoints" type="number" min="5" /></div>
@@ -93,16 +109,19 @@
 </div>
 
 <script>
-  // =============== State & Persistence ===============
+  // =============== State & Constants ===============
   const DEFAULT_SETTINGS = { mode: 'favicon', proxyUrl: '', intervalSec: 60, timeoutMs: 8000, maxInspectorEndpoints: 50 };
   const SPIKE_CONFIG = { MIN_DELTA_MS: 200, FACTOR: 2.0, BASELINE_SAMPLES: 5 };
   const DAY_MS = 24 * 60 * 60 * 1000;
+  const HOUR_MS = 60 * 60 * 1000;
+  const SSL_CHECK_INTERVAL_MS = 12 * HOUR_MS;
 
   const $ = (selector) => document.querySelector(selector);
   const elements = {
       modal: $('#modal'), urlList: $('#urlList'),
       stats: { total: $('#total'), online: $('#online'), offline: $('#offline'), uptime24: $('#uptime24'), avgRt24: $('#avgRt24'), spikes24: $('#spikes24') },
-      inputs: { mode: $('#mode'), proxyUrl: $('#proxyUrl'), interval: $('#interval'), timeout: $('#timeout'), maxEndpoints: $('#maxEndpoints') }
+      inputs: { mode: $('#mode'), proxyUrl: $('#proxyUrl'), interval: $('#interval'), timeout: $('#timeout'), maxEndpoints: $('#maxEndpoints') },
+      dashboards: { uptime: $('#dashboardUptime'), responseTime: $('#dashboardResponseTime') }
   };
 
   let timer = null;
@@ -115,37 +134,23 @@
   const persistSettings = () => persist('ump_settings', settings);
 
   // =============== Utilities ===============
-  const normalizeUrl = (input) => {
-    try {
-      let u = (input || '').trim();
-      if (!u) return null;
-      if (!/^https?:\/\//i.test(u)) u = 'https://' + u;
-      return new URL(u).toString();
-    } catch { return null; }
-  };
+  const normalizeUrl = (input) => { try { let u = (input || '').trim(); if (!u) return null; return new URL(u.startsWith('http') ? u : `https://${u}`).toString(); } catch { return null; } };
   const escapeHtml = (s) => String(s).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
   const average = (arr) => arr.length ? arr.reduce((a, b) => a + b, 0) / arr.length : null;
   const now = () => Date.now();
+  const prune = (arr, key) => (arr || []).filter(item => (item[key] ?? item) >= now() - DAY_MS);
 
-  const prune = (arr, key) => (arr || []).filter(item => item[key] >= now() - DAY_MS);
-  const addHistory = (item, status, rt) => {
+  const addHistory = (item, status, rt, sslExpiry) => {
     item.history = prune(item.history, 't');
-    item.history.push({ t: now(), status, rt: (typeof rt === 'number' ? rt : null) });
+    item.history.push({ t: now(), status, rt: typeof rt === 'number' ? rt : null });
+    if (sslExpiry) {
+      item.sslExpiry = sslExpiry;
+      item.sslChecked = now();
+    }
   };
 
-  function detectSpike(item, currentRt) {
-    if (typeof currentRt !== 'number' || currentRt <= 0) return false;
-    const recentRts = (item.history || []).slice(-SPIKE_CONFIG.BASELINE_SAMPLES).map(h => h.rt).filter(rt => rt > 0);
-    if (recentRts.length < 3) return false;
-    const baseline = average(recentRts);
-    return baseline != null && (currentRt >= baseline * SPIKE_CONFIG.FACTOR) && (currentRt - baseline >= SPIKE_CONFIG.MIN_DELTA_MS);
-  }
-
   // =============== Checkers ===============
-  const pingWithTimeout = (promise, timeoutMs) => Promise.race([
-      promise,
-      new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), timeoutMs))
-  ]);
+  const pingWithTimeout = (promise, timeoutMs) => Promise.race([promise, new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), timeoutMs))]);
 
   async function pingFavicon(url, timeoutMs) {
     const start = performance.now();
@@ -159,22 +164,32 @@
   }
 
   async function pingProxy(url, timeoutMs) {
-    const proxy = settings.proxyUrl.includes('{url}') ? settings.proxyUrl.replace('{url}', encodeURIComponent(url)) : settings.proxyUrl + encodeURIComponent(url);
+    const proxy = settings.proxyUrl.replace('{url}', encodeURIComponent(url));
     const response = await fetch(proxy, { signal: AbortSignal.timeout(timeoutMs) });
     if (!response.ok) throw new Error(`Proxy error: ${response.status}`);
-    return await response.json(); // Expects { status, rt }
+    return await response.json(); // Expects { status, rt, sslExpiry? }
   }
 
   // =============== Core Logic ===============
   async function checkUrl(item) {
     const pingFunc = settings.mode === 'proxy' ? pingProxy : pingFavicon;
     try {
-      if (settings.mode === 'proxy' && !settings.proxyUrl) throw new Error('Proxy URL not set');
-      const { rt } = await pingFunc(item.url, settings.timeoutMs);
-      addHistory(item, 'online', rt);
-      if (detectSpike(item, rt)) {
-        item.spikes = prune(item.spikes, 0);
-        item.spikes.push(now());
+      if (settings.mode === 'proxy' && (!settings.proxyUrl || !settings.proxyUrl.includes('{url}'))) throw new Error('Valid Proxy URL with {url} placeholder is not set');
+
+      // Decide if we should check SSL (only in proxy mode, and not too frequently)
+      const shouldCheckSsl = settings.mode === 'proxy' && (!item.sslChecked || now() - item.sslChecked > SSL_CHECK_INTERVAL_MS);
+      const urlToCheck = shouldCheckSsl ? `${item.url}?ssl-check=true` : item.url; // Inform proxy
+
+      const { rt, sslExpiry } = await pingFunc(urlToCheck, settings.timeoutMs);
+      addHistory(item, 'online', rt, sslExpiry);
+      
+      const recentRts = (item.history || []).slice(-SPIKE_CONFIG.BASELINE_SAMPLES).map(h => h.rt).filter(rt => rt > 0);
+      if (recentRts.length >= 3) {
+        const baseline = average(recentRts);
+        if (baseline != null && (rt >= baseline * SPIKE_CONFIG.FACTOR) && (rt - baseline >= SPIKE_CONFIG.MIN_DELTA_MS)) {
+            item.spikes = prune(item.spikes);
+            item.spikes.push(now());
+        }
       }
     } catch (error) {
       addHistory(item, 'offline', null);
@@ -204,17 +219,29 @@
       return `<rect x="${95-i}" y="0" width="1" height="10" fill="${color}" />`;
   }).join('')}</svg>`;
 
+  const getSslDisplay = (item) => {
+    if (!item.sslExpiry) return '';
+    const daysLeft = Math.floor((new Date(item.sslExpiry) - now()) / DAY_MS);
+    let colorClass = 'success';
+    if (daysLeft < 7) colorClass = 'danger';
+    else if (daysLeft < 30) colorClass = 'warn';
+    return `<span>SSL: <b class="${colorClass}">${daysLeft} days</b></span>`;
+  };
+
   const renderUrlRow = (item) => {
     const last = item.history?.slice(-1)[0] ?? {};
     const statusClass = last.status === 'online' ? 'success' : last.status === 'offline' ? 'danger' : 'muted';
-    const statusColor = `var(--${statusClass})`;
     const rtText = typeof last.rt === 'number' ? `${Math.round(last.rt)}ms` : '—';
     return `
       <div class="row" data-url="${escapeHtml(item.url)}">
-        <div class="dot" style="background:${statusColor}"></div>
+        <div class="dot" style="background:var(--${statusClass})"></div>
         <div>
           <div class="url">${escapeHtml(item.url)}</div>
-          <div class="sub">Status: <span class="${statusClass}">${last.status || 'pending'}</span> | Last check: ${last.t ? new Date(last.t).toLocaleTimeString() : 'N/A'}</div>
+          <div class="sub">
+            <span>Status: <b class="${statusClass}">${last.status || 'pending'}</b></span>
+            <span>Last check: ${last.t ? new Date(last.t).toLocaleTimeString() : 'N/A'}</span>
+            ${getSslDisplay(item)}
+          </div>
         </div>
         <div class="right">
           ${renderTimeline(item.history || [])}
@@ -230,8 +257,9 @@
     const recentHistory = prune(allHistory, 't');
     const recentOnline = recentHistory.filter(h => h.status === 'online');
     const uptime = recentHistory.length ? (recentOnline.length / recentHistory.length * 100).toFixed(1) : '0.0';
-    const avgRt = average(recentOnline.map(h => h.rt).filter(rt => rt != null));
-    const totalSpikes = urls.reduce((sum, u) => sum + (prune(u.spikes, 0)?.length ?? 0), 0);
+    const validRts = recentOnline.map(h => h.rt).filter(rt => rt != null);
+    const avgRt = average(validRts);
+    const totalSpikes = urls.reduce((sum, u) => sum + (prune(u.spikes)?.length ?? 0), 0);
 
     elements.stats.total.textContent = urls.length;
     elements.stats.online.textContent = onlineCount;
@@ -241,9 +269,51 @@
     elements.stats.spikes24.textContent = totalSpikes;
   }
 
+  function renderHourlyDashboard() {
+    const hourlyData = Array.from({ length: 24 }, () => ({ checks: 0, online: 0, rts: [] }));
+    const startTime = now() - DAY_MS;
+    
+    for (const url of urls) {
+      for (const h of url.history || []) {
+        if (h.t < startTime) continue;
+        const hourIndex = Math.floor((h.t - startTime) / HOUR_MS);
+        if (hourIndex >= 0 && hourIndex < 24) {
+          hourlyData[hourIndex].checks++;
+          if (h.status === 'online') {
+            hourlyData[hourIndex].online++;
+            if (h.rt != null) hourlyData[hourIndex].rts.push(h.rt);
+          }
+        }
+      }
+    }
+
+    const maxAvgRt = Math.max(...hourlyData.map(d => average(d.rts) || 0), 0);
+    const uptimeBars = hourlyData.map((d, i) => {
+        const uptime = d.checks > 0 ? (d.online / d.checks * 100) : 0;
+        const hour = new Date(startTime + i * HOUR_MS).getHours();
+        return `<div class="dash-bar dash-uptime" style="height: ${uptime}%;">
+                  <div class="tooltip">${hour}:00 - ${hour}:59<br>Uptime: ${uptime.toFixed(1)}%</div>
+                </div>`;
+    }).join('');
+    
+    const rtBars = hourlyData.map((d, i) => {
+        const avgRt = average(d.rts);
+        const height = (avgRt && maxAvgRt > 0) ? (avgRt / maxAvgRt * 100) : 0;
+        const hour = new Date(startTime + i * HOUR_MS).getHours();
+        return `<div class="dash-bar" style="height: ${height}%;">
+                  <div class="tooltip">${hour}:00 - ${hour}:59<br>Avg RT: ${avgRt ? Math.round(avgRt)+'ms' : 'N/A'}</div>
+                </div>`;
+    }).join('');
+
+    const labels = ['-24h', '-20h', '-16h', '-12h', '-8h', '-4h'].join('</div><div>');
+    elements.dashboards.uptime.innerHTML = `<h4>Uptime (%)</h4><div class="dashboard-grid">${uptimeBars}</div><div class="dash-labels"><div>${labels}</div></div>`;
+    elements.dashboards.responseTime.innerHTML = `<h4>Avg. Response Time (ms)</h4><div class="dashboard-grid">${rtBars}</div><div class="dash-labels"><div>${labels}</div></div>`;
+  }
+
   const render = () => {
     elements.urlList.innerHTML = urls.length ? urls.map(renderUrlRow).join('') : 'No URLs added yet.';
     renderStats();
+    renderHourlyDashboard();
   };
 
   // =============== Actions / Event Handlers ===============
@@ -258,11 +328,7 @@
     }
   }
 
-  const deleteURL = (url) => {
-    urls = urls.filter(u => u.url !== url);
-    persistUrls();
-    render();
-  };
+  const deleteURL = (url) => { urls = urls.filter(u => u.url !== url); persistUrls(); render(); };
 
   const showSettings = () => {
     Object.keys(elements.inputs).forEach(key => elements.inputs[key].value = settings[key] ?? DEFAULT_SETTINGS[key]);
@@ -283,12 +349,12 @@
   async function startInspector() {
     const domainInput = prompt('Enter a domain (e.g., example.com) to inspect for endpoints:');
     if (!domainInput) return;
-    alert(`Inspector started. This may take a while. Found endpoints will be added automatically. Up to ${settings.maxInspectorEndpoints} URLs.`);
-    const commonSubdomains = ['www', 'api', 'app', 'dev', 'blog', 'shop', 'status', 'mail', 'm', 'cdn'];
-    const potentialUrls = commonSubdomains.map(sub => normalizeUrl(`${sub}.${domainInput}`));
+    alert(`Inspector started. This may take a while. Up to ${settings.maxInspectorEndpoints} endpoints will be added.`);
+    const subdomains = ['www', 'api', 'app', 'dev', 'blog', 'shop', 'status', 'mail', 'm', 'cdn', 'prod', 'staging'];
+    const potentialUrls = [normalizeUrl(domainInput), ...subdomains.map(sub => normalizeUrl(`${sub}.${domainInput}`))];
     let foundCount = 0;
-    for (const url of [...new Set([normalizeUrl(domainInput), ...potentialUrls])]) {
-      if (!url || urls.some(u => u.url === url) || foundCount >= settings.maxInspectorEndpoints) continue;
+    for (const url of [...new Set(potentialUrls.filter(Boolean))]) {
+      if (urls.some(u => u.url === url) || foundCount >= settings.maxInspectorEndpoints) continue;
       try {
         await pingFavicon(url, 3000); // Quick check
         urls.push({ url: url, history: [], spikes: [] });
@@ -305,7 +371,7 @@
   function init() {
     urls.forEach(u => {
       u.history = prune(u.history, 't');
-      u.spikes = prune(u.spikes, 0);
+      u.spikes = prune(u.spikes);
     });
     render();
     startChecking();
