@@ -1,62 +1,49 @@
 
 <html>
 <head>
-    <title>URL Monitor Debug</title>
+    <title>URL Monitor - Auto Debug</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 </head>
-<body style="font-family: Arial; padding: 10px; background: lightblue;">
+<body style="font-family: Arial; padding: 20px; background: lightblue;">
 
 <div style="max-width: 800px; margin: 0 auto; background: white; padding: 20px; border-radius: 10px;">
     
-    <h1 style="text-align: center; color: #2196F3;">🐛 Debug Mode</h1>
+    <h1 style="text-align: center; color: #2196F3;">🔍 URL Monitor Pro</h1>
     
-    <div style="background: #000; color: #0f0; padding: 10px; font-family: monospace; font-size: 12px; height: 200px; overflow-y: auto; border: 1px solid #333; margin: 20px 0;" id="debugConsole">
-        <div style="color: yellow;">[START] Debug console loaded</div>
+    <!-- Auto-Debug Panel -->
+    <div style="background: #f0f0f0; padding: 15px; margin: 20px 0; border-radius: 5px; border-left: 5px solid orange;">
+        <h4 style="margin: 0 0 10px 0; color: orange;">🔧 Auto-Diagnostic Results:</h4>
+        <div id="diagnostic" style="font-family: monospace; font-size: 12px;">Running diagnostics...</div>
     </div>
     
-    <div style="text-align: center; margin: 20px 0;">
-        <button onclick="testAddURL()" style="background: green; color: white; padding: 20px; border: none; font-size: 18px; margin: 10px; border-radius: 5px; cursor: pointer;">🧪 Test Add URL</button>
-        <button onclick="testSettings()" style="background: blue; color: white; padding: 20px; border: none; font-size: 18px; margin: 10px; border-radius: 5px; cursor: pointer;">🧪 Test Settings</button>
-        <button onclick="testBrowser()" style="background: orange; color: white; padding: 20px; border: none; font-size: 18px; margin: 10px; border-radius: 5px; cursor: pointer;">🧪 Test Browser</button>
+    <div style="text-align: center; margin: 30px 0;">
+        <button onclick="addURL()" style="background: green; color: white; padding: 20px; border: none; font-size: 18px; margin: 10px; border-radius: 5px; cursor: pointer;">+ Add URL</button>
+        <button onclick="showSettings()" style="background: blue; color: white; padding: 20px; border: none; font-size: 18px; margin: 10px; border-radius: 5px; cursor: pointer;">⚙️ Settings</button>
+        <button onclick="inspector()" style="background: purple; color: white; padding: 20px; border: none; font-size: 18px; margin: 10px; border-radius: 5px; cursor: pointer;">🔎 Inspector</button>
     </div>
     
-    <div id="results" style="background: #f0f0f0; padding: 20px; border-radius: 10px;">
-        <h3>Test Results:</h3>
-        <div id="output">Click buttons above to run tests...</div>
+    <div style="display: flex; gap: 15px; margin: 20px 0; flex-wrap: wrap;">
+        <div style="background: #f5f5f5; padding: 15px; border-radius: 8px; text-align: center; flex: 1; min-width: 100px;">
+            <div style="color: #666; font-size: 12px;">Total</div>
+            <div style="font-size: 24px; font-weight: bold;" id="total">0</div>
+        </div>
+        <div style="background: #f5f5f5; padding: 15px; border-radius: 8px; text-align: center; flex: 1; min-width: 100px;">
+            <div style="color: #666; font-size: 12px;">Online</div>
+            <div style="font-size: 24px; font-weight: bold; color: green;" id="online">0</div>
+        </div>
+        <div style="background: #f5f5f5; padding: 15px; border-radius: 8px; text-align: center; flex: 1; min-width: 100px;">
+            <div style="color: #666; font-size: 12px;">Offline</div>
+            <div style="font-size: 24px; font-weight: bold; color: red;" id="offline">0</div>
+        </div>
+    </div>
+    
+    <div id="content" style="background: #f9f9f9; padding: 20px; border-radius: 10px;">
+        <h3>Monitored URLs</h3>
+        <div id="urlList">No URLs added yet</div>
     </div>
     
 </div>
 
 <script>
-var debugConsole = document.getElementById('debugConsole');
-
-function log(message) {
-    var timestamp = new Date().toLocaleTimeString();
-    var logEntry = document.createElement('div');
-    logEntry.innerHTML = '[' + timestamp + '] ' + message;
-    debugConsole.appendChild(logEntry);
-    debugConsole.scrollTop = debugConsole.scrollHeight;
-    console.log('[DEBUG] ' + message);
-}
-
-function testAddURL() {
-    log('testAddURL() function called');
-    
-    try {
-        log('Testing prompt function...');
-        var url = prompt('Enter URL for testing:');
-        log('Prompt returned: ' + url);
-        
-        if (url) {
-            log('Processing URL: ' + url);
-            if (!url.includes('http')) {
-                url = 'https://' + url;
-                log('Added https: ' + url);
-            }
-            
-            document.getElementById('output').innerHTML = '<div style="background: #e8f5e8; padding: 10px; border-radius: 5px; margin: 10px 0;"><strong>✅ SUCCESS</strong><br>URL: ' + url + '<br>Status: Would be monitored</div>';
-            log('SUCCESS: URL processed successfully');
-            
-        } else {
-            log('No URL entered');
-            document.
+var urls = [];
+var diagnosticDiv = document.getElementById('diagnostic');
