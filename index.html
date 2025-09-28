@@ -1,0 +1,75 @@
+
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>URL Monitor Pro</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#2196F3">
+</head>
+<body>
+    <div class="app-container">
+        <header class="header">
+            <h1>🔍 URL Monitor Pro</h1>
+            <div class="header-controls">
+                <button id="addUrlBtn" class="btn-primary">+ Add URL</button>
+                <button id="settingsBtn" class="btn-secondary">⚙️ Settings</button>
+                <button id="inspectorBtn" class="btn-secondary">🔎 Inspector</button>
+                <div class="status-indicator">
+                    <span id="connectionStatus" class="status-online">●</span>
+                    <span>Auto-refresh: <span id="autoRefreshStatus">ON</span></span>
+                </div>
+            </div>
+        </header>
+
+        <div class="stats-container">
+            <div class="stat-card">
+                <h3>Total URLs</h3>
+                <span id="totalUrls">0</span>
+            </div>
+            <div class="stat-card">
+                <h3>Online</h3>
+                <span id="onlineUrls" class="text-success">0</span>
+            </div>
+            <div class="stat-card">
+                <h3>Offline</h3>
+                <span id="offlineUrls" class="text-danger">0</span>
+            </div>
+            <div class="stat-card">
+                <h3>SSL Alerts</h3>
+                <span id="sslAlerts" class="text-warning">0</span>
+            </div>
+        </div>
+
+        <div class="url-list" id="urlList">
+            <!-- URLs will be added dynamically -->
+        </div>
+
+        <!-- Modals and Panels -->
+        <div id="addUrlModal" class="modal hidden">
+            <div class="modal-content">
+                <span class="close" id="closeModal">&times;</span>
+                <h2>Add New URL</h2>
+                <input type="url" id="newUrlInput" placeholder="https://example.com" class="input-field">
+                <input type="text" id="urlNameInput" placeholder="Display Name (optional)" class="input-field">
+                <button id="addUrlConfirm" class="btn-primary">Add URL</button>
+            </div>
+        </div>
+
+        <div id="inspectorPanel" class="panel hidden">
+            <div class="panel-header">
+                <h2>🔍 Auto Inspector</h2>
+                <button id="closeInspector" class="btn-close">×</button>
+            </div>
+            <div class="inspector-content">
+                <input type="url" id="inspectUrl" placeholder="Enter website URL to inspect" class="input-field">
+                <button id="startInspection" class="btn-primary">Start Inspection</button>
+                <div id="inspectionProgress" class="progress-bar hidden">
+                    <div class="progress-fill"></div>
+                </div>
+                <div id="inspectionResults" class="inspection-results"></div>
+            </div>
+        </div>
+
+        <div id="settingsPanel
