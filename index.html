@@ -1,209 +1,571 @@
 
 <html>
 <head>
- <meta charset="utf-8" />
- <title>URL Monitor Pro</title>
- <meta name="viewport" content="width=device-width, initial-scale=1.0">
- <style>
- :root {
- --primary: #2196F3;
- --success: #2e7d32;
- --danger: #d32f2f;
- --warn: #f9a825;
- --muted: #666;
- --bg: #e3f2fd;
- --panel: #fff;
- --chip: #f5f5f5;
- --border: #eee;
- }
- body { font-family: Arial, sans-serif; padding: 20px; background: var(--bg); }
- .wrap { max-width: 1100px; margin: 0 auto; background: var(--panel); padding: 20px; border-radius: 12px; box-shadow: 0 6px 16px rgba(0,0,0,0.06); }
- h1 { text-align: center; color: var(--primary); margin: 0 0 10px; }
- .actions { text-align: center; margin: 18px 0 24px; display:flex; gap:10px; justify-content:center; flex-wrap:wrap; }
- button { cursor: pointer; }
- .btn { padding: 12px 16px; border: none; font-size: 14px; border-radius: 6px; }
- .btn-primary { background: var(--primary); color: #fff; }
- .btn-green { background: #2e7d32; color: #fff; }
- .btn-purple { background: #6a1b9a; color: #fff; }
- .btn-red { background: #e53935; color: #fff; }
- .btn-gray { background: #9e9e9e; color: #fff; }
- .stats { display: flex; gap: 15px; margin: 10px 0 20px; flex-wrap: wrap; }
- .stat { background: var(--chip); padding: 14px; border-radius: 10px; text-align: center; flex: 1 1 180px; }
- .stat .label { color: var(--muted); }
- .stat .value { font-size: 24px; font-weight: bold; }
- .grid { display: grid; gap: 12px; }
- .row { display:flex; align-items:center; gap:12px; padding:12px; border:1px solid var(--border); border-radius:10px; }
- .dot { width:12px; height:12px; border-radius:50%; }
- .url { font-weight:600; word-break: break-all; }
- .sub { color: var(--muted); font-size: 12px; margin-top: 4px; }
- .right { margin-left:auto; display:flex; gap:8px; }
- .timeline { width: 240px; height: 28px; }
- .chip { background:#eef7ff; color:#1976d2; border:1px solid #cfe8ff; padding:3px 6px; border-radius:999px; font-size:11px; font-weight:600; }
- .section { background:#f9f9f9; padding: 16px; border-radius: 10px; }
- .header { display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; }
- .flex { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
- .grow { flex: 1 1 auto; }
- .small { font-size: 12px; color: var(--muted); }
- .danger { color: var(--danger); }
- .success { color: var(--success); }
- .warn { color: var(--warn); }
- /* Modal */
- .modal-backdrop { position:fixed; inset:0; var(--danger); }
- .success { color: var(--success); }
- .warn { color: var(--warn); }
- /* Modal */
- .modal-backdrop { position:fixed; inset:0; background:rgba(0,0,0,0.35); display:none; align-items:center; justify-content:center; }
- .modal { background:#fff; width: 560px; max-width: 92vw; border-radius:12px; overflow:hidden; }
- .modal header { padding:12px 16px; border-bottom:1px solid var(--border); font-weight:700; }
- .modal .body { padding:14px 16px; display:grid; gap:12px; }
- .modal .rowx { display:grid; grid-template-columns: 170px 1fr; gap:10px; align-items:center; }
- .modal .rowx input, .modal .rowx select { width: 100%; padding:8px; border:1px solid #ddd; border-radius:6px; }
- .modal footer { display:flex; gap:10px; justify-content:flex-end; padding:12px 16px; border-top:1px solid var(--border); }
- @media (max-width: 600px) {
- .timeline { width: 100%; }
- .row { flex-wrap: wrap; }
- .right { width: 100%; justify-content: flex-end; }
- }
- </style>
+  <meta charset="utf-8" />
+  <title>URL Monitor Pro</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    :root {
+      --primary: #2196F3;
+      --success: #2e7d32;
+      --danger: #d32f2f;
+      --warn: #f9a825;
+      --muted: #666;
+      --bg: #e3f2fd;
+      --panel: #fff;
+      --chip: #f5f5f5;
+      --border: #eee;
+    }
+    body { font-family: Arial, sans-serif; padding: 20px; background: var(--bg); }
+    .wrap { max-width: 1100px; margin: 0 auto; background: var(--panel); padding: 20px; border-radius: 12px; box-shadow: 0 6px 16px rgba(0,0,0,0.06); }
+    h1 { text-align: center; color: var(--primary); margin: 0 0 10px; }
+    .actions { text-align: center; margin: 18px 0 24px; display:flex; gap:10px; justify-content:center; flex-wrap:wrap; }
+    button { cursor: pointer; }
+    .btn { padding: 12px 16px; border: none; font-size: 14px; border-radius: 6px; }
+    .btn-primary { background: var(--primary); color: #fff; }
+    .btn-green { background: #2e7d32; color: #fff; }
+    .btn-purple { background: #6a1b9a; color: #fff; }
+    .btn-red { background: #e53935; color: #fff; }
+    .btn-gray { background: #9e9e9e; color: #fff; }
+    .stats { display: flex; gap: 15px; margin: 10px 0 20px; flex-wrap: wrap; }
+    .stat { background: var(--chip); padding: 14px; border-radius: 10px; text-align: center; flex: 1 1 180px; }
+    .stat .label { color: var(--muted); }
+    .stat .value { font-size: 24px; font-weight: bold; }
+    .grid { display: grid; gap: 12px; }
+    .row { display:flex; align-items:center; gap:12px; padding:12px; border:1px solid var(--border); border-radius:10px; }
+    .dot { width:12px; height:12px; border-radius:50%; }
+    .url { font-weight:600; word-break: break-all; }
+    .sub { color: var(--muted); font-size: 12px; margin-top: 4px; }
+    .right { margin-left:auto; display:flex; gap:8px; }
+    .timeline { width: 240px; height: 28px; }
+    .chip { background:#eef7ff; color:#1976d2; border:1px solid #cfe8ff; padding:3px 6px; border-radius:999px; font-size:11px; font-weight:600; }
+    .section { background:#f9f9f9; padding: 16px; border-radius: 10px; }
+    .header { display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; }
+    .flex { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+    .grow { flex: 1 1 auto; }
+    .small { font-size: 12px; color: var(--muted); }
+    .danger { color: var(--danger); }
+    .success { color: var(--success); }
+    .warn { color: var(--warn); }
+    /* Modal */
+    .modal-backdrop { position:fixed; inset:0; background:rgba(0,0,0,0.35); display:none; align-items:center; justify-content:center; }
+    .modal { background:#fff; width: 560px; max-width: 92vw; border-radius:12px; overflow:hidden; }
+    .modal header { padding:12px 16px; border-bottom:1px solid var(--border); font-weight:700; }
+    .modal .body { padding:14px 16px; display:grid; gap:12px; }
+    .modal .rowx { display:grid; grid-template-columns: 170px 1fr; gap:10px; align-items:center; }
+    .modal .rowx input, .modal .rowx select { width: 100%; padding:8px; border:1px solid #ddd; border-radius:6px; }
+    .modal footer { display:flex; gap:10px; justify-content:flex-end; padding:12px 16px; border-top:1px solid var(--border); }
+    @media (max-width: 600px) {
+      .timeline { width: 100%; }
+      .row { flex-wrap: wrap; }
+      .right { width: 100%; justify-content: flex-end; }
+    }
+  </style>
 </head>
 <body>
 <div class="wrap">
- <h1>🔍 URL Monitor Pro</h1>
+  <h1>🔍 URL Monitor Pro</h1>
 
- <div class="actions">
- <button class="btn btn-green" onclick="addURL()">+ Add URL</button>
- <button class="btn btn-primary" onclick="showSettings()">⚙️ Settings</button>
- <button class="btn btn-purple" onclick="startInspector()">🔎 Auto Inspector</button>
- <button class="btn btn-gray" onclick="checkAll()">▶️ Check All Now</button>
- </div>
+  <div class="actions">
+    <button class="btn btn-green" onclick="addURL()">+ Add URL</button>
+    <button class="btn btn-primary" onclick="showSettings()">⚙️ Settings</button>
+    <button class="btn btn-purple" onclick="startInspector()">🔎 Auto Inspector</button>
+    <button class="btn btn-gray" onclick="checkAll()">▶️ Check All Now</button>
+  </div>
 
- <div class="stats">
- <div class="stat"><div class="label">Total</div><div class="value" id="total">0</div></div>
- <div class="stat"><div class="label">Online</div><div class="value success" id="online">0</div></div>
- <div class="stat"><div class="label">Offline</div><div class="value danger" id="offline">0</div></div>
- <div class="stat"><div class="label">24h Uptime</div><div class="value" id="uptime24">0%</div></div>
- <div class="stat"><div class="label">Avg RT (24h)</div><div class="value" id="avgRt24">—</div></div>
- </div>
+  <div class="stats">
+    <div class="stat"><div class="label">Total</div><div class="value" id="total">0</div></div>
+    <div class="stat"><div class="label">Online</div><div class="value success" id="online">0</div></div>
+    <div class="stat"><div class="label">Offline</div><div class="value danger" id="offline">0</div></div>
+    <div class="stat"><div class="label">24h Uptime</div><div class="value" id="uptime24">0%</div></div>
+    <div class="stat"><div class="label">Avg RT (24h)</div><div class="value" id="avgRt24">—</div></div>
+  </div>
 
- <div class="section">
- <div class="header">
- <h3 style="margin:0;">Monitored URLs</h3>
- <div class="small">History retained for last 24 hours</div>
- </div>
- <div id="urlList" class="grid">No URLs added yet</div>
- </div>
+  <div class="section">
+    <div class="header">
+      <h3 style="margin:0;">Monitored URLs</h3>
+      <div class="small">History retained for last 24 hours</div>
+    </div>
+    <div id="urlList" class="grid">No URLs added yet</div>
+  </div>
 </div>
 
 <!-- Settings Modal -->
 <div id="modal" class="modal-backdrop" onclick="backdropClose(event)">
- <div class="modal" role="dialog" aria-modal="true" lass="modal-backdrop" onclick="backdropClose(event)">
- <div class="modal" role="dialog" aria-modal="true" aria-labelledby="settingsTitle" onclick="event.stopPropagation()">
- <header id="settingsTitle">Settings</header>
- <div class="body">
- <div class="rowx">
- <label>Check Mode</label>
- <select id="mode">
- <option value="favicon">Favicon Ping (no proxy)</option>
- <option value="proxy">HTTP via Proxy (accurate)</option>
- </select>
- </div>
- <div class="rowx">
- <label>Proxy URL</label>
- <input id="proxyUrl" placeholder="https://your-domain/check?url=" />
- </div>
- <div class="rowx">
- <label>Check Interval (sec)</label>
- <input id="interval" type="number" min="10" value="60" />
- </div>
- <div class="rowx">
- <label>Timeout (ms)</label>
- <input id="timeout" type="number" min="1000" value="8000" />
- </div>
- <div class="rowx">
- <label>Max Endpoints (Inspector)</label>
- <input id="maxEndpoints" type="number" min="5" value="50" />
- </div>
- </div>
- <footer>
- <button class="btn btn-gray" onclick="hideSettings()">Cancel</button>
- <button class="btn btn-primary" onclick="saveSettings()">Save</button>
- </footer>
- </div>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="settingsTitle" onclick="event.stopPropagation()">
+    <header id="settingsTitle">Settings</header>
+    <div class="body">
+      <div class="rowx">
+        <label>Check Mode</label>
+        <select id="mode">
+          <option value="favicon">Favicon Ping (no proxy)</option>
+          <option value="proxy">HTTP via Proxy (accurate)</option>
+        </select>
+      </div>
+      <div class="rowx">
+        <label>Proxy URL</label>
+        <input id="proxyUrl" placeholder="https://your-domain/check?url=" />
+      </div>
+      <div class="rowx">
+        <label>Check Interval (sec)</label>
+        <input id="interval" type="number" min="10" value="60" />
+      </div>
+      <div class="rowx">
+        <label>Timeout (ms)</label>
+        <input id="timeout" type="number" min="1000" value="8000" />
+      </div>
+      <div class="rowx">
+        <label>Max Endpoints (Inspector)</label>
+        <input id="maxEndpoints" type="number" min="5" value="50" />
+      </div>
+    </div>
+    <footer>
+      <button class="btn btn-gray" onclick="hideSettings()">Cancel</button>
+      <button class="btn btn-primary" onclick="saveSettings()">Save</button>
+    </footer>
+  </div>
 </div>
 
 <script>
- // =============== State & Persistence ===============
- const DEFAULT_SETTINGS = {
- mode: 'favicon', // 'favicon' | 'proxy'
- proxyUrl: '', // e.g. https://your-proxy.example.com/check?url=
- intervalSec: 60,
- timeoutMs: 8000,
- maxInspectorEndpoints: 50,
- };
+  // =============== State & Persistence ===============
+  const DEFAULT_SETTINGS = {
+    mode: 'favicon',          // 'favicon' | 'proxy'
+    proxyUrl: '',             // e.g. https://your-proxy.example.com/check?url= or ...?url={url}
+    intervalSec: 60,
+    timeoutMs: 8000,
+    maxInspectorEndpoints: 50,
+  };
 
- let settings = loadSettings();
- let urls = loadUrls();
- let timer = null;
+  let settings = loadSettings();
+  let urls = loadUrls();
+  let timer = null;
 
- function loadSettings() {
- try {
- const s = JSON.parse(localStorage.getItem('ump_settings') || 'null');
- return Object.assign({}, DEFAULT_SETTINGS, s || {});
- } catch { return { ...DEFAULT_SETTINGS }; }
- }
- function saveSettingsToStorage() {
- localStorage.setItem('ump_settings', JSON.stringify(settings));
- }
- function loadUrls() {
- try {
- const list = JSON.parse(localStorage.getItem('ump_urls') || '[]');
- return Array.isArray(list) ? list : [];
- } catch { return []; }
- }
- function persistUrls() {
- localStorage.setItem('ump_urls', JSON.stringify(urls));
- }
+  function loadSettings() {
+    try {
+      const s = JSON.parse(localStorage.getItem('ump_settings') || 'null');
+      return Object.assign({}, DEFAULT_SETTINGS, s || {});
+    } catch { return { ...DEFAULT_SETTINGS }; }
+  }
+  function saveSettingsToStorage() {
+    localStorage.setItem('ump_settings', JSON.stringify(settings));
+  }
+  function loadUrls() {
+    try {
+      const list = JSON.parse(localStorage.getItem('ump_urls') || '[]');
+      return Array.isArray(list) ? list : [];
+    } catch { return []; }
+  }
+  function persistUrls() {
+    localStorage.setItem('ump_urls', JSON.stringify(urls));
+  }
 
- // =============== Utilities ===============
- function normalizeUrl(input) {
- let u = (input || '').trim();
- if (!u) return null;
- if (!/^https?:\/\//i.test(u)) u = 'https://' + u;
- try { return new URL(u).toString(); } catch { return null; }
- }
- function escapeHtml(s) {
- return String(s).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
- }
- function now() { return Date.now(); }
- function pruneHistory(item) {
- const cutoff = now() - 24 * 60 * 60 * 1000;
- item.history = (item.history || []).filter(h => h.t >= cutoff);
- }
- function addHistory(item, status, rt) {
- item.history = item.history || [];
- pruneHistory(item);
- item.history.push({ t: now(), status, rt: (typeof rt === 'number' ? rt : null) });
- }
- function average(arr) {
- const nums = arr.filter(n => typeof n === 'number' && !isNaN(n));
- if (!nums.length) return null;
- return nums.reduce((a,b)=>a+b,0)/nums.length;
- }
+  // =============== Utilities ===============
+  function normalizeUrl(input) {
+    let u = (input || '').trim();
+    if (!u) return null;
+    if (!/^https?:\/\//i.test(u)) u = 'https://' + u;
+    try { return new URL(u).toString(); } catch { return null; }
+  }
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+  }
+  function now() { return Date.now(); }
+  function pruneHistory(item) {
+    const cutoff = now() - 24 * 60 * 60 * 1000;
+    item.history = (item.history || []).filter(h => h.t >= cutoff);
+  }
+  function addHistory(item, status, rt) {
+    item.history = item.history || [];
+    pruneHistory(item);
+    item.history.push({ t: now(), status, rt: (typeof rt === 'number' ? rt : null) });
+  }
+  function average(arr) {
+    const nums = arr.filter(n => typeof n === 'number' && !isNaN(n));
+    if (!nums.length) return null;
+    return nums.reduce((a,b)=>a+b,0)/nums.length;
+  }
 
- // =============== Checkers ===============
- function pingFavicon(url, timeoutMs) {
- return new Promise((resolve, reject) => {
- let origin;
- try { origin = new URL(url).origin; } catch (e) { reject(e); return; }
- const href = origin + '/favicon.ico?ts=' + Date.now();
- const img = new Image();
- const start = performance.now();
- const timer = setTimeout(() => {
- cleanup(); reject(new Error('timeout'));
- }, timeoutMs || settings.timeoutMs);
+  // =============== Checkers ===============
+  function pingFavicon(url, timeoutMs) {
+    return new Promise((resolve, reject) => {
+      let origin;
+      try { origin = new URL(url).origin; } catch (e) { reject(e); return; }
+      const href = origin + '/favicon.ico?ts=' + Date.now();
+      const img = new Image();
+      const start = performance.now();
+      const timer = setTimeout(() => {
+        cleanup(); reject(new Error('timeout'));
+      }, timeoutMs || settings.timeoutMs);
 
- function cleanup() {
- clearTimeout(timer);
- img.onload = null;
- img.onerror = null;
- eturn;
+      function cleanup() {
+        clearTimeout(timer);
+        img.onload = null;
+        img.onerror = null;
+      }
+      img.onload = () => { const rt = Math.round(performance.now() - start); cleanup(); resolve({ ok: true, status: 200, rt }); };
+      img.onerror = () => { const rt = Math.round(performance.now() - start); cleanup(); reject({ ok:false, status:0, rt }); };
+      img.src = href;
+    });
+  }
+
+  // Expects proxy to return JSON: { ok:boolean, status:number, rt:number, finalUrl?:string }
+  async function checkViaProxy(url, timeoutMs) {
+    const base = settings.proxyUrl || '';
+    if (!base) throw new Error('Proxy URL not configured');
+    const full = base.includes('{url}')
+      ? base.replace('{url}', encodeURIComponent(url))
+      : base + encodeURIComponent(url);
+
+    const ctrl = new AbortController();
+    const to = setTimeout(() => ctrl.abort('timeout'), timeoutMs || settings.timeoutMs);
+    const start = performance.now();
+    try {
+      const res = await fetch(full, { signal: ctrl.signal, headers: { 'accept': 'application/json' } });
+      const text = await res.text();
+      let data;
+      try { data = JSON.parse(text); } catch { data = {}; }
+      const rt = typeof data.rt === 'number' ? data.rt : Math.round(performance.now() - start);
+      clearTimeout(to);
+      return { ok: !!data.ok, status: data.status ?? res.status, rt, finalUrl: data.finalUrl || null };
+    } catch (e) {
+      clearTimeout(to);
+      throw e;
+    }
+  }
+
+  async function check(item) {
+    item.status = 'checking';
+    render();
+    try {
+      let result;
+      if (settings.mode === 'proxy') {
+        result = await checkViaProxy(item.url);
+      } else {
+        result = await pingFavicon(item.url);
+      }
+      item.status = result.ok ? 'online' : 'offline';
+      item.lastChecked = now();
+      item.responseTimeMs = result.rt ?? null;
+      addHistory(item, item.status, item.responseTimeMs);
+    } catch (e) {
+      item.status = 'offline';
+      item.lastChecked = now();
+      item.responseTimeMs = null;
+      addHistory(item, 'offline', null);
+    }
+    persistUrls();
+    render();
+  }
+
+  function checkAll() {
+    urls.forEach(u => check(u));
+  }
+
+  // =============== Inspector ===============
+  async function startInspector() {
+    const input = prompt('Enter a base URL to inspect (e.g. https://example.com):');
+    const baseUrl = normalizeUrl(input);
+    if (!baseUrl) { alert('Invalid URL'); return; }
+
+    if (settings.mode !== 'proxy' || !settings.proxyUrl) {
+      alert('Auto Inspector needs proxy mode enabled with a working Proxy URL.\nOpen Settings to configure it.');
+      showSettings();
+      return;
+    }
+
+    const origin = new URL(baseUrl).origin;
+    const discovered = new Set();
+
+    // Helper: fetch text via proxy
+    async function fetchText(u) {
+      const base = settings.proxyUrl;
+      const urlParam = base.includes('{url}') ? base.replace('{url}', encodeURIComponent(u)) : base + encodeURIComponent(u);
+      const res = await fetch(urlParam, { headers: { 'accept': 'text/plain,*/*;q=0.5' } });
+      const txt = await res.text();
+      return txt;
+    }
+
+    // Try homepage
+    try {
+      const html = await fetchText(baseUrl);
+      extractLinks(html, origin, discovered);
+    } catch {}
+
+    // Try robots.txt
+    try {
+      const robots = await fetchText(origin + '/robots.txt');
+      const sitemaps = (robots.match(/sitemap:\s*(.+)/ig) || []).map(x => x.split(':')[1] ? x.split(':').slice(1).join(':').trim() : x.replace(/sitemap:\s*/i,'').trim());
+      for (const sm of sitemaps) {
+        await fetchAndParseSitemap(resolveUrl(sm, origin), origin, discovered);
+        if (discovered.size >= settings.maxInspectorEndpoints) break;
+      }
+    } catch {}
+
+    // Try sitemap.xml default if none found
+    if (discovered.size === 0) {
+      try {
+        await fetchAndParseSitemap(origin + '/sitemap.xml', origin, discovered);
+      } catch {}
+    }
+
+    // Fallback: add base if nothing
+    if (discovered.size === 0) {
+      discovered.add(baseUrl);
+    }
+
+    // Add up to max
+    const max = settings.maxInspectorEndpoints || 50;
+    const finalList = [...discovered].slice(0, max);
+
+    let added = 0;
+    for (const u of finalList) {
+      if (!urls.some(x => x.url === u)) {
+        urls.push({ id: Date.now() + Math.random(), url: u, status: 'checking', lastChecked: null, responseTimeMs: null, history: [] });
+        added++;
+      }
+    }
+    persistUrls();
+    render();
+
+    if (added > 0) {
+      if (!confirm(`Added ${added} endpoint(s). Check them now?`)) return;
+      checkAll();
+    } else {
+      alert('No new endpoints discovered.');
+    }
+  }
+
+  function resolveUrl(href, origin) {
+    try { return new URL(href, origin).toString(); } catch { return null; }
+  }
+  function extractLinks(html, origin, outSet) {
+    try {
+      const doc = new DOMParser().parseFromString(html, 'text/html');
+      const anchors = Array.from(doc.querySelectorAll('a[href]'));
+      anchors.forEach(a => {
+        const u = resolveUrl(a.getAttribute('href'), origin);
+        if (!u) return;
+        if (!u.startsWith(origin)) return; // same-origin only
+        outSet.add(u.split('#')[0]);
+      });
+    } catch {}
+  }
+  async function fetchAndParseSitemap(sitemapUrl, origin, outSet) {
+    try {
+      const txt = await fetchSitemapText(sitemapUrl);
+      const doc = new DOMParser().parseFromString(txt, 'application/xml');
+      const locs = Array.from(doc.getElementsByTagName('loc')).map(n => n.textContent.trim());
+      locs.forEach(u => {
+        const resolved = resolveUrl(u, origin);
+        if (resolved && resolved.startsWith(origin)) {
+          outSet.add(resolved.split('#')[0]);
+        }
+      });
+    } catch {}
+  }
+  async function fetchSitemapText(url) {
+    const base = settings.proxyUrl;
+    const full = base.includes('{url}') ? base.replace('{url}', encodeURIComponent(url)) : base + encodeURIComponent(url);
+    const res = await fetch(full, { headers: { 'accept': 'application/xml,text/xml;q=0.9,text/plain;q=0.8,*/*;q=0.1' } });
+    return res.text();
+  }
+
+  // =============== UI ===============
+  function addURL() {
+    const input = prompt('Enter URL (e.g. https://example.com):');
+    if (!input) return;
+    const normalized = normalizeUrl(input);
+    if (!normalized) { alert('Invalid URL'); return; }
+    if (urls.some(u => u.url === normalized)) { alert('Already added.'); return; }
+    urls.push({ id: Date.now(), url: normalized, status: 'checking', lastChecked: null, responseTimeMs: null, history: [] });
+    persistUrls();
+    render();
+    check(urls[urls.length - 1]);
+  }
+
+  function removeById(id) {
+    if (!confirm('Remove this URL?')) return;
+    urls = urls.filter(u => u.id !== id);
+    persistUrls();
+    render();
+  }
+
+  function renderTimeline(history) {
+    const width = 240, height = 28;
+    const nowTs = now();
+    const cutoff = nowTs - 24*60*60*1000;
+
+    const segments = new Array(24).fill(null).map((_, i) => {
+      const end = nowTs - i*60*60*1000;
+      const start = end - 60*60*1000;
+      return { start, end, status: 'unknown' };
+    }).reverse();
+
+    const hist = (history || []).filter(h => h.t >= cutoff);
+    segments.forEach(seg => {
+      const pts = hist.filter(h => h.t >= seg.start && h.t < seg.end);
+      if (pts.length) seg.status = pts[pts.length-1].status;
+      else seg.status = 'unknown';
+    });
+
+    const w = width / segments.length;
+    let rects = '';
+    segments.forEach((seg, i) => {
+      const color = seg.status === 'online' ? '#4caf50' :
+                    seg.status === 'offline' ? '#e53935' : '#cfd8dc';
+      rects += `<rect x="${i*w}" y="0" width="${Math.ceil(w)-1}" height="${height}" fill="${color}"></rect>`;
+    });
+    return `<svg class="timeline" viewBox="0 0 ${width} ${height}" preserveAspectRatio="none">${rects}</svg>`;
+  }
+
+  function computeGlobalStats() {
+    const allHist = urls.flatMap(u => (u.history || []).filter(h => h.t >= now() - 24*60*60*1000));
+    const up = allHist.filter(h => h.status === 'online').length;
+    const total = allHist.length;
+    const uptimePct = total ? Math.round((up / total) * 100) : 0;
+    const avgRt = average(allHist.map(h => h.rt));
+    return {
+      uptimePct,
+      avgRt: avgRt != null ? Math.round(avgRt) : null,
+    };
+  }
+
+  function render() {
+    const totalEl = document.getElementById('total');
+    const onlineEl = document.getElementById('online');
+    const offlineEl = document.getElementById('offline');
+    const uptime24El = document.getElementById('uptime24');
+    const avgRt24El = document.getElementById('avgRt24');
+    totalEl.textContent = String(urls.length);
+    let on = 0, off = 0;
+    urls.forEach(u => { if (u.status === 'online') on++; else if (u.status === 'offline') off++; });
+    onlineEl.textContent = String(on);
+    offlineEl.textContent = String(off);
+    const g = computeGlobalStats();
+    uptime24El.textContent = g.uptimePct + '%';
+    avgRt24El.textContent = g.avgRt != null ? (g.avgRt + ' ms') : '—';
+
+    const listEl = document.getElementById('urlList');
+    if (urls.length === 0) {
+      listEl.textContent = 'No URLs added yet';
+      return;
+    }
+
+    const html = urls.map(u => {
+      pruneHistory(u);
+      const color =
+        u.status === 'online' ? '#4caf50' :
+        u.status === 'offline' ? '#e53935' :
+        '#9e9e9e';
+      const last = u.lastChecked ? new Date(u.lastChecked).toLocaleTimeString() : '—';
+      const rt = (typeof u.responseTimeMs === 'number') ? `${u.responseTimeMs} ms` : '—';
+
+      const uptimePct = (() => {
+        const hist = u.history || [];
+        const cutoff = now() - 24*60*60*1000;
+        const recent = hist.filter(h => h.t >= cutoff);
+        const up = recent.filter(h => h.status === 'online').length;
+        return recent.length ? Math.round((up / recent.length) * 100) : 0;
+      })();
+
+      const avgRt = (() => {
+        const hist = u.history || [];
+        const rt = average(hist.map(h => h.rt));
+        return (rt != null && !isNaN(rt)) ? Math.round(rt) + ' ms' : '—';
+      })();
+
+      return `
+      <div class="row">
+        <div class="dot" style="background:${color}"></div>
+        <div class="grow">
+          <div class="url">${escapeHtml(u.url)}</div>
+          <div class="sub">
+            Status: <span style="color:${color}; font-weight:600;">${u.status}</span>
+            • Last: ${last}
+            • RT: <span class="${u.responseTimeMs != null ? 'success' : ''}">${rt}</span>
+            • 24h Uptime: <span>${uptimePct}%</span>
+            • 24h Avg RT: <span>${avgRt}</span>
+          </div>
+        </div>
+        <div>${renderTimeline(u.history || [])}</div>
+        <div class="right">
+          <button class="btn btn-primary" onclick="checkById(${u.id})">Check</button>
+          <button class="btn btn-red" onclick="removeById(${u.id})">Remove</button>
+        </div>
+      </div>`;
+    }).join('');
+    listEl.innerHTML = html;
+  }
+
+  function checkById(id) {
+    const item = urls.find(u => u.id === id);
+    if (item) check(item);
+  }
+
+  // =============== Settings UI ===============
+  function showSettings() {
+    document.getElementById('mode').value = settings.mode;
+    document.getElementById('proxyUrl').value = settings.proxyUrl;
+    document.getElementById('interval').value = settings.intervalSec;
+    document.getElementById('timeout').value = settings.timeoutMs;
+    document.getElementById('maxEndpoints').value = settings.maxInspectorEndpoints;
+    document.getElementById('modal').style.display = 'flex';
+  }
+  function hideSettings() {
+    document.getElementById('modal').style.display = 'none';
+  }
+  function backdropClose(e) {
+    if (e.target.id === 'modal') hideSettings();
+  }
+  function saveSettings() {
+    const mode = document.getElementById('mode').value;
+    const proxyUrl = document.getElementById('proxyUrl').value.trim();
+    const intervalSec = Math.max(10, Number(document.getElementById('interval').value) || 60);
+    const timeoutMs = Math.max(1000, Number(document.getElementById('timeout').value) || 8000);
+    const maxInspectorEndpoints = Math.max(5, Number(document.getElementById('maxEndpoints').value) || 50);
+
+    settings = { mode, proxyUrl, intervalSec, timeoutMs, maxInspectorEndpoints };
+    saveSettingsToStorage();
+    setupInterval();
+    hideSettings();
+  }
+
+  function setupInterval() {
+    if (timer) clearInterval(timer);
+    timer = setInterval(() => {
+      urls.forEach(u => check(u));
+    }, (settings.intervalSec || 60) * 1000);
+  }
+
+  // =============== Init ===============
+  render();
+  setupInterval();
+  if (urls.length) setTimeout(checkAll, 200);
+
+  // =============== Notes ===============
+  // For accurate HTTP checks and Auto Inspector, set Check Mode = "HTTP via Proxy"
+  // and provide a Proxy URL, e.g.:
+  //   https://your-host/check?url=
+  // or
+  //   https://your-host/check?url={url}
+  //
+  // Example proxy (Node/Express) response format:
+  // { ok: boolean, status: number, rt: number, finalUrl?: string }
+  //
+  // Minimal Node/Express proxy (place elsewhere, not in this HTML):
+  //   app.get('/check', async (req, res) => {
+  //     const target = req.query.url;
+  //     const start = Date.now();
+  //     let r, ok=false, status=0, finalUrl=null;
+  //     try {
+  //       try { r = await fetch(target, { method: 'HEAD', redirect: 'follow' }); }
+  //       catch { r = await fetch(target, { method: 'GET', redirect: 'follow' }); await r.arrayBuffer().catch(()=>{}); }
+  //       status = r.status; finalUrl = r.url; ok = r.ok;
+  //     } catch {}
+  //     const rt = Date.now() - start;
+  //     res.setHeader('Access-Control-Allow-Origin', '*');
+  //     res.json({ ok, status, rt, finalUrl });
+  //   });
+</script>
+</body>
+</html>
