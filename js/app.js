@@ -10,14 +10,6 @@ class URLMonitor {
         this.init();
     }
 
-    init() {
-        this.setupEventListeners();
-        this.renderURLs();
-        this.updateStats();
-        this.startMonitoring();
-        this.requestNotificationPermission();
-    }
-
     getDefaultSettings() {
         return {
             monitorInterval: 10,
@@ -26,7 +18,7 @@ class URLMonitor {
             enableNotifications: true,
             enableBackground: true,
             maxRetries: 3,
-            timeout: 10,
+            timeout: 10000,
             enableSSLCheck: true,
             soundVolume: 0.5,
             darkMode: false,
@@ -34,65 +26,49 @@ class URLMonitor {
             showResponseTime: true,
             enableAlerts: true,
             enableHistory: true,
-            maxHistory: 100,
-            enableExport: true,
-            enableImport: true,
-            customAlertSound: 'default',
-            enableEmailAlerts: false,
-            emailAddress: '',
-            enableWebhook: false
+            maxHistory: 100
         };
     }
 
+    init() {
+        this.setupEventListeners();
+        this.renderURLs();
+        this.updateStats();
+        this.startMonitoring();
+        this.requestNotificationPermission();
+    }
+
     setupEventListeners() {
-        // Add URL button
         document.getElementById('addUrlBtn').addEventListener('click', () => {
             document.getElementById('addUrlModal').classList.remove('hidden');
         });
 
-        // Close modal
         document.getElementById('closeModal').addEventListener('click', () => {
             document.getElementById('addUrlModal').classList.add('hidden');
         });
 
-        // Add URL confirm
         document.getElementById('addUrlConfirm').addEventListener('click', () => {
             this.addURL();
         });
 
-        // Settings button
         document.getElementById('settingsBtn').addEventListener('click', () => {
             this.openSettings();
         });
 
-        // Inspector button
         document.getElementById('inspectorBtn').addEventListener('click', () => {
             document.getElementById('inspectorPanel').classList.remove('hidden');
         });
 
-        // Close inspector
         document.getElementById('closeInspector').addEventListener('click', () => {
             document.getElementById('inspectorPanel').classList.add('hidden');
         });
 
-        // Start inspection
         document.getElementById('startInspection').addEventListener('click', () => {
             this.startAutoInspection();
         });
 
-        // Close modal when clicking outside
-        window.addEventListener('click', (e) => {
-            const modal = document.getElementById('addUrlModal');
-            if (e.target === modal) {
-                modal.classList.add('hidden');
-            }
-        });
-
-        // Enter key for adding URL
         document.getElementById('newUrlInput').addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
-                this.addURL();
-            }
+            if (e.key === 'Enter') this.addURL();
         });
     }
 
@@ -103,11 +79,10 @@ class URLMonitor {
         const name = nameInput.value.trim();
 
         if (!url) {
-            this.showAlert('Please enter a valid URL', 'error');
+            alert('Please enter a valid URL');
             return;
         }
 
-        // Add https:// if no protocol specified
         let formattedURL = url;
         if (!url.startsWith('http://') && !url.startsWith('https://')) {
             formattedURL = 'https://' + url;
@@ -118,4 +93,28 @@ class URLMonitor {
             url: formattedURL,
             name: name || formattedURL,
             status: 'pending',
-            response
+            responseTime: 0,
+            lastCheck: null,
+            sslExpiry: null,
+            uptime: 100
+        };
+
+        this.urls.push(newURL);
+        this.saveURLs();
+        this.renderURLs();
+        this.updateStats();
+
+        urlInput.value = '';
+        nameInput.value = '';
+        document.getElementById('addUrlModal').classList.add('hidden');
+        
+        // Check the new URL immediately
+        this.checkURL(newURL);
+    }
+
+    async checkURL(urlObj) {
+        const startTime = Date.now();
+        
+        try {
+            // Using a CORS proxy for demonstration - in production, you'd need your own backend
+            const
