@@ -1,70 +1,201 @@
 
 <html>
 <head>
-    <title>URL Monitor Pro</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="utf-8" />
+  <title>URL Monitor Pro</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
 </head>
 <body style="font-family: Arial; padding: 20px; background: lightblue;">
 
 <div style="max-width: 800px; margin: 0 auto; background: white; padding: 20px; border-radius: 10px;">
-    <h1 style="text-align: center; color: #2196F3;">🔍 URL Monitor Pro</h1>
-    
-    <div style="text-align: center; margin: 30px 0;">
-        <button onclick="addURL()" style="background: green; color: white; padding: 15px 20px; border: none; font-size: 16px; margin: 8px; border-radius: 5px;">+ Add URL</button>
-        <button onclick="showSettings()" style="background: blue; color: white; padding: 15px 20px; border: none; font-size: 16px; margin: 8px; border-radius: 5px;">⚙️ Settings</button>
-        <button onclick="startInspector()" style="background: purple; color: white; padding: 15px 20px; border: none; font-size: 16px; margin: 8px; border-radius: 5px;">🔎 Inspector</button>
+  <h1 style="text-align: center; color: #2196F3;">🔍 URL Monitor Pro</h1>
+  
+  <div style="text-align: center; margin: 30px 0;">
+    <button onclick="addURL()" style="background: green; color: white; padding: 15px 20px; border: none; font-size: 16px; margin: 8px; border-radius: 5px;">+ Add URL</button>
+    <button onclick="showSettings()" style="background: blue; color: white; padding: 15px 20px; border: none; font-size: 16px; margin: 8px; border-radius: 5px;">⚙️ Settings</button>
+    <button onclick="startInspector()" style="background: purple; color: white; padding: 15px 20px; border: none; font-size: 16px; margin: 8px; border-radius: 5px;">🔎 Inspector</button>
+  </div>
+  
+  <div style="display: flex; gap: 15px; margin: 20px 0; flex-wrap: wrap;">
+    <div style="background: #f5f5f5; padding: 15px; border-radius: 8px; text-align: center; flex: 1;">
+      <div style="color: #666;">Total</div>
+      <div style="font-size: 24px; font-weight: bold;" id="total">0</div>
     </div>
-    
-    <div style="display: flex; gap: 15px; margin: 20px 0; flex-wrap: wrap;">
-        <div style="background: #f5f5f5; padding: 15px; border-radius: 8px; text-align: center; flex: 1;">
-            <div style="color: #666;">Total</div>
-            <div style="font-size: 24px; font-weight: bold;" id="total">0</div>
-        </div>
-        <div style="background: #f5f5f5; padding: 15px; border-radius: 8px; text-align: center; flex: 1;">
-            <div style="color: #666;">Online</div>
-            <div style="font-size: 24px; font-weight: bold; color: green;" id="online">0</div>
-        </div>
-        <div style="background: #f5f5f5; padding: 15px; border-radius: 8px; text-align: center; flex: 1;">
-            <div style="color: #666;">Offline</div>
-            <div style="font-size: 24px; font-weight: bold; color: red;" id="offline">0</div>
-        </div>
+    <div style="background: #f5f5f5; padding: 15px; border-radius: 8px; text-align: center; flex: 1;">
+      <div style="color: #666;">Online</div>
+      <div style="font-size: 24px; font-weight: bold; color: green;" id="online">0</div>
     </div>
-    
-    <div style="background: #f9f9f9; padding: 20px; border-radius: 10px;">
-        <h3>Monitored URLs</h3>
-        <div id="urlList">No URLs added yet</div>
+    <div style="background: #f5f5f5; padding: 15px; border-radius: 8px; text-align: center; flex: 1;">
+      <div style="color: #666;">Offline</div>
+      <div style="font-size: 24px; font-weight: bold; color: red;" id="offline">0</div>
     </div>
+  </div>
+  
+  <div style="background: #f9f9f9; padding: 20px; border-radius: 10px;">
+    <h3>Monitored URLs</h3>
+    <div id="urlList">No URLs added yet</div>
+  </div>
 </div>
 
 <script>
-var urls = [];
+  const urls = [];
 
-function addURL() {
-    var url = prompt('Enter URL (e.g. google.com):');
-    if (url) {
-        if (!url.includes('http')) url = 'https://' + url;
-        var newUrl = {id: Date.now(), url: url, status: 'checking'};
-        urls.push(newUrl);
-        display();
-        check(newUrl);
+  function normalizeUrl(input) {
+    let u = input.trim();
+    if (!/^https?:\/\//i.test(u)) {
+      u = 'https://' + u;
     }
-}
+    try {
+      return new URL(u).toString();
+    } catch {
+      return null;
+    }
+  }
 
-function check(urlObj) {
-    fetch(urlObj.url, {mode: 'no-cors'})
-    .then(() => {
-        urlObj.status = 'online';
-        display();
-    })
-    .catch(() => {
-        urlObj.status = 'offline';
-        display();
+  function addURL() {
+    const input = prompt('Enter URL (e.g. google.com or https://example.com/path):');
+    if (!input) return;
+
+    const normalized = normalizeUrl(input);
+    if (!normalized) {
+      alert('Invalid URL');
+      return;
+    }
+
+    const item = { id: Date.now(), url: normalized, status: 'checking', lastChecked: null };
+    urls.push(item);
+    display();
+    check(item);
+  }
+
+  // Cross-origin friendly "ping": try to load the site's favicon
+  function pingFavicon(url, timeoutMs = 8000) {
+    return new Promise((resolve, reject) => {
+      let origin;
+      try {
+        origin = new URL(url).origin;
+      } catch (e) {
+        reject(e);
+        return;
+      }
+
+      const img = new Image();
+      const href = origin + '/favicon.ico?ts=' + Date.now();
+
+      const timer = setTimeout(() => {
+        cleanup();
+        reject(new Error('timeout'));
+      }, timeoutMs);
+
+      function cleanup() {
+        clearTimeout(timer);
+        img.onload = null;
+        img.onerror = null;
+      }
+
+      img.onload = () => { cleanup(); resolve(true); };
+      img.onerror = () => { cleanup(); reject(new Error('error')); };
+      img.src = href;
     });
-}
+  }
 
-function display() {
-    var html = '';
-    var onlineCount = 0;
-    var offlineCount = 0;
-    
-    for (var i = 0; i
+  function check(item) {
+    item.status = 'checking';
+    display();
+
+    pingFavicon(item.url)
+      .then(() => {
+        item.status = 'online';
+        item.lastChecked = new Date();
+        display();
+      })
+      .catch(() => {
+        item.status = 'offline';
+        item.lastChecked = new Date();
+        display();
+      });
+  }
+
+  function display() {
+    const listEl = document.getElementById('urlList');
+    const totalEl = document.getElementById('total');
+    const onlineEl = document.getElementById('online');
+    const offlineEl = document.getElementById('offline');
+
+    if (urls.length === 0) {
+      listEl.textContent = 'No URLs added yet';
+      totalEl.textContent = '0';
+      onlineEl.textContent = '0';
+      offlineEl.textContent = '0';
+      return;
+    }
+
+    let onlineCount = 0;
+    let offlineCount = 0;
+
+    const html = urls.map(u => {
+      if (u.status === 'online') onlineCount++;
+      if (u.status === 'offline') offlineCount++;
+
+      const color =
+        u.status === 'online' ? 'green' :
+        u.status === 'offline' ? 'red' :
+        '#999';
+
+      const last = u.lastChecked
+        ? new Date(u.lastChecked).toLocaleTimeString()
+        : '—';
+
+      return `
+        <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; padding:12px; border:1px solid #eee; border-radius:8px; margin-bottom:10px;">
+          <div style="min-width: 12px; min-height: 12px; border-radius: 50%; background:${color};"></div>
+          <div style="flex:1;">
+            <div style="font-weight:600;">${escapeHtml(u.url)}</div>
+            <div style="color:#666; font-size:12px;">Status: <span style="color:${color}; font-weight:600;">${u.status}</span> • Last checked: ${last}</div>
+          </div>
+          <div style="display:flex; gap:8px;">
+            <button onclick="checkById(${u.id})" style="padding:6px 10px; border:none; background:#2196F3; color:white; border-radius:4px;">Check</button>
+            <button onclick="removeById(${u.id})" style="padding:6px 10px; border:none; background:#e53935; color:white; border-radius:4px;">Remove</button>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    listEl.innerHTML = html;
+    totalEl.textContent = String(urls.length);
+    onlineEl.textContent = String(onlineCount);
+    offlineEl.textContent = String(offlineCount);
+  }
+
+  function escapeHtml(s) {
+    return s.replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+  }
+
+  function checkById(id) {
+    const item = urls.find(u => u.id === id);
+    if (item) check(item);
+  }
+
+  function removeById(id) {
+    const idx = urls.findIndex(u => u.id === id);
+    if (idx >= 0) {
+      urls.splice(idx, 1);
+      display();
+    }
+  }
+
+  // Optional: periodic re-check (every 60s)
+  setInterval(() => {
+    urls.forEach(u => check(u));
+  }, 60000);
+
+  // Button stubs to avoid errors
+  function showSettings() {
+    alert('Settings dialog not implemented yet.');
+  }
+  function startInspector() {
+    alert('Inspector not implemented yet.');
+  }
+</script>
+</body>
+</html>
