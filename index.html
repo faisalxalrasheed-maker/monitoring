@@ -1,34 +1,22 @@
 
 <html>
 <head>
-    <title>URL Monitor - Complete Debug</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple Test</title>
 </head>
-<body style="font-family: Arial; padding: 20px; background: lightblue;">
+<body>
 
-<div style="max-width: 800px; margin: 0 auto; background: white; padding: 20px; border-radius: 10px;">
-    
-    <h1 style="text-align: center; color: #2196F3;">🔍 URL Monitor Pro</h1>
-    
-    <div style="background: #f0f0f0; padding: 15px; margin: 20px 0; border-radius: 5px; border-left: 5px solid orange;">
-        <h4 style="margin: 0 0 10px 0; color: orange;">🔧 Auto-Diagnostic:</h4>
-        <div id="diagnostic" style="font-family: monospace; font-size: 12px;">Running tests...</div>
-    </div>
-    
-    <div style="text-align: center; margin: 30px 0;">
-        <button onclick="addURL()" style="background: green; color: white; padding: 20px; border: none; font-size: 18px; margin: 10px; border-radius: 5px; cursor: pointer;">+ Add URL</button>
-        <button onclick="showSettings()" style="background: blue; color: white; padding: 20px; border: none; font-size: 18px; margin: 10px; border-radius: 5px; cursor: pointer;">⚙️ Settings</button>
-        <button onclick="inspector()" style="background: purple; color: white; padding: 20px; border: none; font-size: 18px; margin: 10px; border-radius: 5px; cursor: pointer;">🔎 Inspector</button>
-    </div>
-    
-    <div style="display: flex; gap: 15px; margin: 20px 0; flex-wrap: wrap;">
-        <div style="background: #f5f5f5; padding: 15px; border-radius: 8px; text-align: center; flex: 1; min-width: 100px;">
-            <div style="color: #666; font-size: 12px;">Total</div>
-            <div style="font-size: 24px; font-weight: bold;" id="total">0</div>
-        </div>
-        <div style="background: #f5f5f5; padding: 15px; border-radius: 8px; text-align: center; flex: 1; min-width: 100px;">
-            <div style="color: #666; font-size: 12px;">Online</div>
-            <div style="font-size: 24px; font-weight: bold; color: green;" id="online">0</div>
-        </div>
-        <div style="background: #f5f5f5; padding: 15px; border-radius: 8px; text-align: center; flex: 1; min-width: 100px;">
-            <div style="color: #666; font-size: 12px;">Offline</div>
+<h1>Simple Button Test</h1>
+
+<button onclick="test()">Click Me</button>
+
+<div id="result"></div>
+
+<script>
+function test() {
+    document.getElementById('result').innerHTML = 'SUCCESS: Button clicked!';
+    alert('Button is working!');
+}
+</script>
+
+</body>
+</html>
