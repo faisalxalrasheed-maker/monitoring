@@ -1,0 +1,58 @@
+
+<html>
+<head>
+    <title>URL Monitor Test</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body style="font-family: Arial; padding: 20px; background: #f0f8ff;">
+
+<h1 style="text-align: center; color: #2196F3;">🔍 URL Monitor Pro</h1>
+
+<div style="text-align: center; margin: 30px;">
+    <button onclick="testAddUrl()" style="background: #4CAF50; color: white; padding: 20px 30px; border: none; border-radius: 8px; font-size: 18px; cursor: pointer; margin: 10px;">
+        + Add URL
+    </button>
+    <button onclick="testSettings()" style="background: #2196F3; color: white; padding: 20px 30px; border: none; border-radius: 8px; font-size: 18px; cursor: pointer; margin: 10px;">
+        ⚙️ Settings
+    </button>
+</div>
+
+<div id="result" style="margin: 30px; padding: 20px; background: white; border-radius: 8px; min-height: 100px;">
+    <p>Click the buttons above to test functionality</p>
+</div>
+
+<script>
+function testAddUrl() {
+    document.getElementById('result').innerHTML = '<h2>Add URL Function Works!</h2><p>URL input would appear here</p>';
+    
+    let url = prompt('Enter a website URL to monitor (e.g., google.com):');
+    if (url) {
+        if (!url.includes('http')) {
+            url = 'https://' + url;
+        }
+        document.getElementById('result').innerHTML = '<h2>✅ URL Added Successfully!</h2><p><strong>' + url + '</strong></p><p>This URL would now be monitored every 10 seconds.</p>';
+    }
+}
+
+function testSettings() {
+    document.getElementById('result').innerHTML = `
+        <h2>⚙️ Settings Panel</h2>
+        <p><label><input type="checkbox" checked> Sound Notifications</label></p>
+        <p><label><input type="checkbox" checked> Browser Notifications</label></p>
+        <p><label>Monitor Interval: <input type="number" value="10" min="5" max="60"> seconds</label></p>
+        <p><label><input type="checkbox" checked> SSL Certificate Checking</label></p>
+        <button onclick="saveSettings()" style="background: #4CAF50; color: white; padding: 10px 20px; border: none; border-radius: 5px; margin-top: 10px;">Save Settings</button>
+    `;
+}
+
+function saveSettings() {
+    document.getElementById('result').innerHTML = '<h2>✅ Settings Saved!</h2><p>Your monitoring preferences have been updated.</p>';
+}
+
+// Test if JavaScript is working
+console.log('JavaScript is working!');
+alert('URL Monitor loaded successfully! JavaScript is working on your tablet.');
+</script>
+
+</body>
+</html>
