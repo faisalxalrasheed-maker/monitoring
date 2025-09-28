@@ -1,56 +1,66 @@
 
 <html>
 <head>
-    <title>URL Monitor Pro</title>
+    <title>Simple Test</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 </head>
-<body style="font-family: Arial; padding: 10px; background: #f0f8ff;">
+<body style="font-family: Arial; padding: 20px;">
 
-<div style="max-width: 800px; margin: 0 auto; background: white; padding: 20px; border-radius: 10px;">
+<h1>URL Monitor Test</h1>
 
-<h1 style="text-align: center; color: #2196F3; margin-bottom: 30px;">🔍 URL Monitor Pro</h1>
+<button onclick="test1()" style="background: green; color: white; padding: 20px; border: none; font-size: 18px; margin: 10px; border-radius: 5px;">
+    Test Add URL
+</button>
 
-<div style="text-align: center; margin-bottom: 30px;">
-    <button onclick="addUrl()" style="background: #4CAF50; color: white; padding: 15px 25px; border: none; border-radius: 8px; font-size: 16px; cursor: pointer; margin: 5px;">+ Add URL</button>
-    <button onclick="showSettings()" style="background: #2196F3; color: white; padding: 15px 25px; border: none; border-radius: 8px; font-size: 16px; cursor: pointer; margin: 5px;">⚙️ Settings</button>
-    <button onclick="inspectWebsite()" style="background: #9C27B0; color: white; padding: 15px 25px; border: none; border-radius: 8px; font-size: 16px; cursor: pointer; margin: 5px;">🔎 Inspector</button>
-</div>
+<button onclick="test2()" style="background: blue; color: white; padding: 20px; border: none; font-size: 18px; margin: 10px; border-radius: 5px;">
+    Test Settings  
+</button>
 
-<div style="display: flex; gap: 15px; margin-bottom: 30px; flex-wrap: wrap;">
-    <div style="background: #f5f5f5; padding: 15px; border-radius: 8px; text-align: center; flex: 1; min-width: 100px;">
-        <div style="color: #666; font-size: 14px;">Total</div>
-        <div style="font-size: 24px; font-weight: bold;" id="totalCount">0</div>
-    </div>
-    <div style="background: #f5f5f5; padding: 15px; border-radius: 8px; text-align: center; flex: 1; min-width: 100px;">
-        <div style="color: #666; font-size: 14px;">Online</div>
-        <div style="font-size: 24px; font-weight: bold; color: #4CAF50;" id="onlineCount">0</div>
-    </div>
-    <div style="background: #f5f5f5; padding: 15px; border-radius: 8px; text-align: center; flex: 1; min-width: 100px;">
-        <div style="color: #666; font-size: 14px;">Offline</div>
-        <div style="font-size: 24px; font-weight: bold; color: #f44336;" id="offlineCount">0</div>
-    </div>
-</div>
-
-<div id="urlList"></div>
-
-<div style="background: #e8f5e8; padding: 15px; border-radius: 8px; margin-top: 30px; text-align: center;">
-    <span style="color: #4CAF50; font-size: 18px;">●</span>
-    <strong>Status: <span id="statusText">Ready</span></strong>
-    <br>
-    <small>Last check: <span id="lastCheck">Never</span></small>
-</div>
-
+<div id="output" style="margin: 20px; padding: 20px; background: #f0f0f0; border-radius: 5px; min-height: 100px;">
+    Click buttons to test...
 </div>
 
 <script>
-let urls = [];
-let settings = {
-    interval: 10,
-    sound: true,
-    notifications: true
-};
-
-function addUrl() {
-    let url = prompt('Enter website URL (e.g., google.com or https://google.com):');
+function test1() {
+    document.getElementById('output').innerHTML = 'Add URL button clicked!<br>';
     
-    if (!url || url.trim() === '') {
+    try {
+        let url = prompt('Enter URL:');
+        document.getElementById('output').innerHTML += 'You entered: ' + url + '<br>';
+        
+        if (url) {
+            document.getElementById('output').innerHTML += 'URL is valid, processing...<br>';
+            // Simple test - just display it
+            document.getElementById('output').innerHTML += '<div style="background: white; padding: 10px; margin: 10px; border-radius: 5px; border: 2px solid green;"><strong>' + url + '</strong><br>Status: <span style="color: green;">✅ ONLINE</span></div>';
+        } else {
+            document.getElementById('output').innerHTML += 'No URL entered.<br>';
+        }
+    } catch(e) {
+        document.getElementById('output').innerHTML += 'Error: ' + e.message + '<br>';
+    }
+}
+
+function test2() {
+    document.getElementById('output').innerHTML = `
+        <h3>Settings Panel</h3>
+        <p><label><input type="checkbox" checked> Enable Sound Alerts</label></p>
+        <p><label><input type="checkbox" checked> Enable Notifications</label></p>
+        <p><label>Check Interval: <select>
+            <option>10 seconds</option>
+            <option>30 seconds</option>
+            <option>60 seconds</option>
+        </select></label></p>
+        <button onclick="saveTest()" style="background: green; color: white; padding: 10px 20px; border: none; border-radius: 5px;">Save Settings</button>
+    `;
+}
+
+function saveTest() {
+    document.getElementById('output').innerHTML = '<h3 style="color: green;">✅ Settings Saved Successfully!</h3><p>Your preferences have been updated.</p>';
+}
+
+// Test if everything loads
+alert('Page loaded! JavaScript is working.');
+</script>
+
+</body>
+</html>
