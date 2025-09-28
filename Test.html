@@ -1,66 +1,31 @@
 
 <html>
 <head>
-    <title>Simple Test</title>
+    <title>URL Monitor Pro - Complete</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 </head>
-<body style="font-family: Arial; padding: 20px;">
+<body style="font-family: Arial; padding: 10px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh;">
 
-<h1>URL Monitor Test</h1>
+<div style="max-width: 1000px; margin: 0 auto; background: rgba(255,255,255,0.95); padding: 20px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.2);">
 
-<button onclick="test1()" style="background: green; color: white; padding: 20px; border: none; font-size: 18px; margin: 10px; border-radius: 5px;">
-    Test Add URL
-</button>
-
-<button onclick="test2()" style="background: blue; color: white; padding: 20px; border: none; font-size: 18px; margin: 10px; border-radius: 5px;">
-    Test Settings  
-</button>
-
-<div id="output" style="margin: 20px; padding: 20px; background: #f0f0f0; border-radius: 5px; min-height: 100px;">
-    Click buttons to test...
+<div style="background: linear-gradient(135deg, #2196F3, #21CBF3); color: white; padding: 20px; border-radius: 10px; margin-bottom: 20px;">
+    <h1 style="margin: 0; text-align: center;">🔍 URL Monitor Pro</h1>
+    <div style="text-align: center; margin-top: 15px;">
+        <button onclick="addUrl()" style="background: rgba(255,255,255,0.2); color: white; padding: 12px 20px; border: 1px solid rgba(255,255,255,0.3); border-radius: 8px; font-size: 14px; cursor: pointer; margin: 5px;">+ Add URL</button>
+        <button onclick="showSettings()" style="background: rgba(255,255,255,0.2); color: white; padding: 12px 20px; border: 1px solid rgba(255,255,255,0.3); border-radius: 8px; font-size: 14px; cursor: pointer; margin: 5px;">⚙️ Settings</button>
+        <button onclick="showInspector()" style="background: rgba(255,255,255,0.2); color: white; padding: 12px 20px; border: 1px solid rgba(255,255,255,0.3); border-radius: 8px; font-size: 14px; cursor: pointer; margin: 5px;">🔎 Inspector</button>
+    </div>
 </div>
 
-<script>
-function test1() {
-    document.getElementById('output').innerHTML = 'Add URL button clicked!<br>';
-    
-    try {
-        let url = prompt('Enter URL:');
-        document.getElementById('output').innerHTML += 'You entered: ' + url + '<br>';
-        
-        if (url) {
-            document.getElementById('output').innerHTML += 'URL is valid, processing...<br>';
-            // Simple test - just display it
-            document.getElementById('output').innerHTML += '<div style="background: white; padding: 10px; margin: 10px; border-radius: 5px; border: 2px solid green;"><strong>' + url + '</strong><br>Status: <span style="color: green;">✅ ONLINE</span></div>';
-        } else {
-            document.getElementById('output').innerHTML += 'No URL entered.<br>';
-        }
-    } catch(e) {
-        document.getElementById('output').innerHTML += 'Error: ' + e.message + '<br>';
-    }
-}
-
-function test2() {
-    document.getElementById('output').innerHTML = `
-        <h3>Settings Panel</h3>
-        <p><label><input type="checkbox" checked> Enable Sound Alerts</label></p>
-        <p><label><input type="checkbox" checked> Enable Notifications</label></p>
-        <p><label>Check Interval: <select>
-            <option>10 seconds</option>
-            <option>30 seconds</option>
-            <option>60 seconds</option>
-        </select></label></p>
-        <button onclick="saveTest()" style="background: green; color: white; padding: 10px 20px; border: none; border-radius: 5px;">Save Settings</button>
-    `;
-}
-
-function saveTest() {
-    document.getElementById('output').innerHTML = '<h3 style="color: green;">✅ Settings Saved Successfully!</h3><p>Your preferences have been updated.</p>';
-}
-
-// Test if everything loads
-alert('Page loaded! JavaScript is working.');
-</script>
-
-</body>
-</html>
+<!-- Stats Dashboard -->
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; margin-bottom: 20px;">
+    <div style="background: white; padding: 20px; border-radius: 10px; text-align: center; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+        <h3 style="margin: 0 0 10px 0; color: #666; font-size: 14px;">Total URLs</h3>
+        <span style="font-size: 28px; font-weight: bold;" id="totalUrls">0</span>
+    </div>
+    <div style="background: white; padding: 20px; border-radius: 10px; text-align: center; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+        <h3 style="margin: 0 0 10px 0; color: #666; font-size: 14px;">Online</h3>
+        <span style="font-size: 28px; font-weight: bold; color: #4CAF50;" id="onlineUrls">0</span>
+    </div>
+    <div style="background: white; padding: 20px; border-radius: 10px; text-align: center; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+        <h3 style="margin: 0 0
