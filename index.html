@@ -198,6 +198,7 @@
     alertSound: 'none'
   };
   const $ = (selector) => document.querySelector(selector);
+  const $$ = (selector) => document.querySelectorAll(selector);
   
   const elements = {
       appContainer: $('#appContainer'),
@@ -516,10 +517,15 @@
   
   // =============== Tab Management ===============
   function switchTab(tabName) {
-    document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
-    document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
-    document.getElementById(`${tabName}Tab`).classList.add('active');
-    event.target.classList.add('active');
+    // Get the event from the global scope (fix for tab switching)
+    const event = window.event || arguments[0];
+    const targetTab = event?.target || $$('.tab')[0];
+    
+    $$('.tab-content').forEach(tab => tab.classList.remove('active'));
+    $$('.tab').forEach(tab => tab.classList.remove('active'));
+    $(`#${tabName}Tab`).classList.add('active');
+    targetTab.classList.add('active');
+    
     if (tabName === 'alerts') {
       renderAlerts();
     }
@@ -527,7 +533,7 @@
 
   // =============== Export Functionality ===============
   function exportData() {
-    const format = document.querySelector('input[name="exportFormat"]:checked').value;
+    const format = $('input[name="exportFormat"]:checked').value;
     let data, mimeType, filename;
     
     if (format === 'csv') {
@@ -568,7 +574,7 @@
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
     
-    const exportResult = document.getElementById('exportResult');
+    const exportResult = $('#exportResult');
     exportResult.innerHTML = `<div class="success">Data exported successfully as ${filename}</div>`;
     setTimeout(() => {
       exportResult.innerHTML = '';
@@ -739,7 +745,7 @@
             elements.inspector.resultList.innerHTML = foundLinks.map(link => `
               <div class="result-row" data-link="${escapeHtml(link)}">
                 <span>${escapeHtml(link)}</span>
-                <button class="btn btn-green" onclick="addInspectedURL(this, '${escapeHtml(link)}')">Add</button>
+                <button class="btn btn-green" onclick="addInspectedURL('${escapeHtml(link)}')">Add</button>
               </div>
             `).join('');
         }
@@ -751,11 +757,16 @@
     }
   }
 
-  function addInspectedURL(button, url) {
+  function addInspectedURL(url) {
     if (addURL(url, true)) {
-        button.textContent = 'Added!';
-        button.disabled = true;
-        button.classList.remove('btn-green');
+        const buttons = $$('.result-row button');
+        buttons.forEach(button => {
+            if (button.textContent === 'Add' && button.parentElement.querySelector('span').textContent === url) {
+                button.textContent = 'Added!';
+                button.disabled = true;
+                button.classList.remove('btn-green');
+            }
+        });
     }
   }
 
