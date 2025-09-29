@@ -1,4 +1,4 @@
-
+<!doctype html>
 <html>
 <head>
   <meta charset="utf-8" />
@@ -194,16 +194,16 @@
 
 <script>
   // =============== State & Persistence ===============
-  const DEFAULT_SETTINGS = { 
-    intervalSec: 60, 
-    timeoutMs: 8000, 
+  const DEFAULT_SETTINGS = {
+    intervalSec: 60,
+    timeoutMs: 8000,
     maxInspectorEndpoints: 20,
     sslCheckInterval: 1,
     sslWarningDays: 30,
     alertSound: 'none'
   };
   const $ = (selector) => document.querySelector(selector);
-  
+
   const elements = {
       appContainer: $('#appContainer'),
       login: { modal: $('#loginModal'), username: $('#username'), password: $('#password'), error: $('#loginError') },
@@ -290,7 +290,7 @@
         const daysToExpiry = Math.floor(Math.random() * 60) + 1; // Random between 1-60 days
         const expiryDate = new Date(today);
         expiryDate.setDate(today.getDate() + daysToExpiry);
-        
+
         resolve({
           valid: true,
           daysRemaining: daysToExpiry,
@@ -314,19 +314,19 @@
     try {
       const { rt } = await pingFavicon(item.url, settings.timeoutMs);
       addHistory(item, 'online', rt);
-      
+
       // Check if SSL check is due
       const lastSSLCheck = item.lastSSLCheck || 0;
       const sslCheckDue = now() - lastSSLCheck > settings.sslCheckInterval * DAY_MS;
-      
+
       if (sslCheckDue) {
         const sslResult = await checkSSLCertificate(item.url);
         item.sslInfo = sslResult;
         item.lastSSLCheck = now();
-        
+
         // Check for SSL expiry warning
         if (sslResult.daysRemaining <= settings.sslWarningDays) {
-          addAlert(item.url, 'SSL Expiry Warning', 
+          addAlert(item.url, 'SSL Expiry Warning',
             `SSL certificate for ${item.url} expires in ${sslResult.daysRemaining} days (${sslResult.expiryDate})`,
             'warning');
         }
@@ -361,12 +361,12 @@
       type,
       read: false
     };
-    
+
     alerts.unshift(alert);
     alerts = alerts.slice(0, 100); // Keep only last 100 alerts
     persistAlerts();
     updateAlertBadge();
-    
+
     // Show notification if enabled
     if (settings.alertSound !== 'none') {
       showNotification(alert);
@@ -394,9 +394,9 @@
       </div>
       <button class="notification-close" onclick="this.parentElement.remove()">×</button>
     `;
-    
+
     document.body.appendChild(notification);
-    
+
     // Auto-remove after 5 seconds
     setTimeout(() => {
       if (notification.parentElement) {
@@ -433,10 +433,10 @@
       elements.alertList.innerHTML = '<div style="text-align:center; color: var(--muted); padding: 20px 0;">No alerts yet.</div>';
       return;
     }
-    
+
     elements.alertList.innerHTML = alerts.map(alert => `
       <div class="row">
-        <div class="dot" style="background:var(--${alert.type === 'error' ? 'danger' : alert.type === 'warning' ? 'warn' : 'primary'})"></div>
+        <div class="dot" style="background:${alert.type === 'error' ? 'var(--danger)' : alert.type === 'warning' ? 'var(--warn)' : 'var(--primary)'}"></div>
         <div>
           <div class="url">${escapeHtml(alert.title)}</div>
           <div class="sub">${escapeHtml(alert.message)}</div>
@@ -474,14 +474,14 @@
     const last = item.history?.slice(-1)[0] ?? {};
     const statusClass = last.status === 'online' ? 'success' : last.status === 'offline' ? 'danger' : 'muted';
     const rtText = typeof last.rt === 'number' ? `${Math.round(last.rt)}ms` : '—';
-    
+
     // SSL info
     let sslHtml = '';
     if (item.sslInfo) {
       const sslClass = getSSLChipClass(item.sslInfo.daysRemaining);
       sslHtml = `<div class="chip ${sslClass}" title="SSL expires on ${item.sslInfo.expiryDate}">SSL: ${item.sslInfo.daysRemaining}d</div>`;
     }
-    
+
     return `
       <div class="row" data-url="${escapeHtml(item.url)}">
         <div class="dot" style="background:var(--${statusClass})"></div>
@@ -508,7 +508,7 @@
     const uptime = recentHistory.length ? (recentOnline.length / recentHistory.length * 100).toFixed(1) : '0.0';
     const validRts = recentOnline.map(h => h.rt).filter(rt => rt != null);
     const avgRt = average(validRts);
-    
+
     elements.stats.total.textContent = urls.length;
     elements.stats.online.textContent = onlineCount;
     elements.stats.offline.textContent = urls.length - onlineCount;
@@ -528,18 +528,19 @@
     document.querySelectorAll('.tab-content').forEach(tab => {
       tab.classList.remove('active');
     });
-    
+
     // Remove active class from all tabs
     document.querySelectorAll('.tab').forEach(tab => {
       tab.classList.remove('active');
     });
-    
+
     // Show selected tab
     document.getElementById(`${tabName}Tab`).classList.add('active');
-    
+
     // Activate selected tab button
-    event.target.classList.add('active');
-    
+    // event may be undefined when called programmatically — guard it
+    try { if (event && event.target) event.target.classList.add('active'); } catch (e) {}
+
     // Render specific tab content if needed
     if (tabName === 'alerts') {
       renderAlerts();
@@ -550,7 +551,7 @@
   function exportData() {
     const format = document.querySelector('input[name="exportFormat"]:checked').value;
     let data, mimeType, filename;
-    
+
     if (format === 'csv') {
       // Create CSV content
       const headers = ['URL', 'Status', 'Last Check', 'Response Time', 'SSL Days Remaining', 'SSL Expiry Date'];
@@ -562,7 +563,7 @@
         url.sslInfo?.daysRemaining || 'N/A',
         url.sslInfo?.expiryDate || 'N/A'
       ]);
-      
+
       data = [headers, ...rows].map(row => row.map(cell => `"${cell}"`).join(',')).join('\n');
       mimeType = 'text/csv';
       filename = 'url-monitor-export.csv';
@@ -581,7 +582,7 @@
       mimeType = 'application/json';
       filename = 'url-monitor-export.json';
     }
-    
+
     // Create download link
     const blob = new Blob([data], { type: mimeType });
     const url = URL.createObjectURL(blob);
@@ -592,7 +593,7 @@
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
-    
+
     // Show success message
     const exportResult = document.getElementById('exportResult');
     exportResult.innerHTML = `<div class="success">Data exported successfully as ${filename}</div>`;
@@ -621,7 +622,11 @@
   const deleteURL = (url) => { urls = urls.filter(u => u.url !== url); persistUrls(); render(); };
 
   const showSettings = () => {
-    Object.keys(elements.inputs).forEach(key => elements.inputs[key].value = settings[key] ?? DEFAULT_SETTINGS[key]);
+    Object.keys(elements.inputs).forEach(key => {
+      // map keys to settings property names
+      if (key === 'maxEndpoints') elements.inputs[key].value = settings.maxInspectorEndpoints ?? DEFAULT_SETTINGS.maxInspectorEndpoints;
+      else elements.inputs[key].value = settings[key] ?? DEFAULT_SETTINGS[key];
+    });
     elements.modals.settings.style.display = 'flex';
   };
 
@@ -645,53 +650,149 @@
     elements.modals.inspector.style.display = 'flex';
   }
 
+  // ================= Enhanced Auto Inspector (full) =================
   async function startInspectorScan() {
-    const sourceRadio = $('input[name="inspectorSource"]:checked');
+    const sourceRadio = document.querySelector('input[name="inspectorSource"]:checked');
     if (!sourceRadio) { alert('Please select a source URL to inspect.'); return; }
-    
+
     elements.inspector.resultList.innerHTML = '<i>Inspecting... This may take a few moments.</i>';
     elements.inspector.startBtn.disabled = true;
 
     const sourceUrl = new URL(sourceRadio.value);
     const domainParts = sourceUrl.hostname.split('.');
-    const mainDomain = domainParts.slice(Math.max(domainParts.length - 2, 0)).join('.'); 
+    const mainDomain = domainParts.slice(Math.max(domainParts.length - 2, 0)).join('.');
 
+    // Common candidate subdomains and paths
     const commonSubdomains = ['www', 'api', 'app', 'dev', 'blog', 'shop', 'status', 'mail', 'cdn', 'prod', 'staging', 'docs'];
-    const commonPaths = ['/status', '/blog', '/api/health'];
-    
+    const commonPaths = ['/status', '/blog', '/api/health', '/api', '/v1', '/v2', '/api/v1', '/api/v2', '/graphql', '/health'];
+
+    // Build initial potential list
     let potentialUrls = commonSubdomains.map(sub => `https://${sub}.${mainDomain}`);
     potentialUrls.push(`https://${mainDomain}`);
     potentialUrls = [...potentialUrls, ...commonPaths.map(path => `https://${mainDomain}${path}`)];
-    
-    const urlsToTest = [...new Set(potentialUrls)].map(normalizeUrl).filter(url => url && !urls.some(u => u.url === url));
+
+    // Attempt to fetch the page HTML to extract links (CORS may block; gracefully continue if so)
+    try {
+      const resp = await fetch(sourceUrl.href, { mode: 'cors' });
+      const html = await resp.text();
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(html, 'text/html');
+
+      // Extract <a href>, <link href>, <script src>, and potential API-looking strings
+      const anchors = [...doc.querySelectorAll('a[href]')].map(a => a.getAttribute('href'));
+      const links = [...doc.querySelectorAll('link[href]')].map(a => a.getAttribute('href'));
+      const scripts = [...doc.querySelectorAll('script[src]')].map(a => a.getAttribute('src'));
+
+      const rawCandidates = [...anchors, ...links, ...scripts].filter(Boolean);
+
+      rawCandidates.forEach(link => {
+        try {
+          let fullUrl = null;
+          if (link.startsWith('http')) {
+            fullUrl = link;
+          } else if (link.startsWith('//')) {
+            fullUrl = `${sourceUrl.protocol}${link}`;
+          } else if (link.startsWith('/')) {
+            fullUrl = `${sourceUrl.origin}${link}`;
+          } else if (link.startsWith('api') || link.startsWith('v1') || link.startsWith('v2') || link.includes('/api/')) {
+            // relative API-like path
+            fullUrl = `${sourceUrl.origin}/${link}`.replace(/([^:]\/)\/+/g, '$1');
+          }
+          if (fullUrl && fullUrl.includes(mainDomain)) {
+            potentialUrls.push(fullUrl);
+          }
+        } catch (e) {
+          // ignore malformed links
+        }
+      });
+
+      // Additionally scan inline scripts / text for common API patterns like "/api/..." or "/v1/..."
+      const bodyText = doc.body ? doc.body.innerText || '' : '';
+      const apiMatches = [...new Set((bodyText.match(/\/api\/[a-zA-Z0-9\/\-_\.?&=]*/g) || []).concat(bodyText.match(/\/v[0-9]+\/[a-zA-Z0-9\/\-_\.?&=]*/g) || []))];
+      apiMatches.forEach(p => {
+        try {
+          let candidate = p;
+          if (!candidate.startsWith('http')) candidate = `${sourceUrl.origin}${candidate}`;
+          if (candidate.includes(mainDomain)) potentialUrls.push(candidate);
+        } catch {}
+      });
+
+    } catch (err) {
+      // Could be blocked by CORS or other network errors — we continue with heuristics
+      console.warn('Failed to fetch/parse main page (CORS or network issue):', err && err.message ? err.message : err);
+    }
+
+    // Normalize, dedupe and filter out existing monitored URLs
+    let urlsToTest = [...new Set(potentialUrls.map(u => normalizeUrl(u)).filter(u => u && !urls.some(existing => existing.url === u)))];
+
+    // Prioritize API-looking URLs first (heuristic), then others
+    urlsToTest.sort((a, b) => {
+      const apiRe = /\/api\/|\/v[0-9]+\/|graphql|\/graphql/;
+      const aIsApi = apiRe.test(a) ? 0 : 1;
+      const bIsApi = apiRe.test(b) ? 0 : 1;
+      if (aIsApi !== bIsApi) return aIsApi - bIsApi;
+      return a.length - b.length; // shorter first
+    });
+
+    // Apply configured limit and hard cap of 50
+    const configuredMax = parseInt(settings.maxInspectorEndpoints || DEFAULT_SETTINGS.maxInspectorEndpoints, 10) || DEFAULT_SETTINGS.maxInspectorEndpoints;
+    const hardCap = 50;
+    const maxToCheck = Math.min(urlsToTest.length, configuredMax, hardCap);
+
+    if (maxToCheck === 0) {
+      elements.inspector.resultList.innerHTML = 'No candidate endpoints to inspect (either none found or all are already monitored).';
+      elements.inspector.startBtn.disabled = false;
+      return;
+    }
 
     let foundLinks = [];
-    const maxToCheck = Math.min(urlsToTest.length, settings.maxInspectorEndpoints);
     for (let i = 0; i < maxToCheck; i++) {
-        const url = urlsToTest[i];
-        elements.inspector.resultList.innerHTML = `<i>Inspecting (${i+1}/${maxToCheck}): ${url}</i>`;
+      const url = urlsToTest[i];
+      elements.inspector.resultList.innerHTML = `<i>Inspecting (${i+1}/${maxToCheck}): ${escapeHtml(url)}</i>`;
+      try {
+        // quick ping using favicon (fast, lightweight)
+        await pingFavicon(url, 3000);
+        foundLinks.push(url);
+      } catch (e) {
+        // Some endpoints (APIs) may not serve favicon; attempt a lightweight HEAD fetch if CORS allows
         try {
-            await pingFavicon(url, 3000);
+          const headResp = await fetch(url, { method: 'HEAD', mode: 'cors' });
+          if (headResp && (headResp.ok || headResp.status < 400)) {
             foundLinks.push(url);
-        } catch {}
+          }
+        } catch (e2) {
+          // ignore
+        }
+      }
     }
 
+    // Render results
     if (foundLinks.length === 0) {
-        elements.inspector.resultList.innerHTML = 'No new, live endpoints were found for that domain.';
+      elements.inspector.resultList.innerHTML = 'No new, live endpoints were found for that domain.';
     } else {
-        elements.inspector.resultList.innerHTML = foundLinks.map(link => `
-          <div class="result-row" data-link="${escapeHtml(link)}">
-            <span>${escapeHtml(link)}</span>
-            <button class="btn btn-green" onclick="addInspectedURL(this, '${escapeHtml(link)}')">Add</button>
-          </div>
-        `).join('');
+      // Limit UI list to hardCap too
+      const displayList = foundLinks.slice(0, hardCap);
+      elements.inspector.resultList.innerHTML = displayList.map(link => `
+        <div class="result-row" data-link="${escapeHtml(link)}">
+          <span>${escapeHtml(link)}</span>
+          <button class="btn btn-green" onclick="addInspectedURL(this, '${escapeHtml(link)}')">Add</button>
+        </div>
+      `).join('');
+      if (foundLinks.length > displayList.length) {
+        elements.inspector.resultList.innerHTML += `<div class="small" style="margin-top:8px;">Results truncated to ${hardCap} entries.</div>`;
+      }
     }
+
     elements.inspector.startBtn.disabled = false;
   }
 
   function addInspectedURL(button, url) {
     if (addURL(url, true)) {
         button.textContent = 'Added!';
+        button.disabled = true;
+        button.classList.remove('btn-green');
+    } else {
+        button.textContent = 'Exists';
         button.disabled = true;
         button.classList.remove('btn-green');
     }
@@ -703,7 +804,7 @@
     settings = { ...DEFAULT_SETTINGS, ...loadFromStorage('ump_settings', {}) };
     urls = loadFromStorage('ump_urls', []);
     alerts = loadFromStorage('ump_alerts', []);
-    
+
     // Add event listener for login form submission on Enter key
     elements.login.password.addEventListener('keyup', (event) => {
         if (event.key === 'Enter') handleLogin();
@@ -717,4 +818,3 @@
 </script>
 </body>
 </html>
-[file content end]
