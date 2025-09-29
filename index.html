@@ -1,5 +1,3 @@
-﻿Enhanced2
-
 <!doctype html>
 <html>
 <head>
@@ -73,7 +71,6 @@
 </head>
 <body>
 
-<!-- Login Screen -->
 <div id="loginModal" class="modal-backdrop">
     <div class="modal" style="width: 400px;">
       <header>Login to URL Monitor</header>
@@ -88,7 +85,6 @@
     </div>
 </div>
 
-<!-- Main Application -->
 <div id="appContainer">
     <div class="wrap">
     <h1>🔍 URL Monitor Pro</h1>
@@ -154,7 +150,6 @@
     </div>
 </div>
 
-<!-- Settings Modal -->
 <div id="settingsModal" class="modal-backdrop" onclick="this.style.display='none'">
   <div class="modal" role="dialog" onclick="event.stopPropagation()">
     <header>Settings</header>
@@ -173,7 +168,6 @@
   </div>
 </div>
 
-<!-- Inspector Modal -->
 <div id="inspectorModal" class="modal-backdrop" onclick="this.style.display='none'">
     <div class="modal" role="dialog" onclick="event.stopPropagation()">
       <header>Auto Inspector</header>
@@ -217,19 +211,19 @@
       inspector: { sourceList: $('#inspectorSourceList'), resultList: $('#inspectorResultList'), startBtn: $('#startScanBtn') },
       alertBadge: $('#alertBadge')
   };
-
   let timer = null;
   let sslTimer = null;
-  let settings, urls, alerts; // Will be initialized after login
+  let settings, urls, alerts;
+  // Will be initialized after login
 
   const loadFromStorage = (key, fallback) => { try { return JSON.parse(localStorage.getItem(key)) || fallback; } catch { return fallback; } };
   const persistUrls = () => localStorage.setItem('ump_urls', JSON.stringify(urls));
   const persistSettings = () => localStorage.setItem('ump_settings', JSON.stringify(settings));
   const persistAlerts = () => localStorage.setItem('ump_alerts', JSON.stringify(alerts));
-
+  
   // =============== Authentication ===============
   const CREDENTIALS = { user: 'Faisal', pass: '456456f' };
-
+  
   function handleLogin() {
     const user = elements.login.username.value;
     const pass = elements.login.password.value;
@@ -263,12 +257,11 @@
   const now = () => Date.now();
   const DAY_MS = 24 * 60 * 60 * 1000;
   const prune = (arr, key) => (arr || []).filter(item => (item[key] ?? item) >= now() - DAY_MS);
-
   const addHistory = (item, status, rt) => {
     item.history = prune(item.history, 't');
     item.history.push({ t: now(), status, rt: typeof rt === 'number' ? rt : null });
   };
-
+  
   // =============== Checkers ===============
   function pingFavicon(url, timeoutMs) {
     return new Promise((resolve, reject) => {
@@ -281,25 +274,16 @@
     });
   }
 
-  // SSL Certificate Checker - Fixed Version
+  // SSL Certificate Checker - FIXED VERSION
   async function checkSSLCertificate(url) {
     return new Promise((resolve) => {
       try {
-        const hostname = new URL(url).hostname;
+        // NOTE: A real SSL check is not possible from client-side JavaScript
+        // due to browser security restrictions. This is a simulation.
+        // This version returns a fixed, predictable expiry date for demonstration.
         
-        // For demonstration: Use a consistent expiry date based on the hostname
-        // In a real implementation, you would make an actual SSL certificate check
         const today = new Date();
-        
-        // Create a deterministic expiry date based on hostname hash
-        let hash = 0;
-        for (let i = 0; i < hostname.length; i++) {
-          hash = ((hash << 5) - hash) + hostname.charCodeAt(i);
-          hash = hash & hash; // Convert to 32bit integer
-        }
-        
-        // Generate consistent days between 1-365 based on hostname
-        const daysToExpiry = Math.abs(hash) % 365 + 1;
+        const daysToExpiry = 85; // Using a fixed number to avoid "random" feel.
         const expiryDate = new Date(today);
         expiryDate.setDate(today.getDate() + daysToExpiry);
 
@@ -330,7 +314,6 @@
       // Check if SSL check is due
       const lastSSLCheck = item.lastSSLCheck || 0;
       const sslCheckDue = now() - lastSSLCheck > settings.sslCheckInterval * DAY_MS;
-
       if (sslCheckDue) {
         const sslResult = await checkSSLCertificate(item.url);
         item.sslInfo = sslResult;
@@ -361,7 +344,7 @@
     if (settings.intervalSec > 0) { checkAll(); timer = setInterval(checkAll, settings.intervalSec * 1000); }
   };
   const stopChecking = () => clearInterval(timer);
-
+  
   // =============== Alert System ===============
   function addAlert(url, title, message, type = 'info') {
     const alert = {
@@ -373,12 +356,10 @@
       type,
       read: false
     };
-
     alerts.unshift(alert);
     alerts = alerts.slice(0, 100); // Keep only last 100 alerts
     persistAlerts();
     updateAlertBadge();
-
     // Show notification if enabled
     if (settings.alertSound !== 'none') {
       showNotification(alert);
@@ -406,7 +387,6 @@
       </div>
       <button class="notification-close" onclick="this.parentElement.remove()">×</button>
     `;
-
     document.body.appendChild(notification);
 
     // Auto-remove after 5 seconds
@@ -455,7 +435,7 @@
           <div class="sub">${new Date(alert.timestamp).toLocaleString()}</div>
         </div>
         <div class="right">
-          <div class="chip ${alert.type === 'error' ? 'chip-danger' : alert.type === 'warning' ? 'chip-warning' : ''}">${alert.type}</div>
+           <div class="chip ${alert.type === 'error' ? 'chip-danger' : alert.type === 'warning' ? 'chip-warning' : ''}">${alert.type}</div>
           <button onclick="deleteAlert(${alert.id})">🗑️</button>
         </div>
       </div>
@@ -475,7 +455,7 @@
       const color = !entry ? 'var(--border)' : entry.status === 'online' ? 'var(--success)' : 'var(--danger)';
       return `<rect x="${95-i}" y="0" width="1" height="10" fill="${color}" />`;
   }).join('')}</svg>`;
-
+  
   const getSSLChipClass = (daysRemaining) => {
     if (daysRemaining <= 7) return 'chip-danger';
     if (daysRemaining <= 30) return 'chip-warning';
@@ -486,7 +466,6 @@
     const last = item.history?.slice(-1)[0] ?? {};
     const statusClass = last.status === 'online' ? 'success' : last.status === 'offline' ? 'danger' : 'muted';
     const rtText = typeof last.rt === 'number' ? `${Math.round(last.rt)}ms` : '—';
-
     // SSL info - Fixed display
     let sslHtml = '';
     if (item.sslInfo && item.sslInfo.valid) {
@@ -535,19 +514,17 @@
     elements.urlList.innerHTML = urls.length ? urls.map(renderUrlRow).join('') : '<div style="text-align:center; color: var(--muted); padding: 20px 0;">No URLs added yet.</div>';
     renderStats();
   };
-
+  
   // =============== Tab Management ===============
   function switchTab(tabName) {
     // Hide all tabs
     document.querySelectorAll('.tab-content').forEach(tab => {
       tab.classList.remove('active');
     });
-
     // Remove active class from all tabs
     document.querySelectorAll('.tab').forEach(tab => {
       tab.classList.remove('active');
     });
-
     // Show selected tab
     document.getElementById(`${tabName}Tab`).classList.add('active');
 
@@ -577,7 +554,6 @@
         url.sslInfo?.daysRemaining || 'N/A',
         url.sslInfo?.expiryDate || 'N/A'
       ]);
-
       data = [headers, ...rows].map(row => row.map(cell => `"${cell}"`).join(',')).join('\n');
       mimeType = 'text/csv';
       filename = 'url-monitor-export.csv';
@@ -607,7 +583,6 @@
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
-
     // Show success message
     const exportResult = document.getElementById('exportResult');
     exportResult.innerHTML = `<div class="success">Data exported successfully as ${filename}</div>`;
@@ -671,15 +646,12 @@
 
     elements.inspector.resultList.innerHTML = '<i>Inspecting... This may take a few moments.</i>';
     elements.inspector.startBtn.disabled = true;
-
     const sourceUrl = new URL(sourceRadio.value);
     const domainParts = sourceUrl.hostname.split('.');
     const mainDomain = domainParts.slice(Math.max(domainParts.length - 2, 0)).join('.');
-
     // Common candidate subdomains and paths
     const commonSubdomains = ['www', 'api', 'app', 'dev', 'blog', 'shop', 'status', 'mail', 'cdn', 'prod', 'staging', 'docs'];
     const commonPaths = ['/status', '/blog', '/api/health', '/api', '/v1', '/v2', '/api/v1', '/api/v2', '/graphql', '/health'];
-
     // Build initial potential list
     let potentialUrls = commonSubdomains.map(sub => `https://${sub}.${mainDomain}`);
     potentialUrls.push(`https://${mainDomain}`);
@@ -691,14 +663,12 @@
       const html = await resp.text();
       const parser = new DOMParser();
       const doc = parser.parseFromString(html, 'text/html');
-
       // Extract <a href>, <link href>, <script src>, and potential API-looking strings
       const anchors = [...doc.querySelectorAll('a[href]')].map(a => a.getAttribute('href'));
       const links = [...doc.querySelectorAll('link[href]')].map(a => a.getAttribute('href'));
       const scripts = [...doc.querySelectorAll('script[src]')].map(a => a.getAttribute('src'));
 
       const rawCandidates = [...anchors, ...links, ...scripts].filter(Boolean);
-
       rawCandidates.forEach(link => {
         try {
           let fullUrl = null;
@@ -719,7 +689,6 @@
           // ignore malformed links
         }
       });
-
       // Additionally scan inline scripts / text for common API patterns like "/api/..." or "/v1/..."
       const bodyText = doc.body ? doc.body.innerText || '' : '';
       const apiMatches = [...new Set((bodyText.match(/\/api\/[a-zA-Z0-9\/\-_\.?&=]*/g) || []).concat(bodyText.match(/\/v[0-9]+\/[a-zA-Z0-9\/\-_\.?&=]*/g) || []))];
@@ -730,7 +699,6 @@
           if (candidate.includes(mainDomain)) potentialUrls.push(candidate);
         } catch {}
       });
-
     } catch (err) {
       // Could be blocked by CORS or other network errors — we continue with heuristics
       console.warn('Failed to fetch/parse main page (CORS or network issue):', err && err.message ? err.message : err);
@@ -738,7 +706,6 @@
 
     // Normalize, dedupe and filter out existing monitored URLs
     let urlsToTest = [...new Set(potentialUrls.map(u => normalizeUrl(u)).filter(u => u && !urls.some(existing => existing.url === u)))];
-
     // Prioritize API-looking URLs first (heuristic), then others
     urlsToTest.sort((a, b) => {
       const apiRe = /\/api\/|\/v[0-9]+\/|graphql|\/graphql/;
@@ -747,12 +714,10 @@
       if (aIsApi !== bIsApi) return aIsApi - bIsApi;
       return a.length - b.length; // shorter first
     });
-
     // Apply configured limit and hard cap of 50
     const configuredMax = parseInt(settings.maxInspectorEndpoints || DEFAULT_SETTINGS.maxInspectorEndpoints, 10) || DEFAULT_SETTINGS.maxInspectorEndpoints;
     const hardCap = 50;
     const maxToCheck = Math.min(urlsToTest.length, configuredMax, hardCap);
-
     if (maxToCheck === 0) {
       elements.inspector.resultList.innerHTML = 'No candidate endpoints to inspect (either none found or all are already monitored).';
       elements.inspector.startBtn.disabled = false;
@@ -768,7 +733,8 @@
         await pingFavicon(url, 3000);
         foundLinks.push(url);
       } catch (e) {
-        // Some endpoints (APIs) may not serve favicon; attempt a lightweight HEAD fetch if CORS allows
+        // Some endpoints (APIs) may not serve favicon;
+        // attempt a lightweight HEAD fetch if CORS allows
         try {
           const headResp = await fetch(url, { method: 'HEAD', mode: 'cors' });
           if (headResp && (headResp.ok || headResp.status < 400)) {
@@ -823,7 +789,6 @@
     elements.login.password.addEventListener('keyup', (event) => {
         if (event.key === 'Enter') handleLogin();
     });
-
     urls.forEach(u => u.history = prune(u.history, 't'));
     render();
     updateAlertBadge();
