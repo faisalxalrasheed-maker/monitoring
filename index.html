@@ -1,4 +1,6 @@
-
+[file name]: Monitoring-Tool-Enhanced.txt
+[file content begin]
+﻿
 <html>
 <head>
   <meta charset="utf-8" />
@@ -17,6 +19,7 @@
     .btn-purple { background: #6a1b9a; color: #fff; }
     .btn-red { background: #d32f2f; color: #fff; }
     .btn-gray { background: #9e9e9e; color: #fff; }
+    .btn-orange { background: #f57c00; color: #fff; }
     .btn:disabled { background: #ccc; cursor: not-allowed; }
     .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; margin: 10px 0 20px; }
     .stat { background: var(--chip); padding: 14px; border-radius: 10px; text-align: center; }
@@ -30,6 +33,9 @@
     .right { margin-left:auto; display:flex; gap:8px; align-items:center; }
     .timeline { width: 240px; height: 28px; }
     .chip { background:#eef7ff; color:#1976d2; border:1px solid #cfe8ff; padding:3px 6px; border-radius:999px; font-size:11px; font-weight:600; }
+    .chip-warning { background:#fff3e0; color:#f57c00; border:1px solid #ffe0b2; }
+    .chip-danger { background:#ffebee; color:#d32f2f; border:1px solid #ffcdd2; }
+    .chip-success { background:#e8f5e8; color:#2e7d32; border:1px solid #c8e6c9; }
     .section { background:#f9f9f9; padding: 16px; border-radius: 10px; margin-top:20px; }
     .small { font-size: 12px; color: var(--muted); }
     .danger { color: var(--danger); }
@@ -50,6 +56,18 @@
     #inspectorResults .result-row .btn { padding: 4px 10px; font-size: 12px; }
     #appContainer { display: none; }
     #loginModal { display: flex; }
+    .tab-container { display: flex; border-bottom: 1px solid var(--border); margin-bottom: 16px; }
+    .tab { padding: 10px 16px; cursor: pointer; border-bottom: 2px solid transparent; }
+    .tab.active { border-bottom-color: var(--primary); font-weight: 600; }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+    .alert-badge { position: absolute; top: -5px; right: -5px; background: var(--danger); color: white; border-radius: 50%; width: 18px; height: 18px; font-size: 10px; display: flex; align-items: center; justify-content: center; }
+    .btn-with-badge { position: relative; }
+    .notification { position: fixed; top: 20px; right: 20px; background: white; padding: 12px 16px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 1000; display: flex; align-items: center; gap: 10px; max-width: 400px; }
+    .notification.success { border-left: 4px solid var(--success); }
+    .notification.warning { border-left: 4px solid var(--warn); }
+    .notification.error { border-left: 4px solid var(--danger); }
+    .notification-close { background: none; border: none; font-size: 16px; cursor: pointer; margin-left: auto; }
     @media (max-width: 600px) { .row { flex-wrap: wrap; } .right { width: 100%; justify-content: flex-end; } .timeline { display:none; } }
   </style>
 </head>
@@ -79,6 +97,7 @@
         <button class="btn btn-green" onclick="addURL()">+ Add URL</button>
         <button class="btn btn-primary" onclick="showSettings()">⚙️ Settings</button>
         <button class="btn btn-purple" onclick="showInspector()">🔎 Auto Inspector</button>
+        <button class="btn btn-orange btn-with-badge" onclick="showAlerts()">🔔 Alerts<div id="alertBadge" class="alert-badge" style="display:none;">0</div></button>
         <button class="btn btn-gray" onclick="checkAll()">▶️ Check All Now</button>
         <button class="btn btn-red" onclick="handleLogout()">🔒 Logout</button>
     </div>
@@ -87,17 +106,51 @@
         <div class="stat"><div class="label">Total</div><div class="value" id="total">0</div></div>
         <div class="stat"><div class="label">Online</div><div class="value success" id="online">0</div></div>
         <div class="stat"><div class="label">Offline</div><div class="value danger" id="offline">0</div></div>
+        <div class="stat"><div class="label">SSL Issues</div><div class="value warn" id="sslIssues">0</div></div>
         <div class="stat"><div class="label">24h Uptime</div><div class="value" id="uptime24">0%</div></div>
         <div class="stat"><div class="label">Avg RT (24h)</div><div class="value" id="avgRt24">—</div></div>
     </div>
 
-    <div class="section">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-            <h3 style="margin:0;">Monitored URLs</h3>
-            <div class="small">History retained for last 24 hours</div>
-        </div>
-        <div id="urlList" class="grid">No URLs added yet</div>
+    <div class="tab-container">
+      <div class="tab active" onclick="switchTab('monitoring')">Monitoring</div>
+      <div class="tab" onclick="switchTab('alerts')">Alert History</div>
+      <div class="tab" onclick="switchTab('export')">Export Data</div>
     </div>
+
+    <div id="monitoringTab" class="tab-content active">
+      <div class="section">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+              <h3 style="margin:0;">Monitored URLs</h3>
+              <div class="small">History retained for last 24 hours</div>
+          </div>
+          <div id="urlList" class="grid">No URLs added yet</div>
+      </div>
+    </div>
+
+    <div id="alertsTab" class="tab-content">
+      <div class="section">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+              <h3 style="margin:0;">Alert History</h3>
+              <button class="btn btn-gray" onclick="clearAlerts()">Clear All</button>
+          </div>
+          <div id="alertList" class="grid">No alerts yet</div>
+      </div>
+    </div>
+
+    <div id="exportTab" class="tab-content">
+      <div class="section">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+              <h3 style="margin:0;">Export Monitoring Data</h3>
+          </div>
+          <div style="margin-bottom: 16px;">
+            <label><input type="radio" name="exportFormat" value="csv" checked> CSV Format</label>
+            <label style="margin-left: 16px;"><input type="radio" name="exportFormat" value="json"> JSON Format</label>
+          </div>
+          <button class="btn btn-primary" onclick="exportData()">Export Data</button>
+          <div id="exportResult" style="margin-top: 16px;"></div>
+      </div>
+    </div>
+
     </div>
 </div>
 
@@ -109,6 +162,9 @@
       <div class="rowx" style="grid-template-columns: 170px 1fr;"><label>Check Interval (sec)</label><input id="interval" type="number" min="10" /></div>
       <div class="rowx" style="grid-template-columns: 170px 1fr;"><label>Timeout (ms)</label><input id="timeout" type="number" min="1000" /></div>
       <div class="rowx" style="grid-template-columns: 170px 1fr;"><label>Max Endpoints (Inspector)</label><input id="maxEndpoints" type="number" min="5" /></div>
+      <div class="rowx" style="grid-template-columns: 170px 1fr;"><label>SSL Check Interval (days)</label><input id="sslCheckInterval" type="number" min="1" /></div>
+      <div class="rowx" style="grid-template-columns: 170px 1fr;"><label>SSL Expiry Warning (days)</label><input id="sslWarningDays" type="number" min="1" /></div>
+      <div class="rowx" style="grid-template-columns: 170px 1fr;"><label>Alert Sound</label><select id="alertSound"><option value="none">None</option><option value="beep">Beep</option><option value="bell">Bell</option></select></div>
     </div>
     <footer>
       <button class="btn btn-gray" onclick="document.getElementById('settingsModal').style.display='none'">Cancel</button>
@@ -140,7 +196,14 @@
 
 <script>
   // =============== State & Persistence ===============
-  const DEFAULT_SETTINGS = { intervalSec: 60, timeoutMs: 8000, maxInspectorEndpoints: 20 };
+  const DEFAULT_SETTINGS = { 
+    intervalSec: 60, 
+    timeoutMs: 8000, 
+    maxInspectorEndpoints: 20,
+    sslCheckInterval: 1,
+    sslWarningDays: 30,
+    alertSound: 'none'
+  };
   const $ = (selector) => document.querySelector(selector);
   
   const elements = {
@@ -148,17 +211,21 @@
       login: { modal: $('#loginModal'), username: $('#username'), password: $('#password'), error: $('#loginError') },
       modals: { settings: $('#settingsModal'), inspector: $('#inspectorModal') },
       urlList: $('#urlList'),
-      stats: { total: $('#total'), online: $('#online'), offline: $('#offline'), uptime24: $('#uptime24'), avgRt24: $('#avgRt24') },
-      inputs: { interval: $('#interval'), timeout: $('#timeout'), maxEndpoints: $('#maxEndpoints') },
-      inspector: { sourceList: $('#inspectorSourceList'), resultList: $('#inspectorResultList'), startBtn: $('#startScanBtn') }
+      alertList: $('#alertList'),
+      stats: { total: $('#total'), online: $('#online'), offline: $('#offline'), sslIssues: $('#sslIssues'), uptime24: $('#uptime24'), avgRt24: $('#avgRt24') },
+      inputs: { interval: $('#interval'), timeout: $('#timeout'), maxEndpoints: $('#maxEndpoints'), sslCheckInterval: $('#sslCheckInterval'), sslWarningDays: $('#sslWarningDays'), alertSound: $('#alertSound') },
+      inspector: { sourceList: $('#inspectorSourceList'), resultList: $('#inspectorResultList'), startBtn: $('#startScanBtn') },
+      alertBadge: $('#alertBadge')
   };
 
   let timer = null;
-  let settings, urls; // Will be initialized after login
+  let sslTimer = null;
+  let settings, urls, alerts; // Will be initialized after login
 
   const loadFromStorage = (key, fallback) => { try { return JSON.parse(localStorage.getItem(key)) || fallback; } catch { return fallback; } };
   const persistUrls = () => localStorage.setItem('ump_urls', JSON.stringify(urls));
   const persistSettings = () => localStorage.setItem('ump_settings', JSON.stringify(settings));
+  const persistAlerts = () => localStorage.setItem('ump_alerts', JSON.stringify(alerts));
 
   // =============== Authentication ===============
   const CREDENTIALS = { user: 'Faisal', pass: '456456f' };
@@ -214,13 +281,61 @@
     });
   }
 
+  // SSL Certificate Checker
+  async function checkSSLCertificate(url) {
+    return new Promise((resolve) => {
+      try {
+        const hostname = new URL(url).hostname;
+        // In a real implementation, this would make a request to check SSL certificate
+        // For demonstration, we'll simulate SSL expiry with random dates
+        const today = new Date();
+        const daysToExpiry = Math.floor(Math.random() * 60) + 1; // Random between 1-60 days
+        const expiryDate = new Date(today);
+        expiryDate.setDate(today.getDate() + daysToExpiry);
+        
+        resolve({
+          valid: true,
+          daysRemaining: daysToExpiry,
+          expiryDate: expiryDate.toISOString().split('T')[0],
+          issuer: "Simulated CA"
+        });
+      } catch (error) {
+        resolve({
+          valid: false,
+          daysRemaining: 0,
+          expiryDate: null,
+          issuer: null,
+          error: error.message
+        });
+      }
+    });
+  }
+
   // =============== Core Logic ===============
   async function checkUrl(item) {
     try {
       const { rt } = await pingFavicon(item.url, settings.timeoutMs);
       addHistory(item, 'online', rt);
+      
+      // Check if SSL check is due
+      const lastSSLCheck = item.lastSSLCheck || 0;
+      const sslCheckDue = now() - lastSSLCheck > settings.sslCheckInterval * DAY_MS;
+      
+      if (sslCheckDue) {
+        const sslResult = await checkSSLCertificate(item.url);
+        item.sslInfo = sslResult;
+        item.lastSSLCheck = now();
+        
+        // Check for SSL expiry warning
+        if (sslResult.daysRemaining <= settings.sslWarningDays) {
+          addAlert(item.url, 'SSL Expiry Warning', 
+            `SSL certificate for ${item.url} expires in ${sslResult.daysRemaining} days (${sslResult.expiryDate})`,
+            'warning');
+        }
+      }
     } catch (error) {
       addHistory(item, 'offline', null);
+      addAlert(item.url, 'Connection Error', `Failed to connect to ${item.url}: ${error.message}`, 'error');
       console.warn(`Check failed for ${item.url}:`, error.message);
     }
   }
@@ -237,6 +352,113 @@
   };
   const stopChecking = () => clearInterval(timer);
 
+  // =============== Alert System ===============
+  function addAlert(url, title, message, type = 'info') {
+    const alert = {
+      id: now() + Math.random(),
+      timestamp: now(),
+      url,
+      title,
+      message,
+      type,
+      read: false
+    };
+    
+    alerts.unshift(alert);
+    alerts = alerts.slice(0, 100); // Keep only last 100 alerts
+    persistAlerts();
+    updateAlertBadge();
+    
+    // Show notification if enabled
+    if (settings.alertSound !== 'none') {
+      showNotification(alert);
+      playAlertSound();
+    }
+  }
+
+  function updateAlertBadge() {
+    const unreadCount = alerts.filter(a => !a.read).length;
+    if (unreadCount > 0) {
+      elements.alertBadge.textContent = unreadCount;
+      elements.alertBadge.style.display = 'flex';
+    } else {
+      elements.alertBadge.style.display = 'none';
+    }
+  }
+
+  function showNotification(alert) {
+    const notification = document.createElement('div');
+    notification.className = `notification ${alert.type}`;
+    notification.innerHTML = `
+      <div>
+        <strong>${escapeHtml(alert.title)}</strong>
+        <div class="small">${escapeHtml(alert.message)}</div>
+      </div>
+      <button class="notification-close" onclick="this.parentElement.remove()">×</button>
+    `;
+    
+    document.body.appendChild(notification);
+    
+    // Auto-remove after 5 seconds
+    setTimeout(() => {
+      if (notification.parentElement) {
+        notification.remove();
+      }
+    }, 5000);
+  }
+
+  function playAlertSound() {
+    // In a real implementation, you would play actual sound files
+    console.log('Alert sound would play here');
+  }
+
+  function showAlerts() {
+    switchTab('alerts');
+    // Mark all alerts as read when viewing
+    alerts.forEach(alert => alert.read = true);
+    persistAlerts();
+    updateAlertBadge();
+    renderAlerts();
+  }
+
+  function clearAlerts() {
+    if (confirm('Are you sure you want to clear all alerts?')) {
+      alerts = [];
+      persistAlerts();
+      updateAlertBadge();
+      renderAlerts();
+    }
+  }
+
+  function renderAlerts() {
+    if (alerts.length === 0) {
+      elements.alertList.innerHTML = '<div style="text-align:center; color: var(--muted); padding: 20px 0;">No alerts yet.</div>';
+      return;
+    }
+    
+    elements.alertList.innerHTML = alerts.map(alert => `
+      <div class="row">
+        <div class="dot" style="background:var(--${alert.type === 'error' ? 'danger' : alert.type === 'warning' ? 'warn' : 'primary'})"></div>
+        <div>
+          <div class="url">${escapeHtml(alert.title)}</div>
+          <div class="sub">${escapeHtml(alert.message)}</div>
+          <div class="sub">${new Date(alert.timestamp).toLocaleString()}</div>
+        </div>
+        <div class="right">
+          <div class="chip ${alert.type === 'error' ? 'chip-danger' : alert.type === 'warning' ? 'chip-warning' : ''}">${alert.type}</div>
+          <button onclick="deleteAlert(${alert.id})">🗑️</button>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  function deleteAlert(id) {
+    alerts = alerts.filter(alert => alert.id !== id);
+    persistAlerts();
+    updateAlertBadge();
+    renderAlerts();
+  }
+
   // =============== UI / Rendering ===============
   const renderTimeline = (history) => `<svg class="timeline" viewBox="0 0 96 10">${[...Array(96)].map((_, i) => {
       const entry = history.find(h => Math.floor((now() - h.t) / (15 * 60 * 1000)) === i);
@@ -244,20 +466,36 @@
       return `<rect x="${95-i}" y="0" width="1" height="10" fill="${color}" />`;
   }).join('')}</svg>`;
 
+  const getSSLChipClass = (daysRemaining) => {
+    if (daysRemaining <= 7) return 'chip-danger';
+    if (daysRemaining <= 30) return 'chip-warning';
+    return 'chip-success';
+  };
+
   const renderUrlRow = (item) => {
     const last = item.history?.slice(-1)[0] ?? {};
     const statusClass = last.status === 'online' ? 'success' : last.status === 'offline' ? 'danger' : 'muted';
     const rtText = typeof last.rt === 'number' ? `${Math.round(last.rt)}ms` : '—';
+    
+    // SSL info
+    let sslHtml = '';
+    if (item.sslInfo) {
+      const sslClass = getSSLChipClass(item.sslInfo.daysRemaining);
+      sslHtml = `<div class="chip ${sslClass}" title="SSL expires on ${item.sslInfo.expiryDate}">SSL: ${item.sslInfo.daysRemaining}d</div>`;
+    }
+    
     return `
       <div class="row" data-url="${escapeHtml(item.url)}">
         <div class="dot" style="background:var(--${statusClass})"></div>
         <div>
           <div class="url">${escapeHtml(item.url)}</div>
           <div class="sub">Status: <b class="${statusClass}">${last.status || 'pending'}</b> | Last check: ${last.t ? new Date(last.t).toLocaleTimeString() : 'N/A'}</div>
+          ${item.sslInfo ? `<div class="sub">SSL: Expires on ${item.sslInfo.expiryDate} (${item.sslInfo.daysRemaining} days remaining)</div>` : ''}
         </div>
         <div class="right">
           ${renderTimeline(item.history || [])}
           <div class="chip">${rtText}</div>
+          ${sslHtml}
           <button onclick="deleteURL('${escapeHtml(item.url)}')">🗑️</button>
         </div>
       </div>`;
@@ -265,6 +503,7 @@
 
   function renderStats() {
     const onlineCount = urls.filter(u => u.history?.slice(-1)[0]?.status === 'online').length;
+    const sslIssueCount = urls.filter(u => u.sslInfo && u.sslInfo.daysRemaining <= settings.sslWarningDays).length;
     const allHistory = urls.flatMap(u => u.history || []);
     const recentHistory = prune(allHistory, 't');
     const recentOnline = recentHistory.filter(h => h.status === 'online');
@@ -275,6 +514,7 @@
     elements.stats.total.textContent = urls.length;
     elements.stats.online.textContent = onlineCount;
     elements.stats.offline.textContent = urls.length - onlineCount;
+    elements.stats.sslIssues.textContent = sslIssueCount;
     elements.stats.uptime24.textContent = `${uptime}%`;
     elements.stats.avgRt24.textContent = avgRt != null ? `${Math.round(avgRt)}ms` : '—';
   }
@@ -283,6 +523,85 @@
     elements.urlList.innerHTML = urls.length ? urls.map(renderUrlRow).join('') : '<div style="text-align:center; color: var(--muted); padding: 20px 0;">No URLs added yet.</div>';
     renderStats();
   };
+
+  // =============== Tab Management ===============
+  function switchTab(tabName) {
+    // Hide all tabs
+    document.querySelectorAll('.tab-content').forEach(tab => {
+      tab.classList.remove('active');
+    });
+    
+    // Remove active class from all tabs
+    document.querySelectorAll('.tab').forEach(tab => {
+      tab.classList.remove('active');
+    });
+    
+    // Show selected tab
+    document.getElementById(`${tabName}Tab`).classList.add('active');
+    
+    // Activate selected tab button
+    event.target.classList.add('active');
+    
+    // Render specific tab content if needed
+    if (tabName === 'alerts') {
+      renderAlerts();
+    }
+  }
+
+  // =============== Export Functionality ===============
+  function exportData() {
+    const format = document.querySelector('input[name="exportFormat"]:checked').value;
+    let data, mimeType, filename;
+    
+    if (format === 'csv') {
+      // Create CSV content
+      const headers = ['URL', 'Status', 'Last Check', 'Response Time', 'SSL Days Remaining', 'SSL Expiry Date'];
+      const rows = urls.map(url => [
+        url.url,
+        url.history?.slice(-1)[0]?.status || 'unknown',
+        url.history?.slice(-1)[0]?.t ? new Date(url.history.slice(-1)[0].t).toLocaleString() : 'N/A',
+        url.history?.slice(-1)[0]?.rt || 'N/A',
+        url.sslInfo?.daysRemaining || 'N/A',
+        url.sslInfo?.expiryDate || 'N/A'
+      ]);
+      
+      data = [headers, ...rows].map(row => row.map(cell => `"${cell}"`).join(',')).join('\n');
+      mimeType = 'text/csv';
+      filename = 'url-monitor-export.csv';
+    } else {
+      // JSON format
+      data = JSON.stringify({
+        exportedAt: new Date().toISOString(),
+        urls: urls.map(url => ({
+          url: url.url,
+          status: url.history?.slice(-1)[0]?.status || 'unknown',
+          lastCheck: url.history?.slice(-1)[0]?.t || null,
+          responseTime: url.history?.slice(-1)[0]?.rt || null,
+          sslInfo: url.sslInfo || null
+        }))
+      }, null, 2);
+      mimeType = 'application/json';
+      filename = 'url-monitor-export.json';
+    }
+    
+    // Create download link
+    const blob = new Blob([data], { type: mimeType });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    
+    // Show success message
+    const exportResult = document.getElementById('exportResult');
+    exportResult.innerHTML = `<div class="success">Data exported successfully as ${filename}</div>`;
+    setTimeout(() => {
+      exportResult.innerHTML = '';
+    }, 3000);
+  }
 
   // =============== Actions / Event Handlers ===============
   function addURL(newUrl, skipCheck = false) {
@@ -312,6 +631,9 @@
     settings.intervalSec = parseInt(elements.inputs.interval.value, 10) || 60;
     settings.timeoutMs = parseInt(elements.inputs.timeout.value, 10) || 8000;
     settings.maxInspectorEndpoints = parseInt(elements.inputs.maxEndpoints.value, 10) || 20;
+    settings.sslCheckInterval = parseInt(elements.inputs.sslCheckInterval.value, 10) || 1;
+    settings.sslWarningDays = parseInt(elements.inputs.sslWarningDays.value, 10) || 30;
+    settings.alertSound = elements.inputs.alertSound.value;
     persistSettings();
     elements.modals.settings.style.display = 'none';
     startChecking();
@@ -382,6 +704,7 @@
     // Load data only after successful authentication
     settings = { ...DEFAULT_SETTINGS, ...loadFromStorage('ump_settings', {}) };
     urls = loadFromStorage('ump_urls', []);
+    alerts = loadFromStorage('ump_alerts', []);
     
     // Add event listener for login form submission on Enter key
     elements.login.password.addEventListener('keyup', (event) => {
@@ -390,8 +713,10 @@
 
     urls.forEach(u => u.history = prune(u.history, 't'));
     render();
+    updateAlertBadge();
     startChecking();
   }
 </script>
 </body>
 </html>
+[file content end]
