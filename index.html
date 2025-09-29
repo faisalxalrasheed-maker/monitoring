@@ -1,4 +1,4 @@
-﻿
+
 <html>
 <head>
   <meta charset="utf-8" />
@@ -71,6 +71,7 @@
 </head>
 <body>
 
+<!-- Login Screen -->
 <div id="loginModal" class="modal-backdrop">
     <div class="modal" style="width: 400px;">
       <header>Login to URL Monitor</header>
@@ -85,6 +86,7 @@
     </div>
 </div>
 
+<!-- Main Application -->
 <div id="appContainer">
     <div class="wrap">
     <h1>🔍 URL Monitor Pro</h1>
@@ -150,6 +152,7 @@
     </div>
 </div>
 
+<!-- Settings Modal -->
 <div id="settingsModal" class="modal-backdrop" onclick="this.style.display='none'">
   <div class="modal" role="dialog" onclick="event.stopPropagation()">
     <header>Settings</header>
@@ -168,6 +171,7 @@
   </div>
 </div>
 
+<!-- Inspector Modal -->
 <div id="inspectorModal" class="modal-backdrop" onclick="this.style.display='none'">
     <div class="modal" role="dialog" onclick="event.stopPropagation()">
       <header>Auto Inspector</header>
@@ -193,7 +197,7 @@
   const DEFAULT_SETTINGS = { 
     intervalSec: 60, 
     timeoutMs: 8000, 
-    maxInspectorEndpoints: 50,
+    maxInspectorEndpoints: 20,
     sslCheckInterval: 1,
     sslWarningDays: 30,
     alertSound: 'none'
@@ -211,19 +215,19 @@
       inspector: { sourceList: $('#inspectorSourceList'), resultList: $('#inspectorResultList'), startBtn: $('#startScanBtn') },
       alertBadge: $('#alertBadge')
   };
+
   let timer = null;
   let sslTimer = null;
-  let settings, urls, alerts;
-  // Will be initialized after login
+  let settings, urls, alerts; // Will be initialized after login
 
   const loadFromStorage = (key, fallback) => { try { return JSON.parse(localStorage.getItem(key)) || fallback; } catch { return fallback; } };
   const persistUrls = () => localStorage.setItem('ump_urls', JSON.stringify(urls));
   const persistSettings = () => localStorage.setItem('ump_settings', JSON.stringify(settings));
   const persistAlerts = () => localStorage.setItem('ump_alerts', JSON.stringify(alerts));
-  
+
   // =============== Authentication ===============
   const CREDENTIALS = { user: 'Faisal', pass: '456456f' };
-  
+
   function handleLogin() {
     const user = elements.login.username.value;
     const pass = elements.login.password.value;
@@ -257,12 +261,12 @@
   const now = () => Date.now();
   const DAY_MS = 24 * 60 * 60 * 1000;
   const prune = (arr, key) => (arr || []).filter(item => (item[key] ?? item) >= now() - DAY_MS);
-  
+
   const addHistory = (item, status, rt) => {
     item.history = prune(item.history, 't');
     item.history.push({ t: now(), status, rt: typeof rt === 'number' ? rt : null });
   };
-  
+
   // =============== Checkers ===============
   function pingFavicon(url, timeoutMs) {
     return new Promise((resolve, reject) => {
@@ -314,6 +318,7 @@
       // Check if SSL check is due
       const lastSSLCheck = item.lastSSLCheck || 0;
       const sslCheckDue = now() - lastSSLCheck > settings.sslCheckInterval * DAY_MS;
+      
       if (sslCheckDue) {
         const sslResult = await checkSSLCertificate(item.url);
         item.sslInfo = sslResult;
@@ -344,7 +349,7 @@
     if (settings.intervalSec > 0) { checkAll(); timer = setInterval(checkAll, settings.intervalSec * 1000); }
   };
   const stopChecking = () => clearInterval(timer);
-  
+
   // =============== Alert System ===============
   function addAlert(url, title, message, type = 'info') {
     const alert = {
@@ -356,6 +361,7 @@
       type,
       read: false
     };
+    
     alerts.unshift(alert);
     alerts = alerts.slice(0, 100); // Keep only last 100 alerts
     persistAlerts();
@@ -388,6 +394,7 @@
       </div>
       <button class="notification-close" onclick="this.parentElement.remove()">×</button>
     `;
+    
     document.body.appendChild(notification);
     
     // Auto-remove after 5 seconds
@@ -456,7 +463,7 @@
       const color = !entry ? 'var(--border)' : entry.status === 'online' ? 'var(--success)' : 'var(--danger)';
       return `<rect x="${95-i}" y="0" width="1" height="10" fill="${color}" />`;
   }).join('')}</svg>`;
-  
+
   const getSSLChipClass = (daysRemaining) => {
     if (daysRemaining <= 7) return 'chip-danger';
     if (daysRemaining <= 30) return 'chip-warning';
@@ -514,13 +521,26 @@
     elements.urlList.innerHTML = urls.length ? urls.map(renderUrlRow).join('') : '<div style="text-align:center; color: var(--muted); padding: 20px 0;">No URLs added yet.</div>';
     renderStats();
   };
-  
+
   // =============== Tab Management ===============
   function switchTab(tabName) {
-    document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
-    document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+    // Hide all tabs
+    document.querySelectorAll('.tab-content').forEach(tab => {
+      tab.classList.remove('active');
+    });
+    
+    // Remove active class from all tabs
+    document.querySelectorAll('.tab').forEach(tab => {
+      tab.classList.remove('active');
+    });
+    
+    // Show selected tab
     document.getElementById(`${tabName}Tab`).classList.add('active');
+    
+    // Activate selected tab button
     event.target.classList.add('active');
+    
+    // Render specific tab content if needed
     if (tabName === 'alerts') {
       renderAlerts();
     }
@@ -532,6 +552,7 @@
     let data, mimeType, filename;
     
     if (format === 'csv') {
+      // Create CSV content
       const headers = ['URL', 'Status', 'Last Check', 'Response Time', 'SSL Days Remaining', 'SSL Expiry Date'];
       const rows = urls.map(url => [
         url.url,
@@ -541,10 +562,12 @@
         url.sslInfo?.daysRemaining || 'N/A',
         url.sslInfo?.expiryDate || 'N/A'
       ]);
+      
       data = [headers, ...rows].map(row => row.map(cell => `"${cell}"`).join(',')).join('\n');
       mimeType = 'text/csv';
       filename = 'url-monitor-export.csv';
     } else {
+      // JSON format
       data = JSON.stringify({
         exportedAt: new Date().toISOString(),
         urls: urls.map(url => ({
@@ -559,6 +582,7 @@
       filename = 'url-monitor-export.json';
     }
     
+    // Create download link
     const blob = new Blob([data], { type: mimeType });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -569,6 +593,7 @@
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
     
+    // Show success message
     const exportResult = document.getElementById('exportResult');
     exportResult.innerHTML = `<div class="success">Data exported successfully as ${filename}</div>`;
     setTimeout(() => {
@@ -603,7 +628,7 @@
   function saveSettings() {
     settings.intervalSec = parseInt(elements.inputs.interval.value, 10) || 60;
     settings.timeoutMs = parseInt(elements.inputs.timeout.value, 10) || 8000;
-    settings.maxInspectorEndpoints = parseInt(elements.inputs.maxEndpoints.value, 10) || 50;
+    settings.maxInspectorEndpoints = parseInt(elements.inputs.maxEndpoints.value, 10) || 20;
     settings.sslCheckInterval = parseInt(elements.inputs.sslCheckInterval.value, 10) || 1;
     settings.sslWarningDays = parseInt(elements.inputs.sslWarningDays.value, 10) || 30;
     settings.alertSound = elements.inputs.alertSound.value;
@@ -620,136 +645,48 @@
     elements.modals.inspector.style.display = 'flex';
   }
 
-  /**
-   * Discovers potential endpoints by fetching a URL's content and parsing it for links.
-   *
-   * IMPORTANT NOTE ON CORS (Cross-Origin Resource Sharing):
-   * This function simulates fetching external web content. In a real-world web application,
-   * browsers block such requests for security reasons (CORS policy). To make this work
-   * reliably, this tool would need a server-side component (a proxy) that fetches the
-   * content on behalf of the user's browser.
-   *
-   * For this demonstration, we will SIMULATE the fetch by returning a hardcoded HTML string.
-   * This showcases the parsing and discovery logic that would run on the fetched content.
-   */
-  async function discoverEndpoints(sourceUrl) {
-    elements.inspector.resultList.innerHTML = `<i>Fetching ${sourceUrl.hostname}... (Simulated)</i>`;
-
-    // --- SIMULATION ---
-    // In a real application, this part would be replaced by a call to a server-side proxy.
-    // e.g., const response = await fetch(`/api/proxy?url=${encodeURIComponent(sourceUrl.href)}`);
-    // const content = await response.text();
-    const simulateFetch = () => {
-        return new Promise(resolve => {
-            setTimeout(() => {
-                const dummyContent = `
-                    <html>
-                        <head>
-                            <link rel="stylesheet" href="/assets/style.css">
-                            <script src="https://cdn.example.com/library.js"></script>
-                        </head>
-                        <body>
-                            <a href="/dashboard">Dashboard</a>
-                            <a href="https://partner-api.com/v1/status">Partner API</a>
-                            <img src="/images/logo.png">
-                            <script>
-                                fetch('/api/v1/users?id=123');
-                                fetch("https://api.main-domain.com/v2/products");
-                                const apiUrl = '/api/v1/session';
-                            </script>
-                        </body>
-                    </html>
-                `;
-                resolve(dummyContent);
-            }, 500); // Simulate network delay
-        });
-    };
-    
-    const content = await simulateFetch();
-    // --- END SIMULATION ---
-
-    elements.inspector.resultList.innerHTML = `<i>Parsing and identifying potential endpoints...</i>`;
-
-    // Regex to find URLs in various contexts (attributes and JS code)
-    const urlRegex = /(?:href|src|action|fetch)\s*=\s*['"]([^'"]+)['"]|\(\s*['"]([^'"]+)['"]/g;
-    let matches;
-    const foundUrls = new Set();
-
-    while ((matches = urlRegex.exec(content)) !== null) {
-        // The URL can be in capture group 1 or 2 depending on the regex match
-        const path = matches[1] || matches[2];
-        if (path && !path.startsWith('data:') && !path.startsWith('#') && !path.startsWith('javascript:')) {
-            try {
-                // Create a full URL from the path relative to the source URL
-                const fullUrl = new URL(path, sourceUrl.href).href;
-                foundUrls.add(fullUrl);
-            } catch (e) {
-                // Ignore invalid URL fragments
-            }
-        }
-    }
-    
-    return Array.from(foundUrls);
-  }
-
   async function startInspectorScan() {
     const sourceRadio = $('input[name="inspectorSource"]:checked');
-    // CORRECTED: Added a check to ensure the radio button has a valid value
-    if (!sourceRadio || !sourceRadio.value) {
-      alert('Please select a valid source URL to inspect.');
-      return;
-    }
-
-    elements.inspector.resultList.innerHTML = '<i>Starting inspection... This may take a few moments.</i>';
+    if (!sourceRadio) { alert('Please select a source URL to inspect.'); return; }
+    
+    elements.inspector.resultList.innerHTML = '<i>Inspecting... This may take a few moments.</i>';
     elements.inspector.startBtn.disabled = true;
 
-    try {
-        const sourceUrl = new URL(sourceRadio.value);
-        
-        // 1. Discover potential URLs by "fetching" and parsing the source page
-        const discoveredUrls = await discoverEndpoints(sourceUrl);
+    const sourceUrl = new URL(sourceRadio.value);
+    const domainParts = sourceUrl.hostname.split('.');
+    const mainDomain = domainParts.slice(Math.max(domainParts.length - 2, 0)).join('.'); 
 
-        // 2. Filter out URLs that are already being monitored
-        const urlsToTest = discoveredUrls.filter(url => url && !urls.some(u => u.url === url));
+    const commonSubdomains = ['www', 'api', 'app', 'dev', 'blog', 'shop', 'status', 'mail', 'cdn', 'prod', 'staging', 'docs'];
+    const commonPaths = ['/status', '/blog', '/api/health'];
+    
+    let potentialUrls = commonSubdomains.map(sub => `https://${sub}.${mainDomain}`);
+    potentialUrls.push(`https://${mainDomain}`);
+    potentialUrls = [...potentialUrls, ...commonPaths.map(path => `https://${mainDomain}${path}`)];
+    
+    const urlsToTest = [...new Set(potentialUrls)].map(normalizeUrl).filter(url => url && !urls.some(u => u.url === url));
 
-        if (urlsToTest.length === 0) {
-            elements.inspector.resultList.innerHTML = 'No new endpoints were discovered from the source URL.';
-            return;
-        }
-
-        // 3. Ping the discovered URLs to see which ones are live
-        let foundLinks = [];
-        const maxToCheck = Math.min(urlsToTest.length, settings.maxInspectorEndpoints);
-        
-        for (let i = 0; i < maxToCheck; i++) {
-            const url = urlsToTest[i];
-            elements.inspector.resultList.innerHTML = `<i>Verifying endpoints (${i + 1}/${maxToCheck}): ${url}</i>`;
-            try {
-                // Use a short timeout for discovery to be faster
-                await pingFavicon(url, 3000);
-                foundLinks.push(url);
-            } catch {
-                // Ignore URLs that don't respond or time out
-            }
-        }
-
-        // 4. Display the results
-        if (foundLinks.length === 0) {
-            elements.inspector.resultList.innerHTML = 'Discovered potential endpoints, but none seem to be live right now.';
-        } else {
-            elements.inspector.resultList.innerHTML = foundLinks.map(link => `
-              <div class="result-row" data-link="${escapeHtml(link)}">
-                <span>${escapeHtml(link)}</span>
-                <button class="btn btn-green" onclick="addInspectedURL(this, '${escapeHtml(link)}')">Add</button>
-              </div>
-            `).join('');
-        }
-    } catch (error) {
-        console.error("Inspector scan failed:", error);
-        elements.inspector.resultList.innerHTML = '<div class="danger">An error occurred during the inspection.</div>';
-    } finally {
-        elements.inspector.startBtn.disabled = false;
+    let foundLinks = [];
+    const maxToCheck = Math.min(urlsToTest.length, settings.maxInspectorEndpoints);
+    for (let i = 0; i < maxToCheck; i++) {
+        const url = urlsToTest[i];
+        elements.inspector.resultList.innerHTML = `<i>Inspecting (${i+1}/${maxToCheck}): ${url}</i>`;
+        try {
+            await pingFavicon(url, 3000);
+            foundLinks.push(url);
+        } catch {}
     }
+
+    if (foundLinks.length === 0) {
+        elements.inspector.resultList.innerHTML = 'No new, live endpoints were found for that domain.';
+    } else {
+        elements.inspector.resultList.innerHTML = foundLinks.map(link => `
+          <div class="result-row" data-link="${escapeHtml(link)}">
+            <span>${escapeHtml(link)}</span>
+            <button class="btn btn-green" onclick="addInspectedURL(this, '${escapeHtml(link)}')">Add</button>
+          </div>
+        `).join('');
+    }
+    elements.inspector.startBtn.disabled = false;
   }
 
   function addInspectedURL(button, url) {
@@ -771,7 +708,7 @@
     elements.login.password.addEventListener('keyup', (event) => {
         if (event.key === 'Enter') handleLogin();
     });
-    
+
     urls.forEach(u => u.history = prune(u.history, 't'));
     render();
     updateAlertBadge();
@@ -780,3 +717,4 @@
 </script>
 </body>
 </html>
+[file content end]
