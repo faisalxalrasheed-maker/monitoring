@@ -1,3 +1,4 @@
+
 <!doctype html>
 <html>
 <head>
@@ -71,6 +72,7 @@
 </head>
 <body>
 
+<!-- Login Screen -->
 <div id="loginModal" class="modal-backdrop">
     <div class="modal" style="width: 400px;">
       <header>Login to URL Monitor</header>
@@ -85,6 +87,7 @@
     </div>
 </div>
 
+<!-- Main Application -->
 <div id="appContainer">
     <div class="wrap">
     <h1>🔍 URL Monitor Pro</h1>
@@ -150,6 +153,7 @@
     </div>
 </div>
 
+<!-- Settings Modal -->
 <div id="settingsModal" class="modal-backdrop" onclick="this.style.display='none'">
   <div class="modal" role="dialog" onclick="event.stopPropagation()">
     <header>Settings</header>
@@ -168,6 +172,7 @@
   </div>
 </div>
 
+<!-- Inspector Modal -->
 <div id="inspectorModal" class="modal-backdrop" onclick="this.style.display='none'">
     <div class="modal" role="dialog" onclick="event.stopPropagation()">
       <header>Auto Inspector</header>
@@ -211,19 +216,19 @@
       inspector: { sourceList: $('#inspectorSourceList'), resultList: $('#inspectorResultList'), startBtn: $('#startScanBtn') },
       alertBadge: $('#alertBadge')
   };
+
   let timer = null;
   let sslTimer = null;
-  let settings, urls, alerts;
-  // Will be initialized after login
+  let settings, urls, alerts; // Will be initialized after login
 
   const loadFromStorage = (key, fallback) => { try { return JSON.parse(localStorage.getItem(key)) || fallback; } catch { return fallback; } };
   const persistUrls = () => localStorage.setItem('ump_urls', JSON.stringify(urls));
   const persistSettings = () => localStorage.setItem('ump_settings', JSON.stringify(settings));
   const persistAlerts = () => localStorage.setItem('ump_alerts', JSON.stringify(alerts));
-  
+
   // =============== Authentication ===============
   const CREDENTIALS = { user: 'Faisal', pass: '456456f' };
-  
+
   function handleLogin() {
     const user = elements.login.username.value;
     const pass = elements.login.password.value;
@@ -257,11 +262,12 @@
   const now = () => Date.now();
   const DAY_MS = 24 * 60 * 60 * 1000;
   const prune = (arr, key) => (arr || []).filter(item => (item[key] ?? item) >= now() - DAY_MS);
+
   const addHistory = (item, status, rt) => {
     item.history = prune(item.history, 't');
     item.history.push({ t: now(), status, rt: typeof rt === 'number' ? rt : null });
   };
-  
+
   // =============== Checkers ===============
   function pingFavicon(url, timeoutMs) {
     return new Promise((resolve, reject) => {
@@ -274,251 +280,31 @@
     });
   }
 
-  // =============== RELIABLE SSL Certificate Checker ===============
-  async function checkSSLWithTLS(hostname) {
-    return new Promise((resolve, reject) => {
-      // This is a simplified approach - in a real implementation, you'd use a proper TLS handshake
-      // For now, we'll use a HEAD request to get certificate info
-      fetch(`https://${hostname}`, { 
-        method: 'HEAD',
-        mode: 'no-cors' // This won't give us SSL info but helps with connectivity check
-      })
-      .then(() => {
-        // If we can connect via HTTPS, assume SSL is valid with reasonable defaults
-        const today = new Date();
-        const expiryDate = new Date(today);
-        expiryDate.setFullYear(today.getFullYear() + 1); // Assume 1 year validity
-        
-        resolve({
-          valid: true,
-          daysRemaining: 365,
-          expiryDate: expiryDate.toISOString().split('T')[0],
-          issuer: 'Automated Check',
-          subject: `CN=${hostname}`,
-          source: 'tls_connectivity'
-        });
-      })
-      .catch(error => {
-        reject(new Error(`TLS connectivity failed: ${error.message}`));
-      });
-    });
-  }
-
-  async function checkSSLWithCrtSh(hostname) {
-    return new Promise(async (resolve, reject) => {
-      try {
-        // Use crt.sh certificate transparency database
-        const crtShUrl = `https://crt.sh/?q=${encodeURIComponent(hostname)}&output=json`;
-        
-        // Use CORS proxy to avoid cross-origin issues
-        const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(crtShUrl)}`;
-        
-        const response = await fetch(proxyUrl);
-        if (!response.ok) throw new Error('Network response was not ok');
-        
-        const data = await response.json();
-        const certificates = JSON.parse(data.contents);
-        
-        if (!certificates || certificates.length === 0) {
-          reject(new Error('No certificates found'));
-          return;
-        }
-
-        // Filter valid certificates and find the one with latest expiry
-        const validCerts = certificates
-          .filter(cert => cert.not_after && new Date(cert.not_after) > new Date())
-          .sort((a, b) => new Date(b.not_after) - new Date(a.not_after));
-        
-        if (validCerts.length === 0) {
-          reject(new Error('No valid certificates found'));
-          return;
-        }
-
-        const latestCert = validCerts[0];
-        const expiryDate = new Date(latestCert.not_after);
-        const today = new Date();
-        const daysRemaining = Math.ceil((expiryDate - today) / (1000 * 60 * 60 * 24));
-
-        resolve({
-          valid: true,
-          daysRemaining: daysRemaining,
-          expiryDate: expiryDate.toISOString().split('T')[0],
-          issuer: latestCert.issuer_name || 'Unknown Issuer',
-          subject: latestCert.common_name || `CN=${hostname}`,
-          source: 'crt.sh'
-        });
-      } catch (error) {
-        reject(error);
-      }
-    });
-  }
-
-  async function checkSSLWithLabs(hostname) {
-    return new Promise(async (resolve, reject) => {
-      try {
-        // SSL Labs API - public and reliable but has rate limits
-        const labsUrl = `https://api.ssllabs.com/api/v3/analyze?host=${hostname}&all=done`;
-        
-        const response = await fetch(labsUrl);
-        if (!response.ok) throw new Error('SSL Labs API not available');
-        
-        const data = await response.json();
-        
-        if (data.status === 'READY' && data.endpoints && data.endpoints.length > 0) {
-          const endpoint = data.endpoints[0];
-          if (endpoint.details && endpoint.details.cert) {
-            const expiryDate = new Date(endpoint.details.cert.notAfter);
-            const today = new Date();
-            const daysRemaining = Math.ceil((expiryDate - today) / (1000 * 60 * 60 * 24));
-            
-            resolve({
-              valid: true,
-              daysRemaining: daysRemaining,
-              expiryDate: expiryDate.toISOString().split('T')[0],
-              issuer: endpoint.details.cert.issuerSubject || 'Unknown Issuer',
-              subject: endpoint.details.cert.subject || `CN=${hostname}`,
-              source: 'ssl_labs'
-            });
-            return;
-          }
-        }
-        
-        reject(new Error('SSL Labs data not ready or available'));
-      } catch (error) {
-        reject(error);
-      }
-    });
-  }
-
-  function generateRealisticSSLInfo(hostname) {
-    const today = new Date();
-    
-    // Create consistent hash based on domain for deterministic results
-    let hash = 0;
-    for (let i = 0; i < hostname.length; i++) {
-      hash = ((hash << 5) - hash) + hostname.charCodeAt(i);
-      hash = hash & hash; // Convert to 32bit integer
-    }
-    
-    // Domain-based SSL pattern detection
-    const domainPatterns = {
-      // Common TLD patterns
-      '.com': { minDays: 30, maxDays: 825, commonIssuers: ['DigiCert', "Let's Encrypt", 'Sectigo'] },
-      '.org': { minDays: 30, maxDays: 825, commonIssuers: ["Let's Encrypt", 'Sectigo', 'DigiCert'] },
-      '.net': { minDays: 30, maxDays: 825, commonIssuers: ['GlobalSign', "Let's Encrypt", 'DigiCert'] },
-      '.io': { minDays: 90, maxDays: 397, commonIssuers: ["Let's Encrypt", 'Google Trust Services'] },
-      '.dev': { minDays: 90, maxDays: 397, commonIssuers: ['Google Trust Services', "Let's Encrypt"] },
-      '.app': { minDays: 90, maxDays: 397, commonIssuers: ['Google Trust Services'] },
-      '.gov': { minDays: 180, maxDays: 365, commonIssuers: ['Entrust', 'DigiCert'] },
-      '.edu': { minDays: 180, maxDays: 365, commonIssuers: ['Entrust', 'DigiCert'] },
-      '.sa': { minDays: 30, maxDays: 825, commonIssuers: ['Sectigo', 'DigiCert', 'GlobalSign'] },
-      '.ae': { minDays: 30, maxDays: 825, commonIssuers: ['Sectigo', 'DigiCert', 'GlobalSign'] }
-    };
-    
-    // Known domain patterns for major services
-    const knownDomains = {
-      'google.com': { issuer: 'Google Trust Services', minDays: 60, maxDays: 90 },
-      'github.com': { issuer: 'DigiCert', minDays: 60, maxDays: 180 },
-      'cloudflare.com': { issuer: 'Cloudflare', minDays: 30, maxDays: 365 },
-      'amazon.com': { issuer: 'Amazon', minDays: 30, maxDays: 365 },
-      'microsoft.com': { issuer: 'Microsoft', minDays: 180, maxDays: 365 },
-      'apple.com': { issuer: 'Apple', minDays: 180, maxDays: 397 },
-      'facebook.com': { issuer: 'DigiCert', minDays: 60, maxDays: 180 },
-      'twitter.com': { issuer: 'DigiCert', minDays: 60, maxDays: 180 },
-      'youtube.com': { issuer: 'Google Trust Services', minDays: 60, maxDays: 90 }
-    };
-    
-    let minDays = 30;
-    let maxDays = 730; // 2 years maximum
-    let issuer = "Let's Encrypt"; // Most common default
-    
-    // Check for known domains first
-    if (knownDomains[hostname]) {
-      const domainInfo = knownDomains[hostname];
-      issuer = domainInfo.issuer;
-      minDays = domainInfo.minDays;
-      maxDays = domainInfo.maxDays;
-    } else {
-      // Check TLD patterns
-      for (const [tld, pattern] of Object.entries(domainPatterns)) {
-        if (hostname.endsWith(tld)) {
-          minDays = pattern.minDays;
-          maxDays = pattern.maxDays;
-          // Pick issuer based on hash for consistency
-          const issuerIndex = Math.abs(hash) % pattern.commonIssuers.length;
-          issuer = pattern.commonIssuers[issuerIndex];
-          break;
-        }
-      }
-    }
-    
-    // Generate consistent days remaining based on domain hash
-    const daysToExpiry = minDays + (Math.abs(hash) % (maxDays - minDays));
-    const expiryDate = new Date(today);
-    expiryDate.setDate(today.getDate() + daysToExpiry);
-
-    return {
-      valid: true,
-      daysRemaining: daysToExpiry,
-      expiryDate: expiryDate.toISOString().split('T')[0],
-      issuer: issuer,
-      subject: `CN=${hostname}`,
-      source: 'domain_pattern_analysis'
-    };
-  }
-
+  // SSL Certificate Checker
   async function checkSSLCertificate(url) {
-    return new Promise(async (resolve) => {
+    return new Promise((resolve) => {
       try {
         const hostname = new URL(url).hostname;
-        
-        // Method 1: Try using the browser's built-in TLS connection
-        try {
-          const sslInfo = await checkSSLWithTLS(hostname);
-          if (sslInfo.valid) {
-            resolve(sslInfo);
-            return;
-          }
-        } catch (error) {
-          console.log('TLS method failed, trying alternatives...');
-        }
+        // In a real implementation, this would make a request to check SSL certificate
+        // For demonstration, we'll simulate SSL expiry with random dates
+        const today = new Date();
+        const daysToExpiry = Math.floor(Math.random() * 60) + 1; // Random between 1-60 days
+        const expiryDate = new Date(today);
+        expiryDate.setDate(today.getDate() + daysToExpiry);
 
-        // Method 2: Use crt.sh certificate transparency logs (most reliable)
-        try {
-          const sslInfo = await checkSSLWithCrtSh(hostname);
-          if (sslInfo.valid) {
-            resolve(sslInfo);
-            return;
-          }
-        } catch (error) {
-          console.log('crt.sh method failed:', error.message);
-        }
-
-        // Method 3: Use SSL Labs API (if available)
-        try {
-          const sslInfo = await checkSSLWithLabs(hostname);
-          if (sslInfo.valid) {
-            resolve(sslInfo);
-            return;
-          }
-        } catch (error) {
-          console.log('SSL Labs method failed:', error.message);
-        }
-
-        // Final fallback: More accurate simulation based on domain patterns
-        const fallbackInfo = generateRealisticSSLInfo(hostname);
-        resolve(fallbackInfo);
-
-      } catch (error) {
-        console.error('All SSL check methods failed:', error);
-        // Return a conservative estimate
         resolve({
           valid: true,
-          daysRemaining: 30, // Conservative default
-          expiryDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-          issuer: 'Unknown Issuer',
-          subject: `CN=${hostname}`,
-          source: 'fallback_conservative'
+          daysRemaining: daysToExpiry,
+          expiryDate: expiryDate.toISOString().split('T')[0],
+          issuer: "Simulated CA"
+        });
+      } catch (error) {
+        resolve({
+          valid: false,
+          daysRemaining: 0,
+          expiryDate: null,
+          issuer: null,
+          error: error.message
         });
       }
     });
@@ -530,30 +316,20 @@
       const { rt } = await pingFavicon(item.url, settings.timeoutMs);
       addHistory(item, 'online', rt);
 
-      // Improved SSL check with better timing
+      // Check if SSL check is due
       const lastSSLCheck = item.lastSSLCheck || 0;
-      const sslCheckIntervalMs = settings.sslCheckInterval * 24 * 60 * 60 * 1000; // Convert days to ms
-      const sslCheckDue = now() - lastSSLCheck > sslCheckIntervalMs;
-      
+      const sslCheckDue = now() - lastSSLCheck > settings.sslCheckInterval * DAY_MS;
+
       if (sslCheckDue) {
-        console.log(`Checking SSL for: ${item.url}`);
         const sslResult = await checkSSLCertificate(item.url);
         item.sslInfo = sslResult;
         item.lastSSLCheck = now();
 
-        // Enhanced SSL expiry warning with better logging
-        if (sslResult.valid && sslResult.daysRemaining <= settings.sslWarningDays) {
-          console.warn(`SSL Expiry Warning for ${item.url}: ${sslResult.daysRemaining} days remaining`);
+        // Check for SSL expiry warning
+        if (sslResult.daysRemaining <= settings.sslWarningDays) {
           addAlert(item.url, 'SSL Expiry Warning',
-            `SSL certificate for ${item.url} expires in ${sslResult.daysRemaining} days (${sslResult.expiryDate}) - Issuer: ${sslResult.issuer} - Source: ${sslResult.source}`,
+            `SSL certificate for ${item.url} expires in ${sslResult.daysRemaining} days (${sslResult.expiryDate})`,
             'warning');
-        }
-        
-        if (!sslResult.valid) {
-          console.error(`Invalid SSL for ${item.url}`);
-          addAlert(item.url, 'SSL Certificate Invalid',
-            `SSL certificate for ${item.url} is invalid or cannot be verified`,
-            'error');
         }
       }
     } catch (error) {
@@ -574,7 +350,7 @@
     if (settings.intervalSec > 0) { checkAll(); timer = setInterval(checkAll, settings.intervalSec * 1000); }
   };
   const stopChecking = () => clearInterval(timer);
-  
+
   // =============== Alert System ===============
   function addAlert(url, title, message, type = 'info') {
     const alert = {
@@ -586,10 +362,12 @@
       type,
       read: false
     };
+
     alerts.unshift(alert);
     alerts = alerts.slice(0, 100); // Keep only last 100 alerts
     persistAlerts();
     updateAlertBadge();
+
     // Show notification if enabled
     if (settings.alertSound !== 'none') {
       showNotification(alert);
@@ -617,6 +395,7 @@
       </div>
       <button class="notification-close" onclick="this.parentElement.remove()">×</button>
     `;
+
     document.body.appendChild(notification);
 
     // Auto-remove after 5 seconds
@@ -665,7 +444,7 @@
           <div class="sub">${new Date(alert.timestamp).toLocaleString()}</div>
         </div>
         <div class="right">
-           <div class="chip ${alert.type === 'error' ? 'chip-danger' : alert.type === 'warning' ? 'chip-warning' : ''}">${alert.type}</div>
+          <div class="chip ${alert.type === 'error' ? 'chip-danger' : alert.type === 'warning' ? 'chip-warning' : ''}">${alert.type}</div>
           <button onclick="deleteAlert(${alert.id})">🗑️</button>
         </div>
       </div>
@@ -685,7 +464,7 @@
       const color = !entry ? 'var(--border)' : entry.status === 'online' ? 'var(--success)' : 'var(--danger)';
       return `<rect x="${95-i}" y="0" width="1" height="10" fill="${color}" />`;
   }).join('')}</svg>`;
-  
+
   const getSSLChipClass = (daysRemaining) => {
     if (daysRemaining <= 7) return 'chip-danger';
     if (daysRemaining <= 30) return 'chip-warning';
@@ -696,13 +475,12 @@
     const last = item.history?.slice(-1)[0] ?? {};
     const statusClass = last.status === 'online' ? 'success' : last.status === 'offline' ? 'danger' : 'muted';
     const rtText = typeof last.rt === 'number' ? `${Math.round(last.rt)}ms` : '—';
-    // SSL info - Real display
+
+    // SSL info
     let sslHtml = '';
-    if (item.sslInfo && item.sslInfo.valid) {
+    if (item.sslInfo) {
       const sslClass = getSSLChipClass(item.sslInfo.daysRemaining);
-      sslHtml = `<div class="chip ${sslClass}" title="SSL expires on ${item.sslInfo.expiryDate} (Issuer: ${item.sslInfo.issuer}) - Source: ${item.sslInfo.source}">SSL: ${item.sslInfo.daysRemaining} days</div>`;
-    } else if (item.sslInfo && !item.sslInfo.valid) {
-      sslHtml = `<div class="chip chip-danger" title="SSL Certificate Invalid">SSL: Invalid</div>`;
+      sslHtml = `<div class="chip ${sslClass}" title="SSL expires on ${item.sslInfo.expiryDate}">SSL: ${item.sslInfo.daysRemaining}d</div>`;
     }
 
     return `
@@ -711,7 +489,7 @@
         <div>
           <div class="url">${escapeHtml(item.url)}</div>
           <div class="sub">Status: <b class="${statusClass}">${last.status || 'pending'}</b> | Last check: ${last.t ? new Date(last.t).toLocaleTimeString() : 'N/A'}</div>
-          ${item.sslInfo && item.sslInfo.valid ? `<div class="sub">SSL: Expires on ${item.sslInfo.expiryDate} (${item.sslInfo.daysRemaining} days remaining) - ${item.sslInfo.issuer} - Source: ${item.sslInfo.source}</div>` : ''}
+          ${item.sslInfo ? `<div class="sub">SSL: Expires on ${item.sslInfo.expiryDate} (${item.sslInfo.daysRemaining} days remaining)</div>` : ''}
         </div>
         <div class="right">
           ${renderTimeline(item.history || [])}
@@ -744,17 +522,19 @@
     elements.urlList.innerHTML = urls.length ? urls.map(renderUrlRow).join('') : '<div style="text-align:center; color: var(--muted); padding: 20px 0;">No URLs added yet.</div>';
     renderStats();
   };
-  
+
   // =============== Tab Management ===============
   function switchTab(tabName) {
     // Hide all tabs
     document.querySelectorAll('.tab-content').forEach(tab => {
       tab.classList.remove('active');
     });
+
     // Remove active class from all tabs
     document.querySelectorAll('.tab').forEach(tab => {
       tab.classList.remove('active');
     });
+
     // Show selected tab
     document.getElementById(`${tabName}Tab`).classList.add('active');
 
@@ -784,6 +564,7 @@
         url.sslInfo?.daysRemaining || 'N/A',
         url.sslInfo?.expiryDate || 'N/A'
       ]);
+
       data = [headers, ...rows].map(row => row.map(cell => `"${cell}"`).join(',')).join('\n');
       mimeType = 'text/csv';
       filename = 'url-monitor-export.csv';
@@ -813,6 +594,7 @@
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
+
     // Show success message
     const exportResult = document.getElementById('exportResult');
     exportResult.innerHTML = `<div class="success">Data exported successfully as ${filename}</div>`;
@@ -876,12 +658,15 @@
 
     elements.inspector.resultList.innerHTML = '<i>Inspecting... This may take a few moments.</i>';
     elements.inspector.startBtn.disabled = true;
+
     const sourceUrl = new URL(sourceRadio.value);
     const domainParts = sourceUrl.hostname.split('.');
     const mainDomain = domainParts.slice(Math.max(domainParts.length - 2, 0)).join('.');
+
     // Common candidate subdomains and paths
     const commonSubdomains = ['www', 'api', 'app', 'dev', 'blog', 'shop', 'status', 'mail', 'cdn', 'prod', 'staging', 'docs'];
     const commonPaths = ['/status', '/blog', '/api/health', '/api', '/v1', '/v2', '/api/v1', '/api/v2', '/graphql', '/health'];
+
     // Build initial potential list
     let potentialUrls = commonSubdomains.map(sub => `https://${sub}.${mainDomain}`);
     potentialUrls.push(`https://${mainDomain}`);
@@ -893,12 +678,14 @@
       const html = await resp.text();
       const parser = new DOMParser();
       const doc = parser.parseFromString(html, 'text/html');
+
       // Extract <a href>, <link href>, <script src>, and potential API-looking strings
       const anchors = [...doc.querySelectorAll('a[href]')].map(a => a.getAttribute('href'));
       const links = [...doc.querySelectorAll('link[href]')].map(a => a.getAttribute('href'));
       const scripts = [...doc.querySelectorAll('script[src]')].map(a => a.getAttribute('src'));
 
       const rawCandidates = [...anchors, ...links, ...scripts].filter(Boolean);
+
       rawCandidates.forEach(link => {
         try {
           let fullUrl = null;
@@ -919,6 +706,7 @@
           // ignore malformed links
         }
       });
+
       // Additionally scan inline scripts / text for common API patterns like "/api/..." or "/v1/..."
       const bodyText = doc.body ? doc.body.innerText || '' : '';
       const apiMatches = [...new Set((bodyText.match(/\/api\/[a-zA-Z0-9\/\-_\.?&=]*/g) || []).concat(bodyText.match(/\/v[0-9]+\/[a-zA-Z0-9\/\-_\.?&=]*/g) || []))];
@@ -929,6 +717,7 @@
           if (candidate.includes(mainDomain)) potentialUrls.push(candidate);
         } catch {}
       });
+
     } catch (err) {
       // Could be blocked by CORS or other network errors — we continue with heuristics
       console.warn('Failed to fetch/parse main page (CORS or network issue):', err && err.message ? err.message : err);
@@ -936,6 +725,7 @@
 
     // Normalize, dedupe and filter out existing monitored URLs
     let urlsToTest = [...new Set(potentialUrls.map(u => normalizeUrl(u)).filter(u => u && !urls.some(existing => existing.url === u)))];
+
     // Prioritize API-looking URLs first (heuristic), then others
     urlsToTest.sort((a, b) => {
       const apiRe = /\/api\/|\/v[0-9]+\/|graphql|\/graphql/;
@@ -944,10 +734,12 @@
       if (aIsApi !== bIsApi) return aIsApi - bIsApi;
       return a.length - b.length; // shorter first
     });
+
     // Apply configured limit and hard cap of 50
     const configuredMax = parseInt(settings.maxInspectorEndpoints || DEFAULT_SETTINGS.maxInspectorEndpoints, 10) || DEFAULT_SETTINGS.maxInspectorEndpoints;
     const hardCap = 50;
     const maxToCheck = Math.min(urlsToTest.length, configuredMax, hardCap);
+
     if (maxToCheck === 0) {
       elements.inspector.resultList.innerHTML = 'No candidate endpoints to inspect (either none found or all are already monitored).';
       elements.inspector.startBtn.disabled = false;
@@ -963,8 +755,7 @@
         await pingFavicon(url, 3000);
         foundLinks.push(url);
       } catch (e) {
-        // Some endpoints (APIs) may not serve favicon;
-        // attempt a lightweight HEAD fetch if CORS allows
+        // Some endpoints (APIs) may not serve favicon; attempt a lightweight HEAD fetch if CORS allows
         try {
           const headResp = await fetch(url, { method: 'HEAD', mode: 'cors' });
           if (headResp && (headResp.ok || headResp.status < 400)) {
@@ -1008,20 +799,6 @@
     }
   }
 
-  // =============== SSL Debug Function ===============
-  function debugSSLInfo() {
-    console.log('=== SSL Debug Information ===');
-    urls.forEach((url, index) => {
-      console.log(`${index + 1}. ${url.url}`);
-      if (url.sslInfo) {
-        console.log(`   SSL Info:`, url.sslInfo);
-        console.log(`   Last Check: ${new Date(url.lastSSLCheck).toLocaleString()}`);
-      } else {
-        console.log(`   No SSL info available`);
-      }
-    });
-  }
-
   // =============== Initialization ===============
   function initializeApp() {
     // Load data only after successful authentication
@@ -1033,6 +810,7 @@
     elements.login.password.addEventListener('keyup', (event) => {
         if (event.key === 'Enter') handleLogin();
     });
+
     urls.forEach(u => u.history = prune(u.history, 't'));
     render();
     updateAlertBadge();
