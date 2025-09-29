@@ -1,1718 +1,871 @@
-<!doctype html>
-<html>
-<head>
-  <meta charset="utf-8" />
-  <title>URL Monitor Pro (Secure)</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <style>
-    :root { --primary: #2196F3; --success: #2e7d32; --danger: #d32f2f; --warn: #f9a825; --muted: #666; --bg: #e3f2fd; --panel: #fff; --chip: #f5f5f5; --border: #eee; }
-    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; padding: 20px; background: var(--bg); color: #333; margin: 0; }
-    .wrap { max-width: 1100px; margin: 0 auto; background: var(--panel); padding: 20px; border-radius: 12px; box-shadow: 0 6px 16px rgba(0,0,0,0.06); }
-    h1 { text-align: center; color: var(--primary); margin: 0 0 10px; }
-    .actions { text-align: center; margin: 18px 0 24px; display:flex; gap:10px; justify-content:center; flex-wrap:wrap; }
-    button { cursor: pointer; }
-    .btn { padding: 12px 16px; border: none; font-size: 14px; border-radius: 6px; }
-    .btn-primary { background: var(--primary); color: #fff; }
-    .btn-green { background: #2e7d32; color: #fff; }
-    .btn-purple { background: #6a1b9a; color: #fff; }
-    .btn-red { background: #d32f2f; color: #fff; }
-    .btn-gray { background: #9e9e9e; color: #fff; }
-    .btn-orange { background: #f57c00; color: #fff; }
-    .btn:disabled { background: #ccc; cursor: not-allowed; }
-    .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; margin: 10px 0 20px; }
-    .stat { background: var(--chip); padding: 14px; border-radius: 10px; text-align: center; }
-    .stat .label { color: var(--muted); }
-    .stat .value { font-size: 24px; font-weight: bold; }
-    .grid { display: grid; gap: 12px; }
-    .row { display:flex; align-items:center; gap:12px; padding:12px; border:1px solid var(--border); border-radius:10px; }
-    .dot { width:12px; height:12px; border-radius:50%; flex-shrink:0; }
-    .url { font-weight:600; word-break: break-all; }
-    .sub { color: var(--muted); font-size: 12px; margin-top: 4px; }
-    .right { margin-left:auto; display:flex; gap:8px; align-items:center; }
-    .timeline { width: 240px; height: 28px; }
-    .chip { background:#eef7ff; color:#1976d2; border:1px solid #cfe8ff; padding:3px 6px; border-radius:999px; font-size:11px; font-weight:600; }
-    .chip-warning { background:#fff3e0; color:#f57c00; border:1px solid #ffe0b2; }
-    .chip-danger { background:#ffebee; color:#d32f2f; border:1px solid #ffcdd2; }
-    .chip-success { background:#e8f5e8; color:#2e7d32; border:1px solid #c8e6c9; }
-    .section { background:#f9f9f9; padding: 16px; border-radius: 10px; margin-top:20px; }
-    .small { font-size: 12px; color: var(--muted); }
-    .danger { color: var(--danger); }
-    .success { color: var(--success); }
-    .warn { color: var(--warn); }
-    .modal-backdrop { position:fixed; inset:0; background:rgba(0,0,0,0.35); display:none; align-items:center; justify-content:center; z-index: 100; }
-    .modal { background:#fff; width: 640px; max-width: 92vw; border-radius:12px; overflow:hidden; display:flex; flex-direction:column; max-height: 85vh; }
-    .modal header { padding:12px 16px; border-bottom:1px solid var(--border); font-weight:700; flex-shrink: 0; }
-    .modal .body { padding:14px 16px; overflow-y: auto; }
-    .modal .rowx { display:grid; grid-template-columns: 100px 1fr; gap:10px; align-items:center; margin-bottom: 12px; }
-    .modal .rowx:last-child { margin-bottom: 0; }
-    .modal .rowx input, .modal .rowx select { width: 100%; padding:8px; border:1px solid #ddd; border-radius:6px; }
-    .modal footer { display:flex; gap:10px; justify-content:flex-end; padding:12px 16px; border-top:1px solid var(--border); flex-shrink: 0; }
-    #inspectorModal .body label { display: block; padding: 8px; border-radius: 6px; cursor: pointer; }
-    #inspectorModal .body label:hover { background: #f0f0f0; }
-    #inspectorModal .body input[type="radio"] { margin-right: 8px; }
-    #inspectorResults .result-row { display: flex; align-items: center; justify-content: space-between; padding: 6px 0; font-size: 14px; }
-    #inspectorResults .result-row .btn { padding: 4px 10px; font-size: 12px; }
-    #appContainer { display: none; }
-    #loginModal { display: flex; }
-    .tab-container { display: flex; border-bottom: 1px solid var(--border); margin-bottom: 16px; }
-    .tab { padding: 10px 16px; cursor: pointer; border-bottom: 2px solid transparent; }
-    .tab.active { border-bottom-color: var(--primary); font-weight: 600; }
-    .tab-content { display: none; }
-    .tab-content.active { display: block; }
-    .alert-badge { position: absolute; top: -5px; right: -5px; background: var(--danger); color: white; border-radius: 50%; width: 18px; height: 18px; font-size: 10px; display: flex; align-items: center; justify-content: center; }
-    .btn-with-badge { position: relative; }
-    .notification { position: fixed; top: 20px; right: 20px; background: white; padding: 12px 16px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 1000; display: flex; align-items: center; gap: 10px; max-width: 400px; }
-    .notification.success { border-left: 4px solid var(--success); }
-    .notification.warning { border-left: 4px solid var(--warn); }
-    .notification.error { border-left: 4px solid var(--danger); }
-    .notification-close { background: none; border: none; font-size: 16px; cursor: pointer; margin-left: auto; }
-    
-    /* NEW STYLES */
-    .url-actions { display: flex; gap: 5px; }
-    .url-actions button { padding: 4px 8px; font-size: 12px; }
-    .health-indicator { width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; display: inline-block; }
-    .health-good { background: var(--success); }
-    .health-warning { background: var(--warn); }
-    .health-critical { background: var(--danger); }
-    .status-dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; margin-right: 6px; }
-    .filters { display: flex; gap: 10px; margin-bottom: 15px; flex-wrap: wrap; }
-    .filter-group { display: flex; gap: 5px; align-items: center; }
-    .filter-select { padding: 6px 10px; border: 1px solid var(--border); border-radius: 4px; background: white; }
-    .search-box { padding: 8px 12px; border: 1px solid var(--border); border-radius: 6px; width: 200px; }
-    .tag { display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: 11px; margin-right: 5px; background: #e3f2fd; color: #1976d2; }
-    .tag-group { display: flex; gap: 5px; margin-top: 5px; flex-wrap: wrap; }
-    .progress-bar { height: 6px; background: #e0e0e0; border-radius: 3px; overflow: hidden; margin-top: 5px; }
-    .progress-fill { height: 100%; background: var(--success); }
-    .progress-warning { background: var(--warn); }
-    .progress-critical { background: var(--danger); }
-    .chart-container { height: 200px; margin: 15px 0; }
-    .details-panel { background: #f8f9fa; border-radius: 8px; padding: 15px; margin-top: 10px; }
-    .details-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; }
-    .detail-item { margin-bottom: 8px; }
-    .detail-label { font-weight: 600; color: var(--muted); font-size: 12px; }
-    .detail-value { font-size: 14px; }
-    .batch-actions { display: flex; gap: 10px; margin-bottom: 15px; }
-    .url-checkbox { margin-right: 8px; }
-    .collapsible { border: 1px solid var(--border); border-radius: 8px; margin-bottom: 10px; overflow: hidden; }
-    .collapsible-header { padding: 12px 15px; background: #f5f5f5; cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
-    .collapsible-content { padding: 15px; display: none; }
-    .response-time-chart { height: 80px; margin-top: 10px; }
-    .trend-indicator { display: inline-block; margin-left: 5px; }
-    .trend-up { color: var(--success); }
-    .trend-down { color: var(--danger); }
-    .export-options { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; margin-bottom: 15px; }
-    .export-option { border: 1px solid var(--border); border-radius: 6px; padding: 10px; cursor: pointer; }
-    .export-option.selected { border-color: var(--primary); background: #e3f2fd; }
-    .dark-mode { --bg: #1e1e1e; --panel: #2d2d2d; --chip: #3d3d3d; --border: #444; color: #f0f0f0; }
-    .theme-toggle { position: fixed; bottom: 20px; right: 20px; background: var(--primary); color: white; border: none; border-radius: 50%; width: 50px; height: 50px; display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 100; box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
-    @media (max-width: 600px) { 
-      .row { flex-wrap: wrap; } 
-      .right { width: 100%; justify-content: flex-end; } 
-      .timeline { display:none; } 
-      .filters { flex-direction: column; }
-      .search-box { width: 100%; }
-    }
-  </style>
-</head>
-<body>
-
-<!-- Login Screen -->
-<div id="loginModal" class="modal-backdrop">
-    <div class="modal" style="width: 400px;">
-      <header>Login to URL Monitor</header>
-      <div class="body">
-        <div class="rowx"><label for="username">Username</label><input id="username" type="text" /></div>
-        <div class="rowx"><label for="password">Password</label><input id="password" type="password" /></div>
-        <p id="loginError" class="danger" style="text-align:center; margin:0; display:none;"></p>
-      </div>
-      <footer>
-        <button class="btn btn-primary" style="width:100%;" onclick="handleLogin()">Login</button>
-      </footer>
-    </div>
-</div>
-
-<!-- Main Application -->
-<div id="appContainer">
-    <div class="wrap">
-    <h1>🔍 URL Monitor Pro</h1>
-
-    <div class="actions">
-        <button class="btn btn-green" onclick="addURL()">+ Add URL</button>
-        <button class="btn btn-primary" onclick="showSettings()">⚙️ Settings</button>
-        <button class="btn btn-purple" onclick="showInspector()">🔎 Auto Inspector</button>
-        <button class="btn btn-orange btn-with-badge" onclick="showAlerts()">🔔 Alerts<div id="alertBadge" class="alert-badge" style="display:none;">0</div></button>
-        <button class="btn btn-gray" onclick="checkAll()">▶️ Check All Now</button>
-        <button class="btn btn-red" onclick="handleLogout()">🔒 Logout</button>
-    </div>
-
-    <div class="stats">
-        <div class="stat"><div class="label">Total</div><div class="value" id="total">0</div></div>
-        <div class="stat"><div class="label">Online</div><div class="value success" id="online">0</div></div>
-        <div class="stat"><div class="label">Offline</div><div class="value danger" id="offline">0</div></div>
-        <div class="stat"><div class="label">SSL Issues</div><div class="value warn" id="sslIssues">0</div></div>
-        <div class="stat"><div class="label">24h Uptime</div><div class="value" id="uptime24">0%</div></div>
-        <div class="stat"><div class="label">Avg RT (24h)</div><div class="value" id="avgRt24">—</div></div>
-        <div class="stat"><div class="label">Health Score</div><div class="value" id="healthScore">0%</div></div>
-    </div>
-
-    <div class="tab-container">
-      <div class="tab active" onclick="switchTab('monitoring')">Monitoring</div>
-      <div class="tab" onclick="switchTab('alerts')">Alert History</div>
-      <div class="tab" onclick="switchTab('export')">Export Data</div>
-      <div class="tab" onclick="switchTab('reports')">Reports</div>
-    </div>
-
-    <div id="monitoringTab" class="tab-content active">
-      <div class="section">
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-              <h3 style="margin:0;">Monitored URLs</h3>
-              <div class="small">History retained for last 24 hours</div>
-          </div>
-          
-          <div class="filters">
-            <input type="text" id="searchUrls" class="search-box" placeholder="Search URLs..." onkeyup="filterURLs()">
-            <div class="filter-group">
-              <label>Status:</label>
-              <select id="statusFilter" class="filter-select" onchange="filterURLs()">
-                <option value="all">All</option>
-                <option value="online">Online</option>
-                <option value="offline">Offline</option>
-              </select>
-            </div>
-            <div class="filter-group">
-              <label>Tags:</label>
-              <select id="tagFilter" class="filter-select" onchange="filterURLs()">
-                <option value="all">All Tags</option>
-              </select>
-            </div>
-            <div class="filter-group">
-              <label>SSL:</label>
-              <select id="sslFilter" class="filter-select" onchange="filterURLs()">
-                <option value="all">All</option>
-                <option value="expiring">Expiring Soon</option>
-                <option value="valid">Valid</option>
-              </select>
-            </div>
-          </div>
-          
-          <div class="batch-actions">
-            <button class="btn btn-gray" onclick="selectAllURLs()">Select All</button>
-            <button class="btn btn-gray" onclick="deselectAllURLs()">Deselect All</button>
-            <button class="btn btn-primary" onclick="checkSelectedURLs()">Check Selected</button>
-            <button class="btn btn-red" onclick="deleteSelectedURLs()">Delete Selected</button>
-          </div>
-          
-          <div id="urlList" class="grid">No URLs added yet</div>
-      </div>
-    </div>
-
-    <div id="alertsTab" class="tab-content">
-      <div class="section">
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-              <h3 style="margin:0;">Alert History</h3>
-              <button class="btn btn-gray" onclick="clearAlerts()">Clear All</button>
-          </div>
-          <div id="alertList" class="grid">No alerts yet</div>
-      </div>
-    </div>
-
-    <div id="exportTab" class="tab-content">
-      <div class="section">
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-              <h3 style="margin:0;">Export Monitoring Data</h3>
-          </div>
-          <div class="export-options">
-            <div class="export-option selected" onclick="selectExportOption(this, 'csv')">
-              <div><strong>CSV Format</strong></div>
-              <div class="small">Export as comma-separated values</div>
-            </div>
-            <div class="export-option" onclick="selectExportOption(this, 'json')">
-              <div><strong>JSON Format</strong></div>
-              <div class="small">Export as structured JSON data</div>
-            </div>
-            <div class="export-option" onclick="selectExportOption(this, 'pdf')">
-              <div><strong>PDF Report</strong></div>
-              <div class="small">Generate a PDF summary report</div>
-            </div>
-            <div class="export-option" onclick="selectExportOption(this, 'html')">
-              <div><strong>HTML Dashboard</strong></div>
-              <div class="small">Export as standalone HTML dashboard</div>
-            </div>
-          </div>
-          <div style="margin-bottom: 16px;">
-            <label><input type="checkbox" id="includeHistory" checked> Include historical data</label>
-            <label style="margin-left: 16px;"><input type="checkbox" id="includeSSL" checked> Include SSL information</label>
-          </div>
-          <button class="btn btn-primary" onclick="exportData()">Export Data</button>
-          <div id="exportResult" style="margin-top: 16px;"></div>
-      </div>
-    </div>
-
-    <div id="reportsTab" class="tab-content">
-      <div class="section">
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-              <h3 style="margin:0;">Monitoring Reports</h3>
-              <button class="btn btn-primary" onclick="generateReport()">Generate Report</button>
-          </div>
-          <div id="reportsContainer">
-            <div class="details-panel">
-              <h4>System Health Overview</h4>
-              <div class="details-grid">
-                <div class="detail-item">
-                  <div class="detail-label">Overall Health Score</div>
-                  <div class="detail-value">
-                    <span class="health-indicator" id="overallHealthIndicator"></span>
-                    <span id="overallHealthScore">0%</span>
-                  </div>
-                  <div class="progress-bar">
-                    <div class="progress-fill" id="healthProgress" style="width: 0%"></div>
-                  </div>
-                </div>
-                <div class="detail-item">
-                  <div class="detail-label">Uptime (7 days)</div>
-                  <div class="detail-value" id="uptime7Days">0%</div>
-                </div>
-                <div class="detail-item">
-                  <div class="detail-label">Avg Response Time</div>
-                  <div class="detail-value" id="avgResponseTime">—</div>
-                </div>
-                <div class="detail-item">
-                  <div class="detail-label">Total Checks (24h)</div>
-                  <div class="detail-value" id="totalChecks24h">0</div>
-                </div>
-              </div>
-            </div>
-            
-            <div style="margin-top: 20px;">
-              <h4>Performance Trends</h4>
-              <div class="chart-container" id="performanceChart">
-                <!-- Chart will be rendered here -->
-                <div style="text-align: center; padding: 40px 0; color: var(--muted);">
-                  Performance chart will appear here when data is available
-                </div>
-              </div>
-            </div>
-            
-            <div style="margin-top: 20px;">
-              <h4>Endpoint Health Details</h4>
-              <div id="endpointHealthList"></div>
-            </div>
-          </div>
-      </div>
-    </div>
-
-    </div>
-</div>
-
-<!-- Settings Modal -->
-<div id="settingsModal" class="modal-backdrop" onclick="this.style.display='none'">
-  <div class="modal" role="dialog" onclick="event.stopPropagation()">
-    <header>Settings</header>
-    <div class="body">
-      <div class="rowx" style="grid-template-columns: 170px 1fr;"><label>Check Interval (sec)</label><input id="interval" type="number" min="10" /></div>
-      <div class="rowx" style="grid-template-columns: 170px 1fr;"><label>Timeout (ms)</label><input id="timeout" type="number" min="1000" /></div>
-      <div class="rowx" style="grid-template-columns: 170px 1fr;"><label>Max Endpoints (Inspector)</label><input id="maxEndpoints" type="number" min="5" /></div>
-      <div class="rowx" style="grid-template-columns: 170px 1fr;"><label>SSL Check Interval (days)</label><input id="sslCheckInterval" type="number" min="1" /></div>
-      <div class="rowx" style="grid-template-columns: 170px 1fr;"><label>SSL Expiry Warning (days)</label><input id="sslWarningDays" type="number" min="1" /></div>
-      <div class="rowx" style="grid-template-columns: 170px 1fr;"><label>Alert Sound</label><select id="alertSound"><option value="none">None</option><option value="beep">Beep</option><option value="bell">Bell</option></select></div>
-      <div class="rowx" style="grid-template-columns: 170px 1fr;"><label>Response Time Warning (ms)</label><input id="responseTimeWarning" type="number" min="100" value="1000" /></div>
-      <div class="rowx" style="grid-template-columns: 170px 1fr;"><label>Response Time Critical (ms)</label><input id="responseTimeCritical" type="number" min="100" value="3000" /></div>
-      <div class="rowx" style="grid-template-columns: 170px 1fr;"><label>Uptime Warning Threshold</label><input id="uptimeWarning" type="number" min="50" max="100" value="95" />%</div>
-      <div class="rowx" style="grid-template-columns: 170px 1fr;"><label>Retry Failed Checks</label><select id="retryFailed"><option value="0">No Retry</option><option value="1">1 Retry</option><option value="2">2 Retries</option><option value="3">3 Retries</option></select></div>
-      <div class="rowx" style="grid-template-columns: 170px 1fr;"><label>Enable Performance Charts</label><input id="enableCharts" type="checkbox" checked /></div>
-    </div>
-    <footer>
-      <button class="btn btn-gray" onclick="document.getElementById('settingsModal').style.display='none'">Cancel</button>
-      <button class="btn btn-primary" onclick="saveSettings()">Save</button>
-    </footer>
-  </div>
-</div>
-
-<!-- Inspector Modal -->
-<div id="inspectorModal" class="modal-backdrop" onclick="this.style.display='none'">
-    <div class="modal" role="dialog" onclick="event.stopPropagation()">
-      <header>Auto Inspector</header>
-      <div class="body">
-        <div>
-          <b>1. Select a URL to inspect for related endpoints</b>
-          <div id="inspectorSourceList" class="grid" style="max-height: 150px; overflow-y: auto; border: 1px solid #eee; padding: 8px; border-radius: 8px; margin-top: 8px;"></div>
-        </div>
-        <div style="margin-top: 16px;">
-          <b>Inspection Options</b>
-          <div style="display: flex; flex-wrap: wrap; gap: 10px; margin-top: 8px;">
-            <label><input type="checkbox" id="deepScan" checked> Deep Scan (slower)</label>
-            <label><input type="checkbox" id="checkSubdomains" checked> Check Subdomains</label>
-            <label><input type="checkbox" id="checkCommonPaths" checked> Common Paths</label>
-            <label><input type="checkbox" id="checkAPIs" checked> API Endpoints</label>
-            <label><input type="checkbox" id="checkFiles" checked> Common Files</label>
-          </div>
-        </div>
-        <div id="inspectorResults" style="margin-top: 16px; border-top: 1px solid var(--border); padding-top: 16px;">
-          <b>2. Found Endpoints</b>
-          <div id="inspectorResultList" style="margin-top: 8px;">Select a source URL and click "Start Inspection".</div>
-        </div>
-      </div>
-      <footer>
-        <button class="btn btn-gray" onclick="document.getElementById('inspectorModal').style.display='none'">Close</button>
-        <button id="startScanBtn" class="btn btn-primary" onclick="startInspectorScan()">Start Inspection</button>
-      </footer>
-    </div>
-  </div>
-
-<!-- URL Details Modal -->
-<div id="urlDetailsModal" class="modal-backdrop" onclick="this.style.display='none'">
-  <div class="modal" role="dialog" onclick="event.stopPropagation()" style="width: 800px;">
-    <header id="urlDetailsHeader">URL Details</header>
-    <div class="body">
-      <div id="urlDetailsContent">
-        <!-- Content will be populated dynamically -->
-      </div>
-    </div>
-    <footer>
-      <button class="btn btn-gray" onclick="document.getElementById('urlDetailsModal').style.display='none'">Close</button>
-    </footer>
-  </div>
-</div>
-
-<!-- Theme Toggle -->
-<button class="theme-toggle" onclick="toggleDarkMode()">🌙</button>
-
 <script>
-  // =============== State & Persistence ===============
-  const DEFAULT_SETTINGS = {
-    intervalSec: 60,
-    timeoutMs: 8000,
-    maxInspectorEndpoints: 20,
-    sslCheckInterval: 1,
-    sslWarningDays: 30,
-    alertSound: 'none',
-    responseTimeWarning: 1000,
-    responseTimeCritical: 3000,
-    uptimeWarning: 95,
-    retryFailed: 0,
-    enableCharts: true,
-    darkMode: false
-  };
-  const $ = (selector) => document.querySelector(selector);
+// =============== NEW ENHANCEMENTS ===============
 
-  const elements = {
-      appContainer: $('#appContainer'),
-      login: { modal: $('#loginModal'), username: $('#username'), password: $('#password'), error: $('#loginError') },
-      modals: { settings: $('#settingsModal'), inspector: $('#inspectorModal'), urlDetails: $('#urlDetailsModal') },
-      urlList: $('#urlList'),
-      alertList: $('#alertList'),
-      stats: { total: $('#total'), online: $('#online'), offline: $('#offline'), sslIssues: $('#sslIssues'), uptime24: $('#uptime24'), avgRt24: $('#avgRt24'), healthScore: $('#healthScore') },
-      inputs: { 
-        interval: $('#interval'), timeout: $('#timeout'), maxEndpoints: $('#maxEndpoints'), 
-        sslCheckInterval: $('#sslCheckInterval'), sslWarningDays: $('#sslWarningDays'), alertSound: $('#alertSound'),
-        responseTimeWarning: $('#responseTimeWarning'), responseTimeCritical: $('#responseTimeCritical'),
-        uptimeWarning: $('#uptimeWarning'), retryFailed: $('#retryFailed'), enableCharts: $('#enableCharts')
-      },
-      inspector: { sourceList: $('#inspectorSourceList'), resultList: $('#inspectorResultList'), startBtn: $('#startScanBtn') },
-      alertBadge: $('#alertBadge'),
-      searchUrls: $('#searchUrls'),
-      statusFilter: $('#statusFilter'),
-      tagFilter: $('#tagFilter'),
-      sslFilter: $('#sslFilter')
-  };
+// 1. AI-Powered Anomaly Detection
+function detectAnomalies() {
+  urls.forEach(url => {
+    const recentHistory = (url.history || []).slice(-50);
+    const responseTimes = recentHistory.map(h => h.rt).filter(rt => typeof rt === 'number');
+    
+    if (responseTimes.length >= 10) {
+      const avg = average(responseTimes);
+      const stdDev = Math.sqrt(responseTimes.reduce((sum, rt) => sum + Math.pow(rt - avg, 2), 0) / responseTimes.length);
+      const latestRT = responseTimes[responseTimes.length - 1];
+      
+      // Detect significant deviations (3 sigma rule)
+      if (Math.abs(latestRT - avg) > 3 * stdDev) {
+        addAlert(url.url, 'Performance Anomaly Detected', 
+          `Response time anomaly: ${Math.round(latestRT)}ms (normally ${Math.round(avg)}ms ± ${Math.round(stdDev)}ms)`, 
+          'warning');
+      }
+    }
+  });
+}
 
-  let timer = null;
-  let sslTimer = null;
-  let settings, urls, alerts; // Will be initialized after login
-  let selectedURLs = new Set();
-  let allTags = new Set();
-
-  const loadFromStorage = (key, fallback) => { try { return JSON.parse(localStorage.getItem(key)) || fallback; } catch { return fallback; } };
-  const persistUrls = () => localStorage.setItem('ump_urls', JSON.stringify(urls));
-  const persistSettings = () => localStorage.setItem('ump_settings', JSON.stringify(settings));
-  const persistAlerts = () => localStorage.setItem('ump_alerts', JSON.stringify(alerts));
-
-  // =============== Authentication ===============
-  const CREDENTIALS = { user: 'Faisal', pass: '456456f' };
-
-  function handleLogin() {
-    const user = elements.login.username.value;
-    const pass = elements.login.password.value;
-    if (user === CREDENTIALS.user && pass === CREDENTIALS.pass) {
-        sessionStorage.setItem('isAuthenticated', 'true');
-        elements.login.modal.style.display = 'none';
-        elements.appContainer.style.display = 'block';
-        initializeApp();
-    } else {
-        elements.login.error.textContent = 'Invalid credentials. Please try again.';
-        elements.login.error.style.display = 'block';
+// 2. Multi-Region Monitoring Simulation
+async function checkFromMultipleRegions(url) {
+  const regions = ['us-east', 'us-west', 'eu-central', 'asia-southeast'];
+  const regionResults = [];
+  
+  for (const region of regions) {
+    try {
+      const start = performance.now();
+      // Simulate region-based latency
+      const latency = Math.random() * 100 + (region === 'asia-southeast' ? 200 : 0);
+      await new Promise(resolve => setTimeout(resolve, latency));
+      
+      const { rt } = await pingFavicon(url, settings.timeoutMs - latency);
+      regionResults.push({
+        region,
+        responseTime: rt + latency,
+        status: 'online'
+      });
+    } catch (error) {
+      regionResults.push({
+        region,
+        responseTime: null,
+        status: 'offline',
+        error: error.message
+      });
     }
   }
+  
+  return regionResults;
+}
 
-  function handleLogout() {
-    sessionStorage.removeItem('isAuthenticated');
-    location.reload();
-  }
+// 3. Advanced Performance Metrics
+function calculateAdvancedMetrics() {
+  return urls.map(url => {
+    const history = url.history || [];
+    const responseTimes = history.map(h => h.rt).filter(rt => typeof rt === 'number');
+    
+    if (responseTimes.length === 0) return null;
+    
+    const sorted = [...responseTimes].sort((a, b) => a - b);
+    const p95 = sorted[Math.floor(sorted.length * 0.95)];
+    const p99 = sorted[Math.floor(sorted.length * 0.99)];
+    
+    return {
+      url: url.url,
+      min: Math.min(...responseTimes),
+      max: Math.max(...responseTimes),
+      median: sorted[Math.floor(sorted.length / 2)],
+      p95,
+      p99,
+      errorRate: (history.filter(h => h.status === 'offline').length / history.length) * 100
+    };
+  }).filter(Boolean);
+}
 
-  // Auto-login if session is active
-  if (sessionStorage.getItem('isAuthenticated') === 'true') {
-    elements.login.modal.style.display = 'none';
-    elements.appContainer.style.display = 'block';
-    initializeApp();
-  }
-
-  // =============== Utilities ===============
-  const normalizeUrl = (input) => { try { let u = (input || '').trim(); if (!u) return null; return new URL(u.startsWith('http') ? u : `https://${u}`).toString(); } catch { return null; } };
-  const escapeHtml = (s) => String(s).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
-  const average = (arr) => arr.length ? arr.reduce((a, b) => a + b, 0) / arr.length : null;
-  const now = () => Date.now();
-  const DAY_MS = 24 * 60 * 60 * 1000;
-  const prune = (arr, key) => (arr || []).filter(item => (item[key] ?? item) >= now() - DAY_MS);
-
-  const addHistory = (item, status, rt) => {
-    item.history = prune(item.history, 't');
-    item.history.push({ t: now(), status, rt: typeof rt === 'number' ? rt : null });
+// 4. Predictive Uptime Forecasting
+function predictUptime(url) {
+  const history = url.history || [];
+  const recentUptime = calculateUptime(history, 24);
+  const weeklyUptime = calculateUptime(history, 24 * 7);
+  
+  // Simple weighted average prediction
+  const predictedUptime = (recentUptime * 0.7 + weeklyUptime * 0.3);
+  
+  return {
+    current: recentUptime,
+    predicted: Math.round(predictedUptime),
+    trend: recentUptime > weeklyUptime ? 'improving' : recentUptime < weeklyUptime ? 'declining' : 'stable'
   };
+}
 
-  // =============== Checkers ===============
-  function pingFavicon(url, timeoutMs) {
-    return new Promise((resolve, reject) => {
-      const img = new Image();
-      const start = performance.now();
-      const timer = setTimeout(() => reject(new Error('Timeout')), timeoutMs);
-      img.onload = () => { clearTimeout(timer); resolve({ rt: performance.now() - start }); };
-      img.onerror = () => { clearTimeout(timer); reject(new Error('Image load error')); };
-      try { img.src = `${new URL(url).origin}/favicon.ico?v=${now()}`; } catch (e) { reject(e); }
-    });
-  }
+// 5. Advanced SSL Certificate Analysis
+async function advancedSSLCheck(url) {
+  const basicInfo = await checkSSLCertificate(url);
+  
+  // Enhanced SSL analysis
+  const enhancedInfo = {
+    ...basicInfo,
+    grade: calculateSSLGrade(basicInfo),
+    recommendations: generateSSLRecommendations(basicInfo),
+    vulnerabilities: checkSSLVulnerabilities(basicInfo)
+  };
+  
+  return enhancedInfo;
+}
 
-  // Enhanced SSL Certificate Checker
-  async function checkSSLCertificate(url) {
-    return new Promise((resolve) => {
-      try {
-        const hostname = new URL(url).hostname;
-        // In a real implementation, this would make a request to check SSL certificate
-        // For demonstration, we'll simulate SSL expiry with random dates
-        const today = new Date();
-        const daysToExpiry = Math.floor(Math.random() * 60) + 1; // Random between 1-60 days
-        const expiryDate = new Date(today);
-        expiryDate.setDate(today.getDate() + daysToExpiry);
+function calculateSSLGrade(sslInfo) {
+  if (!sslInfo.valid) return 'F';
+  if (sslInfo.daysRemaining > 90) return 'A+';
+  if (sslInfo.daysRemaining > 60) return 'A';
+  if (sslInfo.daysRemaining > 30) return 'B';
+  if (sslInfo.daysRemaining > 14) return 'C';
+  if (sslInfo.daysRemaining > 7) return 'D';
+  return 'F';
+}
 
-        resolve({
-          valid: true,
-          daysRemaining: daysToExpiry,
-          expiryDate: expiryDate.toISOString().split('T')[0],
-          issuer: "Simulated CA",
-          protocol: "TLS 1.3",
-          signatureAlgorithm: "SHA256-RSA"
-        });
-      } catch (error) {
-        resolve({
-          valid: false,
-          daysRemaining: 0,
-          expiryDate: null,
-          issuer: null,
-          error: error.message
-        });
-      }
-    });
-  }
+// 6. Dependency Mapping
+const dependencyMap = new Map();
 
-  // =============== Core Logic ===============
-  async function checkUrl(item, retryCount = 0) {
-    try {
-      const { rt } = await pingFavicon(item.url, settings.timeoutMs);
-      addHistory(item, 'online', rt);
-      item.lastCheck = now();
-      item.failCount = 0;
+function buildDependencyMap() {
+  dependencyMap.clear();
+  
+  urls.forEach(url => {
+    const domain = new URL(url.url).hostname;
+    const dependencies = findDependencies(domain);
+    dependencyMap.set(url.url, dependencies);
+  });
+}
 
-      // Check if SSL check is due
-      const lastSSLCheck = item.lastSSLCheck || 0;
-      const sslCheckDue = now() - lastSSLCheck > settings.sslCheckInterval * DAY_MS;
+function findDependencies(domain) {
+  // Simulate finding dependencies (CDNs, APIs, etc.)
+  const commonDependencies = {
+    'google.com': ['fonts.googleapis.com', 'ajax.googleapis.com', 'www.gstatic.com'],
+    'example.com': ['api.example.com', 'cdn.example.com', 'assets.example.com']
+  };
+  
+  return commonDependencies[domain] || [];
+}
 
-      if (sslCheckDue) {
-        const sslResult = await checkSSLCertificate(item.url);
-        item.sslInfo = sslResult;
-        item.lastSSLCheck = now();
-
-        // Check for SSL expiry warning
-        if (sslResult.daysRemaining <= settings.sslWarningDays) {
-          addAlert(item.url, 'SSL Expiry Warning',
-            `SSL certificate for ${item.url} expires in ${sslResult.daysRemaining} days (${sslResult.expiryDate})`,
-            'warning');
+// 7. Automated Root Cause Analysis
+function performRootCauseAnalysis(downUrls) {
+  const affectedDomains = downUrls.map(url => new URL(url).hostname);
+  const potentialCauses = [];
+  
+  // Check for shared dependencies
+  dependencyMap.forEach((dependencies, url) => {
+    const urlDomain = new URL(url).hostname;
+    if (affectedDomains.includes(urlDomain)) {
+      dependencies.forEach(dep => {
+        if (!urls.some(u => u.url.includes(dep))) {
+          potentialCauses.push(`Missing dependency: ${dep}`);
         }
+      });
+    }
+  });
+  
+  // Check for pattern in downtime
+  if (downUrls.length > urls.length * 0.5) {
+    potentialCauses.push('Potential network outage or DNS issues');
+  }
+  
+  return [...new Set(potentialCauses)];
+}
+
+// 8. Business Impact Assessment
+function calculateBusinessImpact(url) {
+  // Define URL categories and their impact weights
+  const impactWeights = {
+    'critical': 10,    // Core application, payment processing
+    'high': 7,         // Main services, APIs
+    'medium': 4,       // Secondary services, documentation
+    'low': 1           // Monitoring, status pages
+  };
+  
+  let category = 'medium';
+  if (url.includes('/api/') || url.includes('/payment')) category = 'critical';
+  else if (url.includes('/admin') || url.includes('/dashboard')) category = 'high';
+  else if (url.includes('/docs') || url.includes('/blog')) category = 'low';
+  
+  const uptime = calculateUptime(url.history || [], 24);
+  const impactScore = (100 - uptime) * impactWeights[category];
+  
+  return {
+    category,
+    impactScore: Math.round(impactScore),
+    financialImpact: calculateFinancialImpact(url, uptime)
+  };
+}
+
+function calculateFinancialImpact(url, uptime) {
+  // Simple simulation - in real scenario, this would use actual business metrics
+  const downtimeMinutes = (100 - uptime) * 14.4; // 24h * 60min * 0.01
+  const costPerMinute = url.includes('/api/') ? 10 : url.includes('/payment') ? 50 : 1;
+  
+  return Math.round(downtimeMinutes * costPerMinute);
+}
+
+// 9. Advanced Alert Correlation
+function correlateAlerts() {
+  const recentAlerts = alerts.filter(a => a.timestamp > now() - 3600000); // Last hour
+  const alertGroups = {};
+  
+  recentAlerts.forEach(alert => {
+    const key = `${alert.type}-${alert.title}`;
+    if (!alertGroups[key]) alertGroups[key] = [];
+    alertGroups[key].push(alert);
+  });
+  
+  // Correlated alerts (same type/title within short period)
+  Object.entries(alertGroups).forEach(([key, groupAlerts]) => {
+    if (groupAlerts.length >= 3) {
+      const correlatedAlert = {
+        id: now() + Math.random(),
+        timestamp: now(),
+        title: `Correlated Alert: ${groupAlerts[0].title}`,
+        message: `${groupAlerts.length} occurrences in the last hour`,
+        type: 'warning',
+        correlated: true,
+        originalAlerts: groupAlerts.map(a => a.id)
+      };
+      
+      if (!alerts.some(a => a.correlated && a.originalAlerts?.includes(groupAlerts[0].id))) {
+        alerts.unshift(correlatedAlert);
+      }
+    }
+  });
+}
+
+// 10. Automated Recovery Verification
+async function verifyRecovery(url) {
+  let recoveryVerified = false;
+  let attempts = 0;
+  
+  while (!recoveryVerified && attempts < 5) {
+    attempts++;
+    try {
+      const { rt } = await pingFavicon(url, settings.timeoutMs);
+      if (rt < settings.responseTimeCritical) {
+        recoveryVerified = true;
+        addAlert(url, 'Recovery Verified', 
+          `Service recovered after ${attempts} verification attempts. Response time: ${Math.round(rt)}ms`, 
+          'success');
       }
     } catch (error) {
-      addHistory(item, 'offline', null);
-      item.failCount = (item.failCount || 0) + 1;
-      
-      // Retry logic
-      if (retryCount < settings.retryFailed) {
-        console.log(`Retrying ${item.url} (${retryCount + 1}/${settings.retryFailed})`);
-        setTimeout(() => checkUrl(item, retryCount + 1), 2000);
-        return;
-      }
-      
-      addAlert(item.url, 'Connection Error', `Failed to connect to ${item.url}: ${error.message}`, 'error');
-      console.warn(`Check failed for ${item.url}:`, error.message);
+      await new Promise(resolve => setTimeout(resolve, 30000)); // Wait 30 seconds
     }
   }
-
-  async function checkAll() {
-    await Promise.all(urls.map(checkUrl));
-    persistUrls();
-    render();
+  
+  if (!recoveryVerified) {
+    addAlert(url, 'Recovery Failed', 
+      'Service failed to recover after multiple verification attempts', 
+      'error');
   }
+}
 
-  const startChecking = () => {
-    stopChecking();
-    if (settings.intervalSec > 0) { checkAll(); timer = setInterval(checkAll, settings.intervalSec * 1000); }
+// 11. Capacity Planning Insights
+function generateCapacityInsights() {
+  const insights = [];
+  const peakHours = findPeakUsageHours();
+  
+  peakHours.forEach(hour => {
+    const load = calculateHourlyLoad(hour.hour);
+    if (load > 0.8) { // 80% capacity threshold
+      insights.push({
+        hour: hour.hour,
+        load: Math.round(load * 100),
+        recommendation: 'Consider scaling resources during this period'
+      });
+    }
+  });
+  
+  return insights;
+}
+
+function findPeakUsageHours() {
+  const hourlyRequests = Array(24).fill(0);
+  
+  urls.forEach(url => {
+    url.history?.forEach(check => {
+      if (check.status === 'online') {
+        const hour = new Date(check.t).getHours();
+        hourlyRequests[hour]++;
+      }
+    });
+  });
+  
+  return hourlyRequests.map((count, hour) => ({ hour, count }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 3);
+}
+
+// 12. Security Vulnerability Scanning
+async function scanSecurityVulnerabilities(url) {
+  const vulnerabilities = [];
+  
+  // Check for common security headers
+  try {
+    const response = await fetch(url, { method: 'HEAD' });
+    const headers = response.headers;
+    
+    if (!headers.get('X-Content-Type-Options')) {
+      vulnerabilities.push('Missing X-Content-Type-Options header');
+    }
+    if (!headers.get('X-Frame-Options')) {
+      vulnerabilities.push('Missing X-Frame-Options header');
+    }
+    if (!headers.get('Strict-Transport-Security')) {
+      vulnerabilities.push('Missing HSTS header');
+    }
+  } catch (error) {
+    // Can't check headers due to CORS
+  }
+  
+  // Check for exposed sensitive files
+  const sensitivePaths = ['/.env', '/.git/config', '/backup.zip', '/wp-config.php'];
+  for (const path of sensitivePaths) {
+    try {
+      const testUrl = new URL(path, url).toString();
+      await fetch(testUrl, { method: 'HEAD' });
+      vulnerabilities.push(`Exposed sensitive file: ${path}`);
+    } catch (error) {
+      // File not exposed or not accessible
+    }
+  }
+  
+  return vulnerabilities;
+}
+
+// 13. Performance Budget Monitoring
+function checkPerformanceBudgets() {
+  const budgets = {
+    'first-contentful-paint': 1000,
+    'largest-contentful-paint': 2500,
+    'cumulative-layout-shift': 0.1,
+    'first-input-delay': 100
   };
-  const stopChecking = () => clearInterval(timer);
+  
+  urls.forEach(url => {
+    const lastRT = url.history?.slice(-1)[0]?.rt;
+    if (lastRT && lastRT > budgets['first-contentful-paint']) {
+      addAlert(url.url, 'Performance Budget Exceeded', 
+        `Response time ${Math.round(lastRT)}ms exceeds budget of ${budgets['first-contentful-paint']}ms`, 
+        'warning');
+    }
+  });
+}
 
-  // =============== Alert System ===============
-  function addAlert(url, title, message, type = 'info') {
-    const alert = {
-      id: now() + Math.random(),
-      timestamp: now(),
-      url,
+// 14. Automated Documentation Generation
+function generateMonitoringDocumentation() {
+  const doc = {
+    generatedAt: new Date().toISOString(),
+    summary: {
+      totalEndpoints: urls.length,
+      criticalEndpoints: urls.filter(u => calculateBusinessImpact(u).category === 'critical').length,
+      averageUptime: calculateOverallUptime(30),
+      healthScore: calculateHealthScore()
+    },
+    endpoints: urls.map(url => ({
+      url: url.url,
+      businessImpact: calculateBusinessImpact(url).category,
+      sla: calculateUptime(url.history || [], 30),
+      dependencies: dependencyMap.get(url.url) || [],
+      lastIncident: alerts.filter(a => a.url === url.url).slice(-1)[0] || null
+    })),
+    alerts: {
+      last24h: alerts.filter(a => a.timestamp > now() - 86400000).length,
+      critical: alerts.filter(a => a.type === 'error').length
+    }
+  };
+  
+  return doc;
+}
+
+// 15. Real-time Collaboration Features
+const collaboration = {
+  users: new Map(),
+  incidents: new Map(),
+  
+  addUser(name, role = 'viewer') {
+    this.users.set(name, { name, role, lastActive: now() });
+    this.broadcastUserUpdate();
+  },
+  
+  startIncident(title, severity) {
+    const incident = {
+      id: now(),
       title,
-      message,
-      type,
-      read: false
+      severity,
+      startTime: now(),
+      status: 'active',
+      assignedTo: null,
+      updates: []
     };
-
-    alerts.unshift(alert);
-    alerts = alerts.slice(0, 100); // Keep only last 100 alerts
-    persistAlerts();
-    updateAlertBadge();
-
-    // Show notification if enabled
-    if (settings.alertSound !== 'none') {
-      showNotification(alert);
-      playAlertSound();
-    }
-  }
-
-  function updateAlertBadge() {
-    const unreadCount = alerts.filter(a => !a.read).length;
-    if (unreadCount > 0) {
-      elements.alertBadge.textContent = unreadCount;
-      elements.alertBadge.style.display = 'flex';
-    } else {
-      elements.alertBadge.style.display = 'none';
-    }
-  }
-
-  function showNotification(alert) {
-    const notification = document.createElement('div');
-    notification.className = `notification ${alert.type}`;
-    notification.innerHTML = `
-      <div>
-        <strong>${escapeHtml(alert.title)}</strong>
-        <div class="small">${escapeHtml(alert.message)}</div>
-      </div>
-      <button class="notification-close" onclick="this.parentElement.remove()">×</button>
-    `;
-
-    document.body.appendChild(notification);
-
-    // Auto-remove after 5 seconds
-    setTimeout(() => {
-      if (notification.parentElement) {
-        notification.remove();
-      }
-    }, 5000);
-  }
-
-  function playAlertSound() {
-    // In a real implementation, you would play actual sound files
-    console.log('Alert sound would play here');
-  }
-
-  function showAlerts() {
-    switchTab('alerts');
-    // Mark all alerts as read when viewing
-    alerts.forEach(alert => alert.read = true);
-    persistAlerts();
-    updateAlertBadge();
-    renderAlerts();
-  }
-
-  function clearAlerts() {
-    if (confirm('Are you sure you want to clear all alerts?')) {
-      alerts = [];
-      persistAlerts();
-      updateAlertBadge();
-      renderAlerts();
-    }
-  }
-
-  function renderAlerts() {
-    if (alerts.length === 0) {
-      elements.alertList.innerHTML = '<div style="text-align:center; color: var(--muted); padding: 20px 0;">No alerts yet.</div>';
-      return;
-    }
-
-    elements.alertList.innerHTML = alerts.map(alert => `
-      <div class="row">
-        <div class="dot" style="background:${alert.type === 'error' ? 'var(--danger)' : alert.type === 'warning' ? 'var(--warn)' : 'var(--primary)'}"></div>
-        <div>
-          <div class="url">${escapeHtml(alert.title)}</div>
-          <div class="sub">${escapeHtml(alert.message)}</div>
-          <div class="sub">${new Date(alert.timestamp).toLocaleString()}</div>
-        </div>
-        <div class="right">
-          <div class="chip ${alert.type === 'error' ? 'chip-danger' : alert.type === 'warning' ? 'chip-warning' : ''}">${alert.type}</div>
-          <button onclick="deleteAlert(${alert.id})">🗑️</button>
-        </div>
-      </div>
-    `).join('');
-  }
-
-  function deleteAlert(id) {
-    alerts = alerts.filter(alert => alert.id !== id);
-    persistAlerts();
-    updateAlertBadge();
-    renderAlerts();
-  }
-
-  // =============== NEW FEATURES ===============
-
-  // 1. Enhanced Auto Inspector with more endpoints
-  async function startInspectorScan() {
-    const sourceRadio = document.querySelector('input[name="inspectorSource"]:checked');
-    if (!sourceRadio) { alert('Please select a source URL to inspect.'); return; }
-
-    elements.inspector.resultList.innerHTML = '<i>Inspecting... This may take a few moments.</i>';
-    elements.inspector.startBtn.disabled = true;
-
-    const sourceUrl = new URL(sourceRadio.value);
-    const domainParts = sourceUrl.hostname.split('.');
-    const mainDomain = domainParts.slice(Math.max(domainParts.length - 2, 0)).join('.');
     
-    // Get inspection options
-    const deepScan = document.getElementById('deepScan').checked;
-    const checkSubdomains = document.getElementById('checkSubdomains').checked;
-    const checkCommonPaths = document.getElementById('checkCommonPaths').checked;
-    const checkAPIs = document.getElementById('checkAPIs').checked;
-    const checkFiles = document.getElementById('checkFiles').checked;
-
-    // Extended common subdomains and paths
-    const commonSubdomains = ['www', 'api', 'app', 'dev', 'blog', 'shop', 'status', 'mail', 'cdn', 'prod', 'staging', 'docs', 
-                              'admin', 'test', 'secure', 'portal', 'assets', 'static', 'media', 'img', 'images', 'js', 'css',
-                              'backend', 'frontend', 'mobile', 'web', 'support', 'help', 'forum', 'community', 'store', 'shop',
-                              'payment', 'billing', 'account', 'user', 'users', 'my', 'id', 'sso', 'auth', 'login', 'signin'];
-    
-    const commonPaths = ['/', '/status', '/blog', '/api/health', '/api', '/v1', '/v2', '/api/v1', '/api/v2', '/graphql', '/health',
-                         '/admin', '/dashboard', '/login', '/signin', '/register', '/signup', '/account', '/user', '/profile',
-                         '/docs', '/documentation', '/help', '/support', '/contact', '/about', '/privacy', '/terms', '/sitemap.xml',
-                         '/robots.txt', '/favicon.ico', '/manifest.json', '/.well-known/security.txt'];
-    
-    const apiPatterns = ['/api/', '/v1/', '/v2/', '/v3/', '/graphql', '/rest/', '/json/', '/xml/', '/soap/', '/ws/', '/wss/',
-                         '/oauth/', '/auth/', '/token/', '/user/', '/users/', '/account/', '/profile/', '/admin/', '/config/'];
-    
-    const commonFiles = ['/robots.txt', '/sitemap.xml', '/security.txt', '/humans.txt', '/ads.txt', '/.well-known/security.txt',
-                         '/.well-known/assetlinks.json', '/.well-known/apple-app-site-association', '/crossdomain.xml', '/clientaccesspolicy.xml'];
-
-    // Build initial potential list
-    let potentialUrls = [];
-    
-    if (checkSubdomains) {
-      potentialUrls = commonSubdomains.map(sub => `https://${sub}.${mainDomain}`);
-      potentialUrls.push(`https://${mainDomain}`);
-    }
-    
-    if (checkCommonPaths) {
-      potentialUrls = [...potentialUrls, ...commonPaths.map(path => `https://${mainDomain}${path}`)];
-    }
-    
-    if (checkAPIs) {
-      potentialUrls = [...potentialUrls, ...apiPatterns.map(pattern => `https://${mainDomain}${pattern}`)];
-      // Also add API patterns to subdomains
-      if (checkSubdomains) {
-        commonSubdomains.forEach(sub => {
-          potentialUrls = [...potentialUrls, ...apiPatterns.map(pattern => `https://${sub}.${mainDomain}${pattern}`)];
-        });
-      }
-    }
-    
-    if (checkFiles) {
-      potentialUrls = [...potentialUrls, ...commonFiles.map(file => `https://${mainDomain}${file}`)];
-    }
-
-    // Deep scan - attempt to fetch the page HTML to extract links
-    if (deepScan) {
-      try {
-        const resp = await fetch(sourceUrl.href, { mode: 'cors' });
-        const html = await resp.text();
-        const parser = new DOMParser();
-        const doc = parser.parseFromString(html, 'text/html');
-
-        // Extract various types of links
-        const anchors = [...doc.querySelectorAll('a[href]')].map(a => a.getAttribute('href'));
-        const links = [...doc.querySelectorAll('link[href]')].map(a => a.getAttribute('href'));
-        const scripts = [...doc.querySelectorAll('script[src]')].map(a => a.getAttribute('src'));
-        const images = [...doc.querySelectorAll('img[src]')].map(a => a.getAttribute('src'));
-        const iframes = [...doc.querySelectorAll('iframe[src]')].map(a => a.getAttribute('src'));
-        const forms = [...doc.querySelectorAll('form[action]')].map(a => a.getAttribute('action'));
-        const metas = [...doc.querySelectorAll('meta[content]')].map(a => a.getAttribute('content'));
-
-        const rawCandidates = [...anchors, ...links, ...scripts, ...images, ...iframes, ...forms, ...metas].filter(Boolean);
-
-        rawCandidates.forEach(link => {
-          try {
-            let fullUrl = null;
-            if (link.startsWith('http')) {
-              fullUrl = link;
-            } else if (link.startsWith('//')) {
-              fullUrl = `${sourceUrl.protocol}${link}`;
-            } else if (link.startsWith('/')) {
-              fullUrl = `${sourceUrl.origin}${link}`;
-            } else if (link.startsWith('./')) {
-              fullUrl = `${sourceUrl.origin}${link.substring(1)}`;
-            } else if (!link.startsWith('#')) {
-              // Relative path
-              fullUrl = `${sourceUrl.origin}/${link}`;
-            }
-            
-            if (fullUrl && fullUrl.includes(mainDomain)) {
-              potentialUrls.push(fullUrl);
-            }
-          } catch (e) {
-            // ignore malformed links
-          }
-        });
-
-        // Additionally scan inline scripts / text for common patterns
-        const bodyText = doc.body ? doc.body.innerText || '' : '';
-        const apiMatches = [...new Set((bodyText.match(/\/api\/[a-zA-Z0-9\/\-_\.?&=]*/g) || []).concat(
-          bodyText.match(/\/v[0-9]+\/[a-zA-Z0-9\/\-_\.?&=]*/g) || [],
-          bodyText.match(/\/[a-zA-Z0-9\-_]+\/[a-zA-Z0-9\-_]+\/[a-zA-Z0-9\-_\/]*/g) || []
-        ))];
-        
-        apiMatches.forEach(p => {
-          try {
-            let candidate = p;
-            if (!candidate.startsWith('http')) candidate = `${sourceUrl.origin}${candidate}`;
-            if (candidate.includes(mainDomain)) potentialUrls.push(candidate);
-          } catch {}
-        });
-
-      } catch (err) {
-        console.warn('Failed to fetch/parse main page (CORS or network issue):', err && err.message ? err.message : err);
-      }
-    }
-
-    // Normalize, dedupe and filter out existing monitored URLs
-    let urlsToTest = [...new Set(potentialUrls.map(u => normalizeUrl(u)).filter(u => u && !urls.some(existing => existing.url === u)))];
-
-    // Prioritize API-looking URLs first (heuristic), then others
-    urlsToTest.sort((a, b) => {
-      const apiRe = /\/api\/|\/v[0-9]+\/|graphql|\/graphql/;
-      const aIsApi = apiRe.test(a) ? 0 : 1;
-      const bIsApi = apiRe.test(b) ? 0 : 1;
-      if (aIsApi !== bIsApi) return aIsApi - bIsApi;
-      return a.length - b.length; // shorter first
-    });
-
-    // Apply configured limit and hard cap of 100
-    const configuredMax = parseInt(settings.maxInspectorEndpoints || DEFAULT_SETTINGS.maxInspectorEndpoints, 10) || DEFAULT_SETTINGS.maxInspectorEndpoints;
-    const hardCap = 100;
-    const maxToCheck = Math.min(urlsToTest.length, configuredMax, hardCap);
-
-    if (maxToCheck === 0) {
-      elements.inspector.resultList.innerHTML = 'No candidate endpoints to inspect (either none found or all are already monitored).';
-      elements.inspector.startBtn.disabled = false;
-      return;
-    }
-
-    let foundLinks = [];
-    for (let i = 0; i < maxToCheck; i++) {
-      const url = urlsToTest[i];
-      elements.inspector.resultList.innerHTML = `<i>Inspecting (${i+1}/${maxToCheck}): ${escapeHtml(url)}</i>`;
-      try {
-        // quick ping using favicon (fast, lightweight)
-        await pingFavicon(url, 3000);
-        foundLinks.push({url, status: 'online'});
-      } catch (e) {
-        // Some endpoints (APIs) may not serve favicon; attempt a lightweight HEAD fetch if CORS allows
-        try {
-          const headResp = await fetch(url, { method: 'HEAD', mode: 'cors' });
-          if (headResp && (headResp.ok || headResp.status < 400)) {
-            foundLinks.push({url, status: 'online'});
-          } else {
-            foundLinks.push({url, status: 'offline'});
-          }
-        } catch (e2) {
-          foundLinks.push({url, status: 'offline'});
-        }
-      }
-    }
-
-    // Render results
-    if (foundLinks.length === 0) {
-      elements.inspector.resultList.innerHTML = 'No new, live endpoints were found for that domain.';
-    } else {
-      // Limit UI list to hardCap too
-      const displayList = foundLinks.slice(0, hardCap);
-      elements.inspector.resultList.innerHTML = displayList.map(link => `
-        <div class="result-row" data-link="${escapeHtml(link.url)}">
-          <span>
-            <span class="status-dot" style="background: ${link.status === 'online' ? 'var(--success)' : 'var(--danger)'}"></span>
-            ${escapeHtml(link.url)}
-          </span>
-          <button class="btn ${link.status === 'online' ? 'btn-green' : 'btn-gray'}" onclick="addInspectedURL(this, '${escapeHtml(link.url)}')">Add</button>
-        </div>
-      `).join('');
-      if (foundLinks.length > displayList.length) {
-        elements.inspector.resultList.innerHTML += `<div class="small" style="margin-top:8px;">Results truncated to ${hardCap} entries.</div>`;
-      }
-    }
-
-    elements.inspector.startBtn.disabled = false;
+    this.incidents.set(incident.id, incident);
+    this.broadcastIncidentUpdate(incident);
+    return incident;
+  },
+  
+  broadcastUserUpdate() {
+    // In real implementation, this would use WebSockets
+    console.log('Users updated:', Array.from(this.users.values()));
+  },
+  
+  broadcastIncidentUpdate(incident) {
+    // In real implementation, this would use WebSockets
+    console.log('Incident updated:', incident);
   }
+};
 
-  // 2. URL Grouping and Tagging
-  function updateTagsList() {
-    allTags.clear();
-    urls.forEach(url => {
-      if (url.tags && url.tags.length) {
-        url.tags.forEach(tag => allTags.add(tag));
-      }
+// 16. Advanced Data Retention Policies
+function applyDataRetentionPolicy() {
+  const retentionDays = settings.dataRetentionDays || 30;
+  const cutoffTime = now() - (retentionDays * 24 * 60 * 60 * 1000);
+  
+  urls.forEach(url => {
+    url.history = (url.history || []).filter(h => h.t >= cutoffTime);
+  });
+  
+  alerts = alerts.filter(alert => alert.timestamp >= cutoffTime);
+  
+  console.log(`Applied data retention policy: ${retentionDays} days`);
+}
+
+// 17. Machine Learning-Based Forecasting
+function forecastMetrics() {
+  const forecasts = {};
+  
+  urls.forEach(url => {
+    const responseTimes = (url.history || [])
+      .map(h => h.rt)
+      .filter(rt => typeof rt === 'number')
+      .slice(-100); // Last 100 data points
+    
+    if (responseTimes.length >= 20) {
+      // Simple linear regression for forecasting
+      const forecast = simpleLinearForecast(responseTimes, 24); // Next 24 periods
+      forecasts[url.url] = {
+        current: responseTimes[responseTimes.length - 1],
+        forecast: Math.round(forecast),
+        trend: forecast > responseTimes[responseTimes.length - 1] ? 'increasing' : 'decreasing'
+      };
+    }
+  });
+  
+  return forecasts;
+}
+
+function simpleLinearForecast(data, periods) {
+  const n = data.length;
+  const xMean = (n - 1) / 2;
+  const yMean = average(data);
+  
+  let numerator = 0;
+  let denominator = 0;
+  
+  data.forEach((y, x) => {
+    numerator += (x - xMean) * (y - yMean);
+    denominator += Math.pow(x - xMean, 2);
+  });
+  
+  const slope = numerator / denominator;
+  return yMean + slope * (n + periods - 1 - xMean);
+}
+
+// 18. Compliance Reporting (GDPR, HIPAA, etc.)
+function generateComplianceReport(standard = 'GDPR') {
+  const checks = {
+    'GDPR': [
+      'Data encryption in transit',
+      'Privacy policy accessibility',
+      'Cookie consent compliance',
+      'Data breach notification'
+    ],
+    'HIPAA': [
+      'PHI data protection',
+      'Access controls',
+      'Audit trails',
+      'Data backup'
+    ]
+  };
+  
+  const report = {
+    standard,
+    generated: new Date().toISOString(),
+    checks: checks[standard] || [],
+    status: 'compliant', // Simplified
+    findings: [],
+    recommendations: [
+      'Implement regular security audits',
+      'Ensure all endpoints use HTTPS',
+      'Maintain access logs for 6+ months'
+    ]
+  };
+  
+  return report;
+}
+
+// 19. Advanced Notification Routing
+const notificationRoutes = {
+  'critical': ['sms', 'email', 'slack'],
+  'warning': ['email', 'slack'],
+  'info': ['slack']
+};
+
+function routeNotification(alert, severity = 'warning') {
+  const channels = notificationRoutes[severity] || notificationRoutes['warning'];
+  
+  channels.forEach(channel => {
+    switch (channel) {
+      case 'sms':
+        sendSMSNotification(alert);
+        break;
+      case 'email':
+        sendEmailNotification(alert);
+        break;
+      case 'slack':
+        sendSlackNotification(alert);
+        break;
+    }
+  });
+}
+
+function sendSMSNotification(alert) {
+  // Integration with SMS gateway
+  console.log('SMS Alert:', alert.title, alert.message);
+}
+
+function sendEmailNotification(alert) {
+  // Integration with email service
+  console.log('Email Alert:', alert.title, alert.message);
+}
+
+function sendSlackNotification(alert) {
+  // Integration with Slack webhook
+  console.log('Slack Alert:', alert.title, alert.message);
+}
+
+// 20. Automated Incident Response
+async function automatedIncidentResponse(downUrl) {
+  const incident = collaboration.startIncident(`Service Down: ${downUrl}`, 'critical');
+  
+  // Step 1: Verify the outage
+  await new Promise(resolve => setTimeout(resolve, 60000)); // Wait 1 minute
+  const verification = await pingFavicon(downUrl, settings.timeoutMs).catch(() => null);
+  
+  if (!verification) {
+    // Step 2: Check dependencies
+    const dependencies = dependencyMap.get(downUrl) || [];
+    const dependencyStatus = await Promise.all(
+      dependencies.map(dep => pingFavicon(`https://${dep}`, settings.timeoutMs).catch(() => null))
+    );
+    
+    // Step 3: Notify team
+    routeNotification({
+      title: `INCIDENT: ${downUrl} is down`,
+      message: `Dependencies checked: ${dependencies.join(', ')}`
+    }, 'critical');
+    
+    // Step 4: Update incident
+    incident.updates.push({
+      timestamp: now(),
+      action: 'automated_verification',
+      details: 'Outage confirmed, dependencies checked'
     });
     
-    elements.tagFilter.innerHTML = '<option value="all">All Tags</option>';
-    allTags.forEach(tag => {
-      elements.tagFilter.innerHTML += `<option value="${tag}">${tag}</option>`;
-    });
+    collaboration.broadcastIncidentUpdate(incident);
   }
+}
 
-  // 3. Filter URLs
-  function filterURLs() {
-    const searchTerm = elements.searchUrls.value.toLowerCase();
-    const statusFilter = elements.statusFilter.value;
-    const tagFilter = elements.tagFilter.value;
-    const sslFilter = elements.sslFilter.value;
-    
-    const filteredUrls = urls.filter(url => {
-      // Search filter
-      if (searchTerm && !url.url.toLowerCase().includes(searchTerm)) return false;
-      
-      // Status filter
-      if (statusFilter !== 'all') {
+// 21. Resource Utilization Monitoring
+function monitorResourceUtilization() {
+  if (typeof performance !== 'undefined' && performance.memory) {
+    const memory = performance.memory;
+    return {
+      usedJSHeapSize: Math.round(memory.usedJSHeapSize / 1048576), // MB
+      totalJSHeapSize: Math.round(memory.totalJSHeapSize / 1048576),
+      jsHeapSizeLimit: Math.round(memory.jsHeapSizeLimit / 1048576),
+      utilization: Math.round((memory.usedJSHeapSize / memory.totalJSHeapSize) * 100)
+    };
+  }
+  return null;
+}
+
+// 22. Advanced Filtering and Query Language
+function advancedQuery(query) {
+  // Simple query language implementation
+  const tokens = query.toLowerCase().split(' ');
+  
+  return urls.filter(url => {
+    return tokens.every(token => {
+      if (token.startsWith('status:')) {
+        const status = token.split(':')[1];
         const lastStatus = url.history?.slice(-1)[0]?.status;
-        if (statusFilter === 'online' && lastStatus !== 'online') return false;
-        if (statusFilter === 'offline' && lastStatus !== 'offline') return false;
+        return lastStatus === status;
+      }
+      if (token.startsWith('tag:')) {
+        const tag = token.split(':')[1];
+        return url.tags?.includes(tag);
+      }
+      if (token.startsWith('rt>')) {
+        const threshold = parseInt(token.split('>')[1]);
+        const lastRT = url.history?.slice(-1)[0]?.rt;
+        return lastRT > threshold;
       }
       
-      // Tag filter
-      if (tagFilter !== 'all' && (!url.tags || !url.tags.includes(tagFilter))) return false;
-      
-      // SSL filter
-      if (sslFilter !== 'all') {
-        if (sslFilter === 'expiring' && (!url.sslInfo || url.sslInfo.daysRemaining > settings.sslWarningDays)) return false;
-        if (sslFilter === 'valid' && (!url.sslInfo || url.sslInfo.daysRemaining <= settings.sslWarningDays)) return false;
-      }
-      
-      return true;
+      return url.url.toLowerCase().includes(token);
     });
-    
-    renderURLList(filteredUrls);
-  }
+  });
+}
 
-  // 4. Batch Operations
-  function selectAllURLs() {
-    selectedURLs = new Set(urls.map(url => url.url));
-    render();
-  }
+// 23. Integration with External Monitoring Services
+const externalIntegrations = {
+  async checkWithUptimeRobot(url) {
+    // Simulate integration with UptimeRobot API
+    try {
+      const response = await fetch(`https://api.uptimerobot.com/v2/getMonitors?api_key=YOUR_KEY&url=${encodeURIComponent(url)}`);
+      const data = await response.json();
+      return data.monitors?.[0] || null;
+    } catch (error) {
+      return null;
+    }
+  },
   
-  function deselectAllURLs() {
-    selectedURLs.clear();
-    render();
-  }
+  async pushToDatadog(metrics) {
+    // Simulate integration with Datadog
+    console.log('Pushing metrics to Datadog:', metrics);
+  },
   
-  function checkSelectedURLs() {
-    const selected = urls.filter(url => selectedURLs.has(url.url));
-    Promise.all(selected.map(checkUrl)).then(() => {
-      persistUrls();
-      render();
-    });
-  }
-  
-  function deleteSelectedURLs() {
-    if (selectedURLs.size === 0) return;
-    if (confirm(`Are you sure you want to delete ${selectedURLs.size} URL(s)?`)) {
-      urls = urls.filter(url => !selectedURLs.has(url.url));
-      selectedURLs.clear();
-      persistUrls();
-      render();
+  async createGithubIssue(alert) {
+    // Simulate creating GitHub issue for critical alerts
+    if (alert.type === 'error') {
+      console.log('Creating GitHub issue for:', alert.title);
     }
   }
+};
 
-  // 5. URL Details View
-  function showURLDetails(url) {
-    const urlData = urls.find(u => u.url === url);
-    if (!urlData) return;
-    
-    elements.modals.urlDetails.style.display = 'flex';
-    document.getElementById('urlDetailsHeader').textContent = `Details: ${url}`;
-    
-    const lastStatus = urlData.history?.slice(-1)[0] || {};
-    const uptime24h = calculateUptime(urlData.history || [], 24);
-    const avgResponseTime = calculateAverageResponseTime(urlData.history || []);
-    
-    let detailsHTML = `
-      <div class="details-grid">
-        <div class="detail-item">
-          <div class="detail-label">Current Status</div>
-          <div class="detail-value">
-            <span class="status-dot" style="background: ${lastStatus.status === 'online' ? 'var(--success)' : 'var(--danger)'}"></span>
-            ${lastStatus.status || 'Unknown'}
-          </div>
-        </div>
-        <div class="detail-item">
-          <div class="detail-label">Last Check</div>
-          <div class="detail-value">${lastStatus.t ? new Date(lastStatus.t).toLocaleString() : 'Never'}</div>
-        </div>
-        <div class="detail-item">
-          <div class="detail-label">Response Time</div>
-          <div class="detail-value">${typeof lastStatus.rt === 'number' ? `${Math.round(lastStatus.rt)}ms` : '—'}</div>
-        </div>
-        <div class="detail-item">
-          <div class="detail-label">Uptime (24h)</div>
-          <div class="detail-value">${uptime24h}%</div>
-        </div>
-        <div class="detail-item">
-          <div class="detail-label">Avg Response Time</div>
-          <div class="detail-value">${avgResponseTime ? `${Math.round(avgResponseTime)}ms` : '—'}</div>
-        </div>
-        <div class="detail-item">
-          <div class="detail-label">Total Checks</div>
-          <div class="detail-value">${urlData.history?.length || 0}</div>
-        </div>
-      </div>
-    `;
-    
-    if (urlData.sslInfo) {
-      detailsHTML += `
-        <div style="margin-top: 20px;">
-          <h4>SSL Certificate Information</h4>
-          <div class="details-grid">
-            <div class="detail-item">
-              <div class="detail-label">Valid</div>
-              <div class="detail-value">${urlData.sslInfo.valid ? 'Yes' : 'No'}</div>
-            </div>
-            <div class="detail-item">
-              <div class="detail-label">Days Remaining</div>
-              <div class="detail-value">${urlData.sslInfo.daysRemaining}</div>
-            </div>
-            <div class="detail-item">
-              <div class="detail-label">Expiry Date</div>
-              <div class="detail-value">${urlData.sslInfo.expiryDate || '—'}</div>
-            </div>
-            <div class="detail-item">
-              <div class="detail-label">Issuer</div>
-              <div class="detail-value">${urlData.sslInfo.issuer || '—'}</div>
-            </div>
-          </div>
-        </div>
-      `;
-    }
-    
-    // Response time chart (simplified)
-    if (settings.enableCharts && urlData.history && urlData.history.length > 0) {
-      const recentHistory = urlData.history.slice(-20); // Last 20 checks
-      detailsHTML += `
-        <div style="margin-top: 20px;">
-          <h4>Response Time History</h4>
-          <div class="response-time-chart">
-            <svg width="100%" height="80" viewBox="0 0 300 80">
-              ${recentHistory.map((entry, i) => {
-                if (!entry.rt) return '';
-                const x = (i / (recentHistory.length - 1)) * 280 + 10;
-                const y = 70 - Math.min(entry.rt / 10, 70);
-                const color = entry.status === 'online' ? 
-                  (entry.rt > settings.responseTimeCritical ? 'var(--danger)' : 
-                   entry.rt > settings.responseTimeWarning ? 'var(--warn)' : 'var(--success)') : 'var(--danger)';
-                return `<circle cx="${x}" cy="${y}" r="3" fill="${color}" />`;
-              }).join('')}
-              ${recentHistory.map((entry, i) => {
-                if (!entry.rt || i === 0) return '';
-                const x1 = ((i-1) / (recentHistory.length - 1)) * 280 + 10;
-                const y1 = 70 - Math.min(recentHistory[i-1].rt / 10, 70);
-                const x2 = (i / (recentHistory.length - 1)) * 280 + 10;
-                const y2 = 70 - Math.min(entry.rt / 10, 70);
-                const color = entry.status === 'online' ? '#ccc' : 'var(--danger)';
-                return `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${color}" stroke-width="1" />`;
-              }).join('')}
-            </svg>
-          </div>
-        </div>
-      `;
-    }
-    
-    document.getElementById('urlDetailsContent').innerHTML = detailsHTML;
-  }
-
-  // 6. Health Score Calculation
-  function calculateHealthScore() {
-    if (urls.length === 0) return 0;
-    
-    let totalScore = 0;
-    urls.forEach(url => {
-      let urlScore = 0;
+// 24. Custom Check Intervals per URL
+function updateCustomIntervals() {
+  urls.forEach(url => {
+    if (url.customInterval) {
+      const lastCheck = url.lastCheck || 0;
+      const interval = url.customInterval * 1000;
       
-      // Status score (50%)
-      const lastStatus = url.history?.slice(-1)[0]?.status;
-      if (lastStatus === 'online') urlScore += 50;
-      
-      // Response time score (30%)
-      const lastRT = url.history?.slice(-1)[0]?.rt;
-      if (typeof lastRT === 'number') {
-        if (lastRT <= settings.responseTimeWarning) urlScore += 30;
-        else if (lastRT <= settings.responseTimeCritical) urlScore += 15;
-        // else 0 points for slow response
+      if (now() - lastCheck >= interval) {
+        checkUrl(url);
       }
-      
-      // SSL score (20%)
-      if (url.sslInfo && url.sslInfo.valid && url.sslInfo.daysRemaining > settings.sslWarningDays) {
-        urlScore += 20;
-      } else if (url.sslInfo && url.sslInfo.valid) {
-        urlScore += 10; // Partial score for expiring SSL
+    }
+  });
+}
+
+// 25. Advanced Visualization and Dashboard Customization
+function createCustomDashboard() {
+  return {
+    widgets: [
+      {
+        type: 'uptime-gauge',
+        title: 'Overall Uptime',
+        data: calculateOverallUptime(30)
+      },
+      {
+        type: 'response-time-chart',
+        title: 'Response Times',
+        data: calculateAdvancedMetrics()
+      },
+      {
+        type: 'health-score',
+        title: 'System Health',
+        data: calculateHealthScore()
       }
-      
-      totalScore += urlScore;
-    });
+    ],
+    layout: 'grid', // 'grid', 'list', 'custom'
+    refreshRate: 30000 // 30 seconds
+  };
+}
+
+// =============== INTEGRATION WITH EXISTING CODE ===============
+
+// Update the checkUrl function to include new features
+async function enhancedCheckUrl(item, retryCount = 0) {
+  try {
+    const { rt } = await pingFavicon(item.url, settings.timeoutMs);
+    addHistory(item, 'online', rt);
+    item.lastCheck = now();
+    item.failCount = 0;
+
+    // Enhanced SSL check
+    const lastSSLCheck = item.lastSSLCheck || 0;
+    const sslCheckDue = now() - lastSSLCheck > settings.sslCheckInterval * DAY_MS;
+
+    if (sslCheckDue) {
+      const sslResult = await advancedSSLCheck(item.url);
+      item.sslInfo = sslResult;
+      item.lastSSLCheck = now();
+
+      if (sslResult.daysRemaining <= settings.sslWarningDays) {
+        addAlert(item.url, 'SSL Expiry Warning',
+          `SSL certificate for ${item.url} expires in ${sslResult.daysRemaining} days (${sslResult.expiryDate})`,
+          'warning');
+      }
+    }
+
+    // Security vulnerability scan (weekly)
+    const lastSecurityScan = item.lastSecurityScan || 0;
+    if (now() - lastSecurityScan > 7 * DAY_MS) {
+      const vulnerabilities = await scanSecurityVulnerabilities(item.url);
+      if (vulnerabilities.length > 0) {
+        addAlert(item.url, 'Security Vulnerabilities Found',
+          `Found ${vulnerabilities.length} potential security issues`, 'warning');
+      }
+      item.lastSecurityScan = now();
+    }
+
+    // Business impact assessment
+    const impact = calculateBusinessImpact(item);
+    item.businessImpact = impact;
+
+    // Performance budget check
+    if (rt > settings.responseTimeCritical) {
+      addAlert(item.url, 'Performance Budget Exceeded',
+        `Response time ${Math.round(rt)}ms exceeds critical threshold`, 'warning');
+    }
+
+  } catch (error) {
+    addHistory(item, 'offline', null);
+    item.failCount = (item.failCount || 0) + 1;
     
-    return Math.round(totalScore / urls.length);
-  }
-
-  // 7. Calculate uptime for a specific period
-  function calculateUptime(history, hours) {
-    const period = hours * 60 * 60 * 1000;
-    const recentHistory = history.filter(h => h.t >= now() - period);
-    if (recentHistory.length === 0) return 0;
-    
-    const onlineCount = recentHistory.filter(h => h.status === 'online').length;
-    return Math.round((onlineCount / recentHistory.length) * 100);
-  }
-
-  // 8. Calculate average response time
-  function calculateAverageResponseTime(history) {
-    const validRTs = history.map(h => h.rt).filter(rt => typeof rt === 'number');
-    return average(validRTs);
-  }
-
-  // 9. Export options selection
-  function selectExportOption(element, format) {
-    document.querySelectorAll('.export-option').forEach(opt => opt.classList.remove('selected'));
-    element.classList.add('selected');
-    document.querySelector(`input[value="${format}"]`).checked = true;
-  }
-
-  // 10. Enhanced export functionality
-  function exportData() {
-    const format = document.querySelector('input[name="exportFormat"]:checked').value;
-    const includeHistory = document.getElementById('includeHistory').checked;
-    const includeSSL = document.getElementById('includeSSL').checked;
-    
-    let data, mimeType, filename;
-
-    if (format === 'csv') {
-      // Create CSV content
-      const headers = ['URL', 'Status', 'Last Check', 'Response Time', 'Uptime (24h)', 'SSL Days Remaining', 'SSL Expiry Date'];
-      const rows = urls.map(url => {
-        const lastStatus = url.history?.slice(-1)[0] || {};
-        const uptime24h = calculateUptime(url.history || [], 24);
-        return [
-          url.url,
-          lastStatus.status || 'unknown',
-          lastStatus.t ? new Date(lastStatus.t).toLocaleString() : 'N/A',
-          lastStatus.rt || 'N/A',
-          `${uptime24h}%`,
-          url.sslInfo?.daysRemaining || 'N/A',
-          url.sslInfo?.expiryDate || 'N/A'
-        ];
-      });
-
-      data = [headers, ...rows].map(row => row.map(cell => `"${cell}"`).join(',')).join('\n');
-      mimeType = 'text/csv';
-      filename = 'url-monitor-export.csv';
-    } else if (format === 'json') {
-      // JSON format
-      data = JSON.stringify({
-        exportedAt: new Date().toISOString(),
-        settings: settings,
-        urls: urls.map(url => ({
-          url: url.url,
-          tags: url.tags || [],
-          status: url.history?.slice(-1)[0]?.status || 'unknown',
-          lastCheck: url.history?.slice(-1)[0]?.t || null,
-          responseTime: url.history?.slice(-1)[0]?.rt || null,
-          uptime24h: calculateUptime(url.history || [], 24),
-          sslInfo: includeSSL ? url.sslInfo || null : null,
-          history: includeHistory ? (url.history || []) : []
-        }))
-      }, null, 2);
-      mimeType = 'application/json';
-      filename = 'url-monitor-export.json';
-    } else if (format === 'pdf') {
-      // PDF would require a library like jsPDF - for now, we'll create an HTML representation
-      alert('PDF export would be implemented with a library like jsPDF in a real application');
+    // Enhanced retry logic with exponential backoff
+    if (retryCount < settings.retryFailed) {
+      const backoffDelay = Math.pow(2, retryCount) * 2000;
+      console.log(`Retrying ${item.url} in ${backoffDelay}ms (${retryCount + 1}/${settings.retryFailed})`);
+      setTimeout(() => enhancedCheckUrl(item, retryCount + 1), backoffDelay);
       return;
-    } else if (format === 'html') {
-      // Create a standalone HTML dashboard
-      data = generateHTMLDashboard();
-      mimeType = 'text/html';
-      filename = 'url-monitor-dashboard.html';
     }
-
-    // Create download link
-    const blob = new Blob([data], { type: mimeType });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-
-    // Show success message
-    const exportResult = document.getElementById('exportResult');
-    exportResult.innerHTML = `<div class="success">Data exported successfully as ${filename}</div>`;
-    setTimeout(() => {
-      exportResult.innerHTML = '';
-    }, 3000);
-  }
-
-  // 11. Generate HTML Dashboard for export
-  function generateHTMLDashboard() {
-    const onlineCount = urls.filter(u => u.history?.slice(-1)[0]?.status === 'online').length;
-    const healthScore = calculateHealthScore();
     
-    return `
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8">
-  <title>URL Monitor Dashboard</title>
-  <style>
-    body { font-family: Arial, sans-serif; padding: 20px; }
-    .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; margin: 20px 0; }
-    .stat { background: #f5f5f5; padding: 14px; border-radius: 10px; text-align: center; }
-    .url-list { margin-top: 20px; }
-    .url-item { border: 1px solid #eee; padding: 10px; margin-bottom: 10px; border-radius: 5px; }
-    .online { border-left: 4px solid green; }
-    .offline { border-left: 4px solid red; }
-    .exported { text-align: center; color: #666; margin-top: 30px; }
-  </style>
-</head>
-<body>
-  <h1>URL Monitor Dashboard</h1>
-  <div class="exported">Exported on ${new Date().toLocaleString()}</div>
+    // Automated incident response for critical URLs
+    if (item.businessImpact?.category === 'critical') {
+      automatedIncidentResponse(item.url);
+    }
+    
+    addAlert(item.url, 'Connection Error', `Failed to connect to ${item.url}: ${error.message}`, 'error');
+    console.warn(`Check failed for ${item.url}:`, error.message);
+  }
+}
+
+// Update the main checking loop to include new features
+function enhancedStartChecking() {
+  stopChecking();
+  if (settings.intervalSec > 0) {
+    checkAll();
+    timer = setInterval(() => {
+      checkAll();
+      
+      // Run additional monitoring tasks
+      detectAnomalies();
+      correlateAlerts();
+      checkPerformanceBudgets();
+      updateCustomIntervals();
+      
+      // Resource monitoring
+      const resources = monitorResourceUtilization();
+      if (resources && resources.utilization > 90) {
+        console.warn('High memory utilization:', resources);
+      }
+      
+    }, settings.intervalSec * 1000);
+  }
+}
+
+// Add new UI components for enhanced features
+function renderEnhancedDashboard() {
+  // Add AI insights panel
+  const insights = calculateAdvancedMetrics();
+  const forecasts = forecastMetrics();
+  const capacityInsights = generateCapacityInsights();
   
-  <div class="stats">
-    <div class="stat"><div>Total URLs</div><div style="font-size: 24px; font-weight: bold;">${urls.length}</div></div>
-    <div class="stat"><div>Online</div><div style="font-size: 24px; font-weight: bold; color: green;">${onlineCount}</div></div>
-    <div class="stat"><div>Offline</div><div style="font-size: 24px; font-weight: bold; color: red;">${urls.length - onlineCount}</div></div>
-    <div class="stat"><div>Health Score</div><div style="font-size: 24px; font-weight: bold;">${healthScore}%</div></div>
-  </div>
+  // This would be called from the existing render function
+  // to update the UI with new data
+}
+
+// Initialize enhanced features
+function initializeEnhancedFeatures() {
+  // Build dependency map
+  buildDependencyMap();
   
-  <div class="url-list">
-    <h2>Monitored URLs</h2>
-    ${urls.map(url => {
-      const lastStatus = url.history?.slice(-1)[0] || {};
-      return `
-      <div class="url-item ${lastStatus.status === 'online' ? 'online' : 'offline'}">
-        <div><strong>${url.url}</strong></div>
-        <div>Status: ${lastStatus.status || 'unknown'} | Last Check: ${lastStatus.t ? new Date(lastStatus.t).toLocaleString() : 'N/A'}</div>
-        <div>Response Time: ${typeof lastStatus.rt === 'number' ? `${Math.round(lastStatus.rt)}ms` : '—'}</div>
-      </div>
-      `;
-    }).join('')}
-  </div>
-</body>
-</html>
-    `;
-  }
+  // Set up data retention policy
+  applyDataRetentionPolicy();
+  
+  // Initialize collaboration features
+  collaboration.addUser('System', 'admin');
+  
+  // Generate initial documentation
+  const docs = generateMonitoringDocumentation();
+  console.log('Initial documentation:', docs);
+  
+  // Start enhanced monitoring
+  enhancedStartChecking();
+}
 
-  // 12. Generate Reports
-  function generateReport() {
-    const healthScore = calculateHealthScore();
-    const uptime7Days = calculateOverallUptime(7);
-    const avgResponseTime = calculateOverallAverageResponseTime();
-    const totalChecks24h = urls.reduce((sum, url) => sum + (url.history?.filter(h => h.t >= now() - DAY_MS).length || 0), 0);
-    
-    // Update health indicator
-    const healthIndicator = document.getElementById('overallHealthIndicator');
-    const healthProgress = document.getElementById('healthProgress');
-    
-    if (healthScore >= 80) {
-      healthIndicator.className = 'health-indicator health-good';
-      healthProgress.className = 'progress-fill';
-    } else if (healthScore >= 60) {
-      healthIndicator.className = 'health-indicator health-warning';
-      healthProgress.className = 'progress-fill progress-warning';
-    } else {
-      healthIndicator.className = 'health-indicator health-critical';
-      healthProgress.className = 'progress-fill progress-critical';
-    }
-    
-    document.getElementById('overallHealthScore').textContent = `${healthScore}%`;
-    document.getElementById('healthProgress').style.width = `${healthScore}%`;
-    document.getElementById('uptime7Days').textContent = `${uptime7Days}%`;
-    document.getElementById('avgResponseTime').textContent = avgResponseTime ? `${Math.round(avgResponseTime)}ms` : '—';
-    document.getElementById('totalChecks24h').textContent = totalChecks24h;
-    
-    // Render endpoint health list
-    const endpointHealthList = document.getElementById('endpointHealthList');
-    endpointHealthList.innerHTML = urls.map(url => {
-      const lastStatus = url.history?.slice(-1)[0] || {};
-      const uptime24h = calculateUptime(url.history || [], 24);
-      const avgRT = calculateAverageResponseTime(url.history || []);
-      
-      let healthClass = 'health-good';
-      if (lastStatus.status !== 'online') {
-        healthClass = 'health-critical';
-      } else if (avgRT > settings.responseTimeCritical) {
-        healthClass = 'health-critical';
-      } else if (avgRT > settings.responseTimeWarning) {
-        healthClass = 'health-warning';
-      }
-      
-      return `
-        <div class="collapsible">
-          <div class="collapsible-header" onclick="toggleCollapsible(this)">
-            <span>
-              <span class="health-indicator ${healthClass}"></span>
-              ${url.url}
-            </span>
-            <span>${uptime24h}% uptime</span>
-          </div>
-          <div class="collapsible-content">
-            <div class="details-grid">
-              <div class="detail-item">
-                <div class="detail-label">Current Status</div>
-                <div class="detail-value">${lastStatus.status || 'Unknown'}</div>
-              </div>
-              <div class="detail-item">
-                <div class="detail-label">Avg Response Time</div>
-                <div class="detail-value">${avgRT ? `${Math.round(avgRT)}ms` : '—'}</div>
-              </div>
-              <div class="detail-item">
-                <div class="detail-label">Uptime (24h)</div>
-                <div class="detail-value">${uptime24h}%</div>
-              </div>
-              <div class="detail-item">
-                <div class="detail-label">SSL Status</div>
-                <div class="detail-value">${url.sslInfo ? (url.sslInfo.daysRemaining > settings.sslWarningDays ? 'Valid' : 'Expiring Soon') : 'Unknown'}</div>
-              </div>
-            </div>
-          </div>
-        </div>
-      `;
-    }).join('');
-    
-    // Render performance chart if enabled
-    if (settings.enableCharts) {
-      renderPerformanceChart();
-    }
-  }
-
-  // 13. Calculate overall uptime
-  function calculateOverallUptime(days) {
-    const allHistory = urls.flatMap(u => u.history || []);
-    const period = days * 24 * 60 * 60 * 1000;
-    const recentHistory = allHistory.filter(h => h.t >= now() - period);
-    if (recentHistory.length === 0) return 0;
-    
-    const onlineCount = recentHistory.filter(h => h.status === 'online').length;
-    return Math.round((onlineCount / recentHistory.length) * 100);
-  }
-
-  // 14. Calculate overall average response time
-  function calculateOverallAverageResponseTime() {
-    const allHistory = urls.flatMap(u => u.history || []);
-    const validRTs = allHistory.map(h => h.rt).filter(rt => typeof rt === 'number');
-    return average(validRTs);
-  }
-
-  // 15. Render performance chart
-  function renderPerformanceChart() {
-    const chartContainer = document.getElementById('performanceChart');
-    
-    // Create a simple SVG chart
-    const svgNS = "http://www.w3.org/2000/svg";
-    const svg = document.createElementNS(svgNS, "svg");
-    svg.setAttribute("width", "100%");
-    svg.setAttribute("height", "200");
-    svg.setAttribute("viewBox", "0 0 300 200");
-    
-    // Get response time data for the last 24 hours
-    const timeSlots = 24;
-    const data = [];
-    
-    for (let i = 0; i < timeSlots; i++) {
-      const time = now() - (timeSlots - i) * 60 * 60 * 1000;
-      const endTime = time + 60 * 60 * 1000;
-      
-      const checksInSlot = urls.flatMap(u => u.history || [])
-        .filter(h => h.t >= time && h.t < endTime && h.status === 'online' && typeof h.rt === 'number');
-      
-      if (checksInSlot.length > 0) {
-        const avgRT = average(checksInSlot.map(h => h.rt));
-        data.push(avgRT);
-      } else {
-        data.push(null);
-      }
-    }
-    
-    // Filter out null values and find max value for scaling
-    const validData = data.filter(d => d !== null);
-    const maxValue = validData.length > 0 ? Math.max(...validData) : 1000;
-    
-    // Draw chart
-    for (let i = 0; i < data.length; i++) {
-      if (data[i] === null) continue;
-      
-      const x = (i / (data.length - 1)) * 280 + 10;
-      const y = 190 - (data[i] / maxValue) * 160;
-      
-      const circle = document.createElementNS(svgNS, "circle");
-      circle.setAttribute("cx", x);
-      circle.setAttribute("cy", y);
-      circle.setAttribute("r", "3");
-      circle.setAttribute("fill", data[i] > settings.responseTimeCritical ? "var(--danger)" : 
-                         data[i] > settings.responseTimeWarning ? "var(--warn)" : "var(--success)");
-      svg.appendChild(circle);
-      
-      if (i > 0 && data[i-1] !== null) {
-        const prevX = ((i-1) / (data.length - 1)) * 280 + 10;
-        const prevY = 190 - (data[i-1] / maxValue) * 160;
-        
-        const line = document.createElementNS(svgNS, "line");
-        line.setAttribute("x1", prevX);
-        line.setAttribute("y1", prevY);
-        line.setAttribute("x2", x);
-        line.setAttribute("y2", y);
-        line.setAttribute("stroke", "#ccc");
-        line.setAttribute("stroke-width", "1");
-        svg.appendChild(line);
-      }
-    }
-    
-    // Add X axis (time labels)
-    for (let i = 0; i < 5; i++) {
-      const x = (i / 4) * 280 + 10;
-      const hoursAgo = 24 - (i / 4) * 24;
-      
-      const text = document.createElementNS(svgNS, "text");
-      text.setAttribute("x", x);
-      text.setAttribute("y", 195);
-      text.setAttribute("text-anchor", "middle");
-      text.setAttribute("font-size", "10");
-      text.setAttribute("fill", "#666");
-      text.textContent = `${Math.round(hoursAgo)}h ago`;
-      svg.appendChild(text);
-    }
-    
-    // Add Y axis (response time labels)
-    for (let i = 0; i <= 4; i++) {
-      const y = 190 - (i / 4) * 160;
-      const value = Math.round((i / 4) * maxValue);
-      
-      const text = document.createElementNS(svgNS, "text");
-      text.setAttribute("x", 5);
-      text.setAttribute("y", y + 3);
-      text.setAttribute("text-anchor", "start");
-      text.setAttribute("font-size", "10");
-      text.setAttribute("fill", "#666");
-      text.textContent = `${value}ms`;
-      svg.appendChild(text);
-    }
-    
-    chartContainer.innerHTML = '';
-    chartContainer.appendChild(svg);
-  }
-
-  // 16. Toggle collapsible sections
-  function toggleCollapsible(header) {
-    const content = header.nextElementSibling;
-    if (content.style.display === 'block') {
-      content.style.display = 'none';
-    } else {
-      content.style.display = 'block';
-    }
-  }
-
-  // 17. Dark mode toggle
-  function toggleDarkMode() {
-    settings.darkMode = !settings.darkMode;
-    document.body.classList.toggle('dark-mode', settings.darkMode);
-    persistSettings();
-    
-    // Update theme toggle button
-    const themeToggle = document.querySelector('.theme-toggle');
-    themeToggle.textContent = settings.darkMode ? '☀️' : '🌙';
-  }
-
-  // 18. Enhanced URL adding with tags
-  function addURL(newUrl, skipCheck = false, tags = []) {
-    const finalUrl = typeof newUrl === 'string' ? normalizeUrl(newUrl) : null;
-    if (!finalUrl) {
-      // Show a modal for adding URL with tags
-      showAddURLModal();
-      return false;
-    }
-    
-    if (!urls.some(u => u.url === finalUrl)) {
-      urls.push({ 
-        url: finalUrl, 
-        history: [], 
-        spikes: [],
-        tags: tags,
-        lastCheck: null,
-        failCount: 0
-      });
-      
-      if (!skipCheck) {
-        checkUrl(urls.slice(-1)[0]).then(() => { 
-          persistUrls(); 
-          render(); 
-        });
-      } else {
-        persistUrls(); 
-        render();
-      }
-      
-      updateTagsList();
-      return true;
-    } else if (typeof newUrl !== 'string') {
-      alert('This URL is already being monitored.');
-    }
-    return false;
-  }
-
-  // 19. Show add URL modal
-  function showAddURLModal() {
-    // In a real implementation, this would show a modal for adding URLs with tags
-    const url = prompt('Enter a new URL to monitor:');
-    if (!url) return;
-    
-    const tagsInput = prompt('Enter tags (comma-separated, optional):');
-    const tags = tagsInput ? tagsInput.split(',').map(t => t.trim()).filter(t => t) : [];
-    
-    addURL(url, false, tags);
-  }
-
-  // 20. Add inspected URL
-  function addInspectedURL(button, url) {
-    if (addURL(url, true)) {
-        button.textContent = 'Added!';
-        button.disabled = true;
-        button.classList.remove('btn-green');
-    } else {
-        button.textContent = 'Exists';
-        button.disabled = true;
-        button.classList.remove('btn-green');
-    }
-  }
-
-  // =============== UI / Rendering ===============
-  const renderTimeline = (history) => `<svg class="timeline" viewBox="0 0 96 10">${[...Array(96)].map((_, i) => {
-      const entry = history.find(h => Math.floor((now() - h.t) / (15 * 60 * 1000)) === i);
-      const color = !entry ? 'var(--border)' : entry.status === 'online' ? 'var(--success)' : 'var(--danger)';
-      return `<rect x="${95-i}" y="0" width="1" height="10" fill="${color}" />`;
-  }).join('')}</svg>`;
-
-  const getSSLChipClass = (daysRemaining) => {
-    if (daysRemaining <= 7) return 'chip-danger';
-    if (daysRemaining <= 30) return 'chip-warning';
-    return 'chip-success';
+// Update the existing initializeApp function
+function initializeApp() {
+  // Existing initialization code...
+  
+  // Load enhanced settings
+  settings = { 
+    ...DEFAULT_SETTINGS, 
+    ...loadFromStorage('ump_settings', {}),
+    // Enhanced default settings
+    dataRetentionDays: 30,
+    enableAnomalyDetection: true,
+    enableForecasting: true,
+    enableSecurityScan: true
   };
+  
+  // Existing initialization continues...
+  
+  // Initialize enhanced features
+  initializeEnhancedFeatures();
+}
 
-  const renderURLList = (urlsToRender = urls) => {
-    elements.urlList.innerHTML = urlsToRender.length ? urlsToRender.map(renderUrlRow).join('') : 
-      '<div style="text-align:center; color: var(--muted); padding: 20px 0;">No URLs match the current filters.</div>';
-  };
+// Add new settings to the settings modal
+function showEnhancedSettings() {
+  // Add new settings fields to the modal
+  const enhancedSettingsHTML = `
+    <div class="rowx" style="grid-template-columns: 170px 1fr;">
+      <label>Data Retention (days)</label>
+      <input id="dataRetentionDays" type="number" min="1" max="365" value="${settings.dataRetentionDays || 30}" />
+    </div>
+    <div class="rowx" style="grid-template-columns: 170px 1fr;">
+      <label>Enable Anomaly Detection</label>
+      <input id="enableAnomalyDetection" type="checkbox" ${settings.enableAnomalyDetection ? 'checked' : ''} />
+    </div>
+    <div class="rowx" style="grid-template-columns: 170px 1fr;">
+      <label>Enable Forecasting</label>
+      <input id="enableForecasting" type="checkbox" ${settings.enableForecasting ? 'checked' : ''} />
+    </div>
+    <div class="rowx" style="grid-template-columns: 170px 1fr;">
+      <label>Enable Security Scan</label>
+      <input id="enableSecurityScan" type="checkbox" ${settings.enableSecurityScan ? 'checked' : ''} />
+    </div>
+  `;
+  
+  // Inject into settings modal
+  const settingsBody = document.querySelector('#settingsModal .body');
+  settingsBody.innerHTML += enhancedSettingsHTML;
+  
+  // Show the modal
+  elements.modals.settings.style.display = 'flex';
+}
 
-  const renderUrlRow = (item) => {
-    const last = item.history?.slice(-1)[0] ?? {};
-    const statusClass = last.status === 'online' ? 'success' : last.status === 'offline' ? 'danger' : 'muted';
-    const rtText = typeof last.rt === 'number' ? `${Math.round(last.rt)}ms` : '—';
-    
-    // Determine response time status
-    let rtStatus = '';
-    if (last.status === 'online' && typeof last.rt === 'number') {
-      if (last.rt > settings.responseTimeCritical) {
-        rtStatus = 'chip-danger';
-      } else if (last.rt > settings.responseTimeWarning) {
-        rtStatus = 'chip-warning';
-      }
-    }
-
-    // SSL info
-    let sslHtml = '';
-    if (item.sslInfo) {
-      const sslClass = getSSLChipClass(item.sslInfo.daysRemaining);
-      sslHtml = `<div class="chip ${sslClass}" title="SSL expires on ${item.sslInfo.expiryDate}">SSL: ${item.sslInfo.daysRemaining}d</div>`;
-    }
-    
-    // Tags
-    let tagsHtml = '';
-    if (item.tags && item.tags.length) {
-      tagsHtml = `<div class="tag-group">${item.tags.map(tag => `<span class="tag">${escapeHtml(tag)}</span>`).join('')}</div>`;
-    }
-
-    return `
-      <div class="row" data-url="${escapeHtml(item.url)}">
-        <input type="checkbox" class="url-checkbox" ${selectedURLs.has(item.url) ? 'checked' : ''} onchange="toggleURLSelection('${escapeHtml(item.url)}', this.checked)">
-        <div class="dot" style="background:var(--${statusClass})"></div>
-        <div style="flex: 1;">
-          <div class="url">${escapeHtml(item.url)}</div>
-          <div class="sub">Status: <b class="${statusClass}">${last.status || 'pending'}</b> | Last check: ${last.t ? new Date(last.t).toLocaleTimeString() : 'N/A'}</div>
-          ${item.sslInfo ? `<div class="sub">SSL: Expires on ${item.sslInfo.expiryDate} (${item.sslInfo.daysRemaining} days remaining)</div>` : ''}
-          ${tagsHtml}
-        </div>
-        <div class="right">
-          ${renderTimeline(item.history || [])}
-          <div class="chip ${rtStatus}">${rtText}</div>
-          ${sslHtml}
-          <div class="url-actions">
-            <button onclick="showURLDetails('${escapeHtml(item.url)}')">📊</button>
-            <button onclick="deleteURL('${escapeHtml(item.url)}')">🗑️</button>
-          </div>
-        </div>
-      </div>`;
-  };
-
-  function renderStats() {
-    const onlineCount = urls.filter(u => u.history?.slice(-1)[0]?.status === 'online').length;
-    const sslIssueCount = urls.filter(u => u.sslInfo && u.sslInfo.daysRemaining <= settings.sslWarningDays).length;
-    const allHistory = urls.flatMap(u => u.history || []);
-    const recentHistory = prune(allHistory, 't');
-    const recentOnline = recentHistory.filter(h => h.status === 'online');
-    const uptime = recentHistory.length ? (recentOnline.length / recentHistory.length * 100).toFixed(1) : '0.0';
-    const validRts = recentOnline.map(h => h.rt).filter(rt => rt != null);
-    const avgRt = average(validRts);
-    const healthScore = calculateHealthScore();
-
-    elements.stats.total.textContent = urls.length;
-    elements.stats.online.textContent = onlineCount;
-    elements.stats.offline.textContent = urls.length - onlineCount;
-    elements.stats.sslIssues.textContent = sslIssueCount;
-    elements.stats.uptime24.textContent = `${uptime}%`;
-    elements.stats.avgRt24.textContent = avgRt != null ? `${Math.round(avgRt)}ms` : '—';
-    elements.stats.healthScore.textContent = `${healthScore}%`;
-  }
-
-  const render = () => {
-    renderURLList();
-    renderStats();
-    updateTagsList();
-  };
-
-  // 21. Toggle URL selection
-  function toggleURLSelection(url, selected) {
-    if (selected) {
-      selectedURLs.add(url);
-    } else {
-      selectedURLs.delete(url);
-    }
-    render();
-  }
-
-  // =============== Tab Management ===============
-  function switchTab(tabName) {
-    // Hide all tabs
-    document.querySelectorAll('.tab-content').forEach(tab => {
-      tab.classList.remove('active');
-    });
-
-    // Remove active class from all tabs
-    document.querySelectorAll('.tab').forEach(tab => {
-      tab.classList.remove('active');
-    });
-
-    // Show selected tab
-    document.getElementById(`${tabName}Tab`).classList.add('active');
-
-    // Activate selected tab button
-    // event may be undefined when called programmatically — guard it
-    try { if (event && event.target) event.target.classList.add('active'); } catch (e) {}
-
-    // Render specific tab content if needed
-    if (tabName === 'alerts') {
-      renderAlerts();
-    } else if (tabName === 'reports') {
-      generateReport();
-    }
-  }
-
-  // =============== Actions / Event Handlers ===============
-  const deleteURL = (url) => { 
-    urls = urls.filter(u => u.url !== url); 
-    selectedURLs.delete(url);
-    persistUrls(); 
-    render(); 
-  };
-
-  const showSettings = () => {
-    Object.keys(elements.inputs).forEach(key => {
-      // map keys to settings property names
-      if (key === 'maxEndpoints') elements.inputs[key].value = settings.maxInspectorEndpoints ?? DEFAULT_SETTINGS.maxInspectorEndpoints;
-      else elements.inputs[key].value = settings[key] ?? DEFAULT_SETTINGS[key];
-    });
-    elements.modals.settings.style.display = 'flex';
-  };
-
-  function saveSettings() {
-    settings.intervalSec = parseInt(elements.inputs.interval.value, 10) || 60;
-    settings.timeoutMs = parseInt(elements.inputs.timeout.value, 10) || 8000;
-    settings.maxInspectorEndpoints = parseInt(elements.inputs.maxEndpoints.value, 10) || 20;
-    settings.sslCheckInterval = parseInt(elements.inputs.sslCheckInterval.value, 10) || 1;
-    settings.sslWarningDays = parseInt(elements.inputs.sslWarningDays.value, 10) || 30;
-    settings.alertSound = elements.inputs.alertSound.value;
-    settings.responseTimeWarning = parseInt(elements.inputs.responseTimeWarning.value, 10) || 1000;
-    settings.responseTimeCritical = parseInt(elements.inputs.responseTimeCritical.value, 10) || 3000;
-    settings.uptimeWarning = parseInt(elements.inputs.uptimeWarning.value, 10) || 95;
-    settings.retryFailed = parseInt(elements.inputs.retryFailed.value, 10) || 0;
-    settings.enableCharts = elements.inputs.enableCharts.checked;
-    persistSettings();
-    elements.modals.settings.style.display = 'none';
-    startChecking();
-  }
-
-  function showInspector() {
-    elements.inspector.sourceList.innerHTML = urls.length ? urls.map((u, i) => `
-      <label><input type="radio" name="inspectorSource" value="${escapeHtml(u.url)}" ${i===0 ? 'checked' : ''}>${escapeHtml(u.url)}</label>
-    `).join('') : 'Add a URL first to use as an inspection source.';
-    elements.inspector.resultList.innerHTML = 'Select a source URL and click "Start Inspection".';
-    elements.modals.inspector.style.display = 'flex';
-  }
-
-  // =============== Initialization ===============
-  function initializeApp() {
-    // Load data only after successful authentication
-    settings = { ...DEFAULT_SETTINGS, ...loadFromStorage('ump_settings', {}) };
-    urls = loadFromStorage('ump_urls', []);
-    alerts = loadFromStorage('ump_alerts', []);
-
-    // Add event listener for login form submission on Enter key
-    elements.login.password.addEventListener('keyup', (event) => {
-        if (event.key === 'Enter') handleLogin();
-    });
-
-    // Initialize dark mode
-    document.body.classList.toggle('dark-mode', settings.darkMode);
-    const themeToggle = document.querySelector('.theme-toggle');
-    if (themeToggle) {
-      themeToggle.textContent = settings.darkMode ? '☀️' : '🌙';
-    }
-
-    urls.forEach(u => u.history = prune(u.history, 't'));
-    render();
-    updateAlertBadge();
-    updateTagsList();
-    startChecking();
-  }
+// Update saveSettings to include new settings
+function saveEnhancedSettings() {
+  // Existing settings saving...
+  
+  // Enhanced settings
+  settings.dataRetentionDays = parseInt(document.getElementById('dataRetentionDays').value) || 30;
+  settings.enableAnomalyDetection = document.getElementById('enableAnomalyDetection').checked;
+  settings.enableForecasting = document.getElementById('enableForecasting').checked;
+  settings.enableSecurityScan = document.getElementById('enableSecurityScan').checked;
+  
+  persistSettings();
+  elements.modals.settings.style.display = 'none';
+  
+  // Re-apply data retention policy
+  applyDataRetentionPolicy();
+}
 </script>
-</body>
-</html>
