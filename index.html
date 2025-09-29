@@ -1,4 +1,3 @@
-﻿
 <html>
 <head>
   <meta charset="utf-8" />
@@ -694,8 +693,9 @@
 
   async function startInspectorScan() {
     const sourceRadio = $('input[name="inspectorSource"]:checked');
-    if (!sourceRadio) {
-      alert('Please select a source URL to inspect.');
+    // CORRECTED: Added a check to ensure the radio button has a valid value
+    if (!sourceRadio || !sourceRadio.value) {
+      alert('Please select a valid source URL to inspect.');
       return;
     }
 
