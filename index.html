@@ -1,4 +1,4 @@
-Enhanced Auto Inspector
+﻿Enhanced2
 
 <!doctype html>
 <html>
@@ -281,15 +281,25 @@ Enhanced Auto Inspector
     });
   }
 
-  // SSL Certificate Checker
+  // SSL Certificate Checker - Fixed Version
   async function checkSSLCertificate(url) {
     return new Promise((resolve) => {
       try {
         const hostname = new URL(url).hostname;
-        // In a real implementation, this would make a request to check SSL certificate
-        // For demonstration, we'll simulate SSL expiry with random dates
+        
+        // For demonstration: Use a consistent expiry date based on the hostname
+        // In a real implementation, you would make an actual SSL certificate check
         const today = new Date();
-        const daysToExpiry = Math.floor(Math.random() * 60) + 1; // Random between 1-60 days
+        
+        // Create a deterministic expiry date based on hostname hash
+        let hash = 0;
+        for (let i = 0; i < hostname.length; i++) {
+          hash = ((hash << 5) - hash) + hostname.charCodeAt(i);
+          hash = hash & hash; // Convert to 32bit integer
+        }
+        
+        // Generate consistent days between 1-365 based on hostname
+        const daysToExpiry = Math.abs(hash) % 365 + 1;
         const expiryDate = new Date(today);
         expiryDate.setDate(today.getDate() + daysToExpiry);
 
@@ -297,7 +307,7 @@ Enhanced Auto Inspector
           valid: true,
           daysRemaining: daysToExpiry,
           expiryDate: expiryDate.toISOString().split('T')[0],
-          issuer: "Simulated CA"
+          issuer: "Simulated CA - Fixed"
         });
       } catch (error) {
         resolve({
@@ -477,11 +487,13 @@ Enhanced Auto Inspector
     const statusClass = last.status === 'online' ? 'success' : last.status === 'offline' ? 'danger' : 'muted';
     const rtText = typeof last.rt === 'number' ? `${Math.round(last.rt)}ms` : '—';
 
-    // SSL info
+    // SSL info - Fixed display
     let sslHtml = '';
-    if (item.sslInfo) {
+    if (item.sslInfo && item.sslInfo.valid) {
       const sslClass = getSSLChipClass(item.sslInfo.daysRemaining);
-      sslHtml = `<div class="chip ${sslClass}" title="SSL expires on ${item.sslInfo.expiryDate}">SSL: ${item.sslInfo.daysRemaining}d</div>`;
+      sslHtml = `<div class="chip ${sslClass}" title="SSL expires on ${item.sslInfo.expiryDate} (Issuer: ${item.sslInfo.issuer})">SSL: ${item.sslInfo.daysRemaining} days</div>`;
+    } else if (item.sslInfo && !item.sslInfo.valid) {
+      sslHtml = `<div class="chip chip-danger" title="SSL Certificate Invalid">SSL: Invalid</div>`;
     }
 
     return `
@@ -490,7 +502,7 @@ Enhanced Auto Inspector
         <div>
           <div class="url">${escapeHtml(item.url)}</div>
           <div class="sub">Status: <b class="${statusClass}">${last.status || 'pending'}</b> | Last check: ${last.t ? new Date(last.t).toLocaleTimeString() : 'N/A'}</div>
-          ${item.sslInfo ? `<div class="sub">SSL: Expires on ${item.sslInfo.expiryDate} (${item.sslInfo.daysRemaining} days remaining)</div>` : ''}
+          ${item.sslInfo && item.sslInfo.valid ? `<div class="sub">SSL: Expires on ${item.sslInfo.expiryDate} (${item.sslInfo.daysRemaining} days remaining) - ${item.sslInfo.issuer}</div>` : ''}
         </div>
         <div class="right">
           ${renderTimeline(item.history || [])}
