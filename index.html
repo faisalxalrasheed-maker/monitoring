@@ -279,47 +279,73 @@
     });
   }
 
-  // ================= ENHANCED SSL Certificate Checker (uses SSL Labs) =================
+  // ================= FIXED SSL Certificate Checker (uses SSL Labs, robust polling & chain checks) =================
   async function checkSSLCertificate(url) {
     try {
       const hostname = new URL(url).hostname;
 
-      // Kick off an analysis on SSL Labs
-      // Using public SSL Labs API: https://api.ssllabs.com/api/v3/
-      let resp = await fetch(`https://api.ssllabs.com/api/v3/analyze?host=${hostname}`);
-      let data = await resp.json();
-
-      // Poll until READY or ERROR — limit retries to avoid long loops
       let retries = 0;
-      const maxRetries = 12; // up to ~1 minute (12 * 5s = 60s)
-      while (data.status && data.status !== "READY" && data.status !== "ERROR" && retries < maxRetries) {
-        await new Promise(r => setTimeout(r, 5000)); // wait 5s
-        resp = await fetch(`https://api.ssllabs.com/api/v3/analyze?host=${hostname}`);
+      let data = null;
+
+      // Poll SSL Labs until analysis is READY or ERROR
+      while (retries < 12) { // up to ~2 minutes (12 * 10s)
+        const resp = await fetch(`https://api.ssllabs.com/api/v3/analyze?host=${hostname}&all=done`);
         data = await resp.json();
+
+        if (data && (data.status === "READY" || data.status === "ERROR")) break;
+
+        // Wait 10s before next poll
+        await new Promise(r => setTimeout(r, 10000));
         retries++;
       }
 
-      if (data.status === "READY" && data.endpoints && data.endpoints.length > 0) {
+      if (data?.status === "READY" && data.endpoints?.length) {
         // Prefer first endpoint result
-        const ep = data.endpoints[0];
-        const cert = ep.details && ep.details.cert ? ep.details.cert : null;
-        if (cert && cert.notAfter) {
-          const expiry = new Date(cert.notAfter);
+        const details = data.endpoints[0].details || {};
+        let expiry = null;
+
+        // Try details.cert.notAfter (common)
+        if (details.cert && details.cert.notAfter) {
+          expiry = new Date(details.cert.notAfter);
+        }
+
+        // Try chain certificates (if available)
+        if (!expiry && details.chain && Array.isArray(details.chain.certs) && details.chain.certs.length) {
+          // Take the certificate with the latest notAfter
+          const certs = details.chain.certs;
+          let latest = null;
+          certs.forEach(c => {
+            try {
+              if (c && c.notAfter) {
+                const d = new Date(c.notAfter);
+                if (!latest || d > latest) latest = d;
+              }
+            } catch {}
+          });
+          if (latest) expiry = latest;
+        }
+
+        // Some endpoints may embed certs differently; try endpoints[].details.cert chain alternative keys
+        if (!expiry && details.cert && details.cert.notAfter) {
+          try { expiry = new Date(details.cert.notAfter); } catch {}
+        }
+
+        if (expiry) {
           const daysRemaining = Math.ceil((expiry - Date.now()) / (1000 * 60 * 60 * 24));
           return {
             valid: true,
             daysRemaining,
             expiryDate: expiry.toISOString().split('T')[0],
-            issuer: cert.issuerLabel || (cert.issuer && cert.issuer.O) || "Unknown"
+            issuer: (details.cert && details.cert.issuerLabel) || (details.cert && details.cert.issuer && details.cert.issuer.O) || "Unknown"
           };
         }
       }
 
-      // If we reach here, SSL data not available
+      // If we reach here, SSL data not available or analysis errored
       return { valid: false, daysRemaining: 0, expiryDate: null, issuer: null };
     } catch (e) {
       console.warn("SSL check failed:", e);
-      return { valid: false, daysRemaining: 0, expiryDate: null, issuer: null, error: e.message || String(e) };
+      return { valid: false, daysRemaining: 0, expiryDate: null, issuer: null, error: e && e.message ? e.message : String(e) };
     }
   }
 
@@ -339,7 +365,7 @@
         item.lastSSLCheck = now();
         
         // Check for SSL expiry warning
-        if (sslResult.daysRemaining !== null && sslResult.daysRemaining <= settings.sslWarningDays) {
+        if (typeof sslResult.daysRemaining === 'number' && sslResult.daysRemaining <= settings.sslWarningDays) {
           addAlert(item.url, 'SSL Expiry Warning', 
             `SSL certificate for ${item.url} expires in ${sslResult.daysRemaining} days (${sslResult.expiryDate})`,
             'warning');
