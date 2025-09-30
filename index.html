@@ -67,6 +67,29 @@
     .notification.warning { border-left: 4px solid var(--warn); }
     .notification.error { border-left: 4px solid var(--danger); }
     .notification-close { background: none; border: none; font-size: 16px; cursor: pointer; margin-left: auto; }
+
+        /* Fix for Modals - Missing Tab Styles */
+    .modal-tab-container { display: flex; border-bottom: 1px solid var(--border); margin-bottom: 10px; }
+    .modal-tab { padding: 8px 12px; cursor: pointer; border-bottom: 2px solid transparent; font-size: 14px; }
+    .modal-tab.active { border-bottom-color: var(--primary); font-weight: 600; }
+    .modal-tab-content { display: none; padding-top: 5px; }
+    .modal-tab-content.active { display: block; }
+    /* Fix for Spinner (Needed for Feature 14) */
+    .checking-spinner {
+        display: none;
+        width: 16px;
+        height: 16px;
+        border: 2px solid #f3f3f3;
+        border-top: 2px solid var(--primary);
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+        margin-left: 10px;
+    }
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+
     
     /* NEW STYLES */
     .url-actions { display: flex; gap: 5px; }
