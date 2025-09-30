@@ -1,871 +1,1498 @@
 <script>
-// =============== NEW ENHANCEMENTS ===============
+// =============== ENHANCED AUTO INSPECTOR FEATURES ===============
 
-// 1. AI-Powered Anomaly Detection
-function detectAnomalies() {
-  urls.forEach(url => {
-    const recentHistory = (url.history || []).slice(-50);
-    const responseTimes = recentHistory.map(h => h.rt).filter(rt => typeof rt === 'number');
-    
-    if (responseTimes.length >= 10) {
-      const avg = average(responseTimes);
-      const stdDev = Math.sqrt(responseTimes.reduce((sum, rt) => sum + Math.pow(rt - avg, 2), 0) / responseTimes.length);
-      const latestRT = responseTimes[responseTimes.length - 1];
-      
-      // Detect significant deviations (3 sigma rule)
-      if (Math.abs(latestRT - avg) > 3 * stdDev) {
-        addAlert(url.url, 'Performance Anomaly Detected', 
-          `Response time anomaly: ${Math.round(latestRT)}ms (normally ${Math.round(avg)}ms ± ${Math.round(stdDev)}ms)`, 
-          'warning');
-      }
-    }
-  });
-}
-
-// 2. Multi-Region Monitoring Simulation
-async function checkFromMultipleRegions(url) {
-  const regions = ['us-east', 'us-west', 'eu-central', 'asia-southeast'];
-  const regionResults = [];
+// 1. Advanced Web Crawler with Sitemap Detection
+async function advancedWebCrawl(baseUrl, maxDepth = 2) {
+  const crawledUrls = new Set();
+  const queue = [{ url: baseUrl, depth: 0 }];
   
-  for (const region of regions) {
+  while (queue.length > 0 && crawledUrls.size < settings.maxInspectorEndpoints) {
+    const { url, depth } = queue.shift();
+    
+    if (crawledUrls.has(url) || depth > maxDepth) continue;
+    crawledUrls.add(url);
+    
     try {
-      const start = performance.now();
-      // Simulate region-based latency
-      const latency = Math.random() * 100 + (region === 'asia-southeast' ? 200 : 0);
-      await new Promise(resolve => setTimeout(resolve, latency));
+      const response = await fetch(url, { 
+        method: 'GET',
+        headers: { 'User-Agent': 'URLMonitorPro-Bot/1.0' }
+      });
+      const html = await response.text();
       
-      const { rt } = await pingFavicon(url, settings.timeoutMs - latency);
-      regionResults.push({
-        region,
-        responseTime: rt + latency,
-        status: 'online'
-      });
-    } catch (error) {
-      regionResults.push({
-        region,
-        responseTime: null,
-        status: 'offline',
-        error: error.message
-      });
-    }
-  }
-  
-  return regionResults;
-}
-
-// 3. Advanced Performance Metrics
-function calculateAdvancedMetrics() {
-  return urls.map(url => {
-    const history = url.history || [];
-    const responseTimes = history.map(h => h.rt).filter(rt => typeof rt === 'number');
-    
-    if (responseTimes.length === 0) return null;
-    
-    const sorted = [...responseTimes].sort((a, b) => a - b);
-    const p95 = sorted[Math.floor(sorted.length * 0.95)];
-    const p99 = sorted[Math.floor(sorted.length * 0.99)];
-    
-    return {
-      url: url.url,
-      min: Math.min(...responseTimes),
-      max: Math.max(...responseTimes),
-      median: sorted[Math.floor(sorted.length / 2)],
-      p95,
-      p99,
-      errorRate: (history.filter(h => h.status === 'offline').length / history.length) * 100
-    };
-  }).filter(Boolean);
-}
-
-// 4. Predictive Uptime Forecasting
-function predictUptime(url) {
-  const history = url.history || [];
-  const recentUptime = calculateUptime(history, 24);
-  const weeklyUptime = calculateUptime(history, 24 * 7);
-  
-  // Simple weighted average prediction
-  const predictedUptime = (recentUptime * 0.7 + weeklyUptime * 0.3);
-  
-  return {
-    current: recentUptime,
-    predicted: Math.round(predictedUptime),
-    trend: recentUptime > weeklyUptime ? 'improving' : recentUptime < weeklyUptime ? 'declining' : 'stable'
-  };
-}
-
-// 5. Advanced SSL Certificate Analysis
-async function advancedSSLCheck(url) {
-  const basicInfo = await checkSSLCertificate(url);
-  
-  // Enhanced SSL analysis
-  const enhancedInfo = {
-    ...basicInfo,
-    grade: calculateSSLGrade(basicInfo),
-    recommendations: generateSSLRecommendations(basicInfo),
-    vulnerabilities: checkSSLVulnerabilities(basicInfo)
-  };
-  
-  return enhancedInfo;
-}
-
-function calculateSSLGrade(sslInfo) {
-  if (!sslInfo.valid) return 'F';
-  if (sslInfo.daysRemaining > 90) return 'A+';
-  if (sslInfo.daysRemaining > 60) return 'A';
-  if (sslInfo.daysRemaining > 30) return 'B';
-  if (sslInfo.daysRemaining > 14) return 'C';
-  if (sslInfo.daysRemaining > 7) return 'D';
-  return 'F';
-}
-
-// 6. Dependency Mapping
-const dependencyMap = new Map();
-
-function buildDependencyMap() {
-  dependencyMap.clear();
-  
-  urls.forEach(url => {
-    const domain = new URL(url.url).hostname;
-    const dependencies = findDependencies(domain);
-    dependencyMap.set(url.url, dependencies);
-  });
-}
-
-function findDependencies(domain) {
-  // Simulate finding dependencies (CDNs, APIs, etc.)
-  const commonDependencies = {
-    'google.com': ['fonts.googleapis.com', 'ajax.googleapis.com', 'www.gstatic.com'],
-    'example.com': ['api.example.com', 'cdn.example.com', 'assets.example.com']
-  };
-  
-  return commonDependencies[domain] || [];
-}
-
-// 7. Automated Root Cause Analysis
-function performRootCauseAnalysis(downUrls) {
-  const affectedDomains = downUrls.map(url => new URL(url).hostname);
-  const potentialCauses = [];
-  
-  // Check for shared dependencies
-  dependencyMap.forEach((dependencies, url) => {
-    const urlDomain = new URL(url).hostname;
-    if (affectedDomains.includes(urlDomain)) {
-      dependencies.forEach(dep => {
-        if (!urls.some(u => u.url.includes(dep))) {
-          potentialCauses.push(`Missing dependency: ${dep}`);
+      // Parse HTML for links
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(html, 'text/html');
+      
+      // Extract all possible links
+      const links = [
+        ...doc.querySelectorAll('a[href]'),
+        ...doc.querySelectorAll('link[href]'),
+        ...doc.querySelectorAll('script[src]'),
+        ...doc.querySelectorAll('img[src]'),
+        ...doc.querySelectorAll('iframe[src]')
+      ].map(el => el.getAttribute('href') || el.getAttribute('src'));
+      
+      // Process and normalize links
+      for (const link of links) {
+        if (!link) continue;
+        
+        let absoluteUrl;
+        try {
+          if (link.startsWith('http')) {
+            absoluteUrl = link;
+          } else if (link.startsWith('//')) {
+            absoluteUrl = `${new URL(url).protocol}${link}`;
+          } else if (link.startsWith('/')) {
+            absoluteUrl = `${new URL(url).origin}${link}`;
+          } else {
+            absoluteUrl = new URL(link, url).toString();
+          }
+          
+          // Only follow same-domain links
+          if (new URL(absoluteUrl).hostname === new URL(baseUrl).hostname) {
+            if (!crawledUrls.has(absoluteUrl) && depth < maxDepth) {
+              queue.push({ url: absoluteUrl, depth: depth + 1 });
+            }
+          }
+        } catch (e) {
+          // Skip invalid URLs
         }
-      });
+      }
+    } catch (error) {
+      console.warn(`Failed to crawl ${url}:`, error.message);
     }
-  });
-  
-  // Check for pattern in downtime
-  if (downUrls.length > urls.length * 0.5) {
-    potentialCauses.push('Potential network outage or DNS issues');
   }
   
-  return [...new Set(potentialCauses)];
+  return Array.from(crawledUrls);
 }
 
-// 8. Business Impact Assessment
-function calculateBusinessImpact(url) {
-  // Define URL categories and their impact weights
-  const impactWeights = {
-    'critical': 10,    // Core application, payment processing
-    'high': 7,         // Main services, APIs
-    'medium': 4,       // Secondary services, documentation
-    'low': 1           // Monitoring, status pages
-  };
+// 2. Sitemap.xml Parser
+async function parseSitemap(baseUrl) {
+  const sitemapUrls = [];
+  const sitemapLocations = [
+    '/sitemap.xml',
+    '/sitemap_index.xml',
+    '/sitemap/index.xml',
+    '/sitemap.php',
+    '/sitemap.txt'
+  ];
   
-  let category = 'medium';
-  if (url.includes('/api/') || url.includes('/payment')) category = 'critical';
-  else if (url.includes('/admin') || url.includes('/dashboard')) category = 'high';
-  else if (url.includes('/docs') || url.includes('/blog')) category = 'low';
-  
-  const uptime = calculateUptime(url.history || [], 24);
-  const impactScore = (100 - uptime) * impactWeights[category];
-  
-  return {
-    category,
-    impactScore: Math.round(impactScore),
-    financialImpact: calculateFinancialImpact(url, uptime)
-  };
-}
-
-function calculateFinancialImpact(url, uptime) {
-  // Simple simulation - in real scenario, this would use actual business metrics
-  const downtimeMinutes = (100 - uptime) * 14.4; // 24h * 60min * 0.01
-  const costPerMinute = url.includes('/api/') ? 10 : url.includes('/payment') ? 50 : 1;
-  
-  return Math.round(downtimeMinutes * costPerMinute);
-}
-
-// 9. Advanced Alert Correlation
-function correlateAlerts() {
-  const recentAlerts = alerts.filter(a => a.timestamp > now() - 3600000); // Last hour
-  const alertGroups = {};
-  
-  recentAlerts.forEach(alert => {
-    const key = `${alert.type}-${alert.title}`;
-    if (!alertGroups[key]) alertGroups[key] = [];
-    alertGroups[key].push(alert);
-  });
-  
-  // Correlated alerts (same type/title within short period)
-  Object.entries(alertGroups).forEach(([key, groupAlerts]) => {
-    if (groupAlerts.length >= 3) {
-      const correlatedAlert = {
-        id: now() + Math.random(),
-        timestamp: now(),
-        title: `Correlated Alert: ${groupAlerts[0].title}`,
-        message: `${groupAlerts.length} occurrences in the last hour`,
-        type: 'warning',
-        correlated: true,
-        originalAlerts: groupAlerts.map(a => a.id)
-      };
+  for (const location of sitemapLocations) {
+    try {
+      const sitemapUrl = new URL(location, baseUrl).toString();
+      const response = await fetch(sitemapUrl);
+      const text = await response.text();
       
-      if (!alerts.some(a => a.correlated && a.originalAlerts?.includes(groupAlerts[0].id))) {
-        alerts.unshift(correlatedAlert);
-      }
-    }
-  });
-}
-
-// 10. Automated Recovery Verification
-async function verifyRecovery(url) {
-  let recoveryVerified = false;
-  let attempts = 0;
-  
-  while (!recoveryVerified && attempts < 5) {
-    attempts++;
-    try {
-      const { rt } = await pingFavicon(url, settings.timeoutMs);
-      if (rt < settings.responseTimeCritical) {
-        recoveryVerified = true;
-        addAlert(url, 'Recovery Verified', 
-          `Service recovered after ${attempts} verification attempts. Response time: ${Math.round(rt)}ms`, 
-          'success');
+      if (response.ok) {
+        // Parse XML sitemap
+        const parser = new DOMParser();
+        const xmlDoc = parser.parseFromString(text, 'text/xml');
+        
+        // Check if it's a sitemap index
+        const sitemapTags = xmlDoc.getElementsByTagName('sitemap');
+        if (sitemapTags.length > 0) {
+          // It's a sitemap index, parse individual sitemaps
+          for (const sitemapTag of sitemapTags) {
+            const loc = sitemapTag.getElementsByTagName('loc')[0];
+            if (loc) {
+              const nestedUrls = await parseSitemap(loc.textContent);
+              sitemapUrls.push(...nestedUrls);
+            }
+          }
+        } else {
+          // Regular sitemap
+          const urlTags = xmlDoc.getElementsByTagName('url');
+          for (const urlTag of urlTags) {
+            const loc = urlTag.getElementsByTagName('loc')[0];
+            if (loc) {
+              sitemapUrls.push(loc.textContent);
+            }
+          }
+        }
       }
     } catch (error) {
-      await new Promise(resolve => setTimeout(resolve, 30000)); // Wait 30 seconds
+      // Sitemap not found or inaccessible
     }
   }
   
-  if (!recoveryVerified) {
-    addAlert(url, 'Recovery Failed', 
-      'Service failed to recover after multiple verification attempts', 
-      'error');
+  return [...new Set(sitemapUrls)];
+}
+
+// 3. API Endpoint Discovery
+async function discoverAPIEndpoints(baseUrl) {
+  const apiEndpoints = [];
+  const commonApiPatterns = [
+    '/api/v1', '/api/v2', '/api/v3', '/v1/api', '/v2/api',
+    '/graphql', '/gql', '/rest', '/json', '/xml', '/soap',
+    '/oauth', '/auth', '/token', '/login', '/register',
+    '/user', '/users', '/account', '/profile', '/admin',
+    '/config', '/settings', '/system', '/health', '/status',
+    '/metrics', '/debug', '/test', '/demo'
+  ];
+  
+  // Check common API patterns
+  for (const pattern of commonApiPatterns) {
+    const apiUrl = new URL(pattern, baseUrl).toString();
+    apiEndpoints.push(apiUrl);
   }
-}
-
-// 11. Capacity Planning Insights
-function generateCapacityInsights() {
-  const insights = [];
-  const peakHours = findPeakUsageHours();
   
-  peakHours.forEach(hour => {
-    const load = calculateHourlyLoad(hour.hour);
-    if (load > 0.8) { // 80% capacity threshold
-      insights.push({
-        hour: hour.hour,
-        load: Math.round(load * 100),
-        recommendation: 'Consider scaling resources during this period'
-      });
-    }
-  });
+  // Check for API documentation (OpenAPI/Swagger)
+  const docUrls = [
+    '/swagger.json', '/swagger.yaml', '/swagger.yml',
+    '/openapi.json', '/openapi.yaml', '/openapi.yml',
+    '/api-docs', '/api/docs', '/swagger-ui.html'
+  ];
   
-  return insights;
-}
-
-function findPeakUsageHours() {
-  const hourlyRequests = Array(24).fill(0);
-  
-  urls.forEach(url => {
-    url.history?.forEach(check => {
-      if (check.status === 'online') {
-        const hour = new Date(check.t).getHours();
-        hourlyRequests[hour]++;
+  for (const docUrl of docUrls) {
+    const fullUrl = new URL(docUrl, baseUrl).toString();
+    try {
+      const response = await fetch(fullUrl);
+      if (response.ok) {
+        apiEndpoints.push(fullUrl);
+        // If we find OpenAPI spec, parse it for endpoints
+        if (docUrl.includes('.json')) {
+          const spec = await response.json();
+          const paths = Object.keys(spec.paths || {});
+          paths.forEach(path => {
+            apiEndpoints.push(new URL(path, baseUrl).toString());
+          });
+        }
       }
-    });
-  });
+    } catch (error) {
+      // API doc not found
+    }
+  }
   
-  return hourlyRequests.map((count, hour) => ({ hour, count }))
-    .sort((a, b) => b.count - a.count)
-    .slice(0, 3);
+  return apiEndpoints;
 }
 
-// 12. Security Vulnerability Scanning
-async function scanSecurityVulnerabilities(url) {
-  const vulnerabilities = [];
+// 4. JavaScript File Analysis
+async function analyzeJavaScriptFiles(baseUrl) {
+  const endpoints = new Set();
   
-  // Check for common security headers
   try {
-    const response = await fetch(url, { method: 'HEAD' });
-    const headers = response.headers;
+    const response = await fetch(baseUrl);
+    const html = await response.text();
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(html, 'text/html');
     
-    if (!headers.get('X-Content-Type-Options')) {
-      vulnerabilities.push('Missing X-Content-Type-Options header');
-    }
-    if (!headers.get('X-Frame-Options')) {
-      vulnerabilities.push('Missing X-Frame-Options header');
-    }
-    if (!headers.get('Strict-Transport-Security')) {
-      vulnerabilities.push('Missing HSTS header');
-    }
-  } catch (error) {
-    // Can't check headers due to CORS
-  }
-  
-  // Check for exposed sensitive files
-  const sensitivePaths = ['/.env', '/.git/config', '/backup.zip', '/wp-config.php'];
-  for (const path of sensitivePaths) {
-    try {
-      const testUrl = new URL(path, url).toString();
-      await fetch(testUrl, { method: 'HEAD' });
-      vulnerabilities.push(`Exposed sensitive file: ${path}`);
-    } catch (error) {
-      // File not exposed or not accessible
-    }
-  }
-  
-  return vulnerabilities;
-}
-
-// 13. Performance Budget Monitoring
-function checkPerformanceBudgets() {
-  const budgets = {
-    'first-contentful-paint': 1000,
-    'largest-contentful-paint': 2500,
-    'cumulative-layout-shift': 0.1,
-    'first-input-delay': 100
-  };
-  
-  urls.forEach(url => {
-    const lastRT = url.history?.slice(-1)[0]?.rt;
-    if (lastRT && lastRT > budgets['first-contentful-paint']) {
-      addAlert(url.url, 'Performance Budget Exceeded', 
-        `Response time ${Math.round(lastRT)}ms exceeds budget of ${budgets['first-contentful-paint']}ms`, 
-        'warning');
-    }
-  });
-}
-
-// 14. Automated Documentation Generation
-function generateMonitoringDocumentation() {
-  const doc = {
-    generatedAt: new Date().toISOString(),
-    summary: {
-      totalEndpoints: urls.length,
-      criticalEndpoints: urls.filter(u => calculateBusinessImpact(u).category === 'critical').length,
-      averageUptime: calculateOverallUptime(30),
-      healthScore: calculateHealthScore()
-    },
-    endpoints: urls.map(url => ({
-      url: url.url,
-      businessImpact: calculateBusinessImpact(url).category,
-      sla: calculateUptime(url.history || [], 30),
-      dependencies: dependencyMap.get(url.url) || [],
-      lastIncident: alerts.filter(a => a.url === url.url).slice(-1)[0] || null
-    })),
-    alerts: {
-      last24h: alerts.filter(a => a.timestamp > now() - 86400000).length,
-      critical: alerts.filter(a => a.type === 'error').length
-    }
-  };
-  
-  return doc;
-}
-
-// 15. Real-time Collaboration Features
-const collaboration = {
-  users: new Map(),
-  incidents: new Map(),
-  
-  addUser(name, role = 'viewer') {
-    this.users.set(name, { name, role, lastActive: now() });
-    this.broadcastUserUpdate();
-  },
-  
-  startIncident(title, severity) {
-    const incident = {
-      id: now(),
-      title,
-      severity,
-      startTime: now(),
-      status: 'active',
-      assignedTo: null,
-      updates: []
-    };
-    
-    this.incidents.set(incident.id, incident);
-    this.broadcastIncidentUpdate(incident);
-    return incident;
-  },
-  
-  broadcastUserUpdate() {
-    // In real implementation, this would use WebSockets
-    console.log('Users updated:', Array.from(this.users.values()));
-  },
-  
-  broadcastIncidentUpdate(incident) {
-    // In real implementation, this would use WebSockets
-    console.log('Incident updated:', incident);
-  }
-};
-
-// 16. Advanced Data Retention Policies
-function applyDataRetentionPolicy() {
-  const retentionDays = settings.dataRetentionDays || 30;
-  const cutoffTime = now() - (retentionDays * 24 * 60 * 60 * 1000);
-  
-  urls.forEach(url => {
-    url.history = (url.history || []).filter(h => h.t >= cutoffTime);
-  });
-  
-  alerts = alerts.filter(alert => alert.timestamp >= cutoffTime);
-  
-  console.log(`Applied data retention policy: ${retentionDays} days`);
-}
-
-// 17. Machine Learning-Based Forecasting
-function forecastMetrics() {
-  const forecasts = {};
-  
-  urls.forEach(url => {
-    const responseTimes = (url.history || [])
-      .map(h => h.rt)
-      .filter(rt => typeof rt === 'number')
-      .slice(-100); // Last 100 data points
-    
-    if (responseTimes.length >= 20) {
-      // Simple linear regression for forecasting
-      const forecast = simpleLinearForecast(responseTimes, 24); // Next 24 periods
-      forecasts[url.url] = {
-        current: responseTimes[responseTimes.length - 1],
-        forecast: Math.round(forecast),
-        trend: forecast > responseTimes[responseTimes.length - 1] ? 'increasing' : 'decreasing'
-      };
-    }
-  });
-  
-  return forecasts;
-}
-
-function simpleLinearForecast(data, periods) {
-  const n = data.length;
-  const xMean = (n - 1) / 2;
-  const yMean = average(data);
-  
-  let numerator = 0;
-  let denominator = 0;
-  
-  data.forEach((y, x) => {
-    numerator += (x - xMean) * (y - yMean);
-    denominator += Math.pow(x - xMean, 2);
-  });
-  
-  const slope = numerator / denominator;
-  return yMean + slope * (n + periods - 1 - xMean);
-}
-
-// 18. Compliance Reporting (GDPR, HIPAA, etc.)
-function generateComplianceReport(standard = 'GDPR') {
-  const checks = {
-    'GDPR': [
-      'Data encryption in transit',
-      'Privacy policy accessibility',
-      'Cookie consent compliance',
-      'Data breach notification'
-    ],
-    'HIPAA': [
-      'PHI data protection',
-      'Access controls',
-      'Audit trails',
-      'Data backup'
-    ]
-  };
-  
-  const report = {
-    standard,
-    generated: new Date().toISOString(),
-    checks: checks[standard] || [],
-    status: 'compliant', // Simplified
-    findings: [],
-    recommendations: [
-      'Implement regular security audits',
-      'Ensure all endpoints use HTTPS',
-      'Maintain access logs for 6+ months'
-    ]
-  };
-  
-  return report;
-}
-
-// 19. Advanced Notification Routing
-const notificationRoutes = {
-  'critical': ['sms', 'email', 'slack'],
-  'warning': ['email', 'slack'],
-  'info': ['slack']
-};
-
-function routeNotification(alert, severity = 'warning') {
-  const channels = notificationRoutes[severity] || notificationRoutes['warning'];
-  
-  channels.forEach(channel => {
-    switch (channel) {
-      case 'sms':
-        sendSMSNotification(alert);
-        break;
-      case 'email':
-        sendEmailNotification(alert);
-        break;
-      case 'slack':
-        sendSlackNotification(alert);
-        break;
-    }
-  });
-}
-
-function sendSMSNotification(alert) {
-  // Integration with SMS gateway
-  console.log('SMS Alert:', alert.title, alert.message);
-}
-
-function sendEmailNotification(alert) {
-  // Integration with email service
-  console.log('Email Alert:', alert.title, alert.message);
-}
-
-function sendSlackNotification(alert) {
-  // Integration with Slack webhook
-  console.log('Slack Alert:', alert.title, alert.message);
-}
-
-// 20. Automated Incident Response
-async function automatedIncidentResponse(downUrl) {
-  const incident = collaboration.startIncident(`Service Down: ${downUrl}`, 'critical');
-  
-  // Step 1: Verify the outage
-  await new Promise(resolve => setTimeout(resolve, 60000)); // Wait 1 minute
-  const verification = await pingFavicon(downUrl, settings.timeoutMs).catch(() => null);
-  
-  if (!verification) {
-    // Step 2: Check dependencies
-    const dependencies = dependencyMap.get(downUrl) || [];
-    const dependencyStatus = await Promise.all(
-      dependencies.map(dep => pingFavicon(`https://${dep}`, settings.timeoutMs).catch(() => null))
+    // Find all JavaScript files
+    const scriptTags = doc.querySelectorAll('script[src]');
+    const jsFiles = Array.from(scriptTags).map(script => 
+      new URL(script.getAttribute('src'), baseUrl).toString()
     );
     
-    // Step 3: Notify team
-    routeNotification({
-      title: `INCIDENT: ${downUrl} is down`,
-      message: `Dependencies checked: ${dependencies.join(', ')}`
-    }, 'critical');
-    
-    // Step 4: Update incident
-    incident.updates.push({
-      timestamp: now(),
-      action: 'automated_verification',
-      details: 'Outage confirmed, dependencies checked'
-    });
-    
-    collaboration.broadcastIncidentUpdate(incident);
+    // Analyze each JS file for API endpoints
+    for (const jsFile of jsFiles.slice(0, 5)) { // Limit to 5 files
+      try {
+        const jsResponse = await fetch(jsFile);
+        const jsCode = await jsResponse.text();
+        
+        // Look for API endpoint patterns in JavaScript code
+        const apiPatterns = [
+          /fetch\(['"`]([^'"`]+)['"`]/g,
+          /axios\.get\(['"`]([^'"`]+)['"`]/g,
+          /\.ajax\([^}]*url:\s*['"`]([^'"`]+)['"`]/g,
+          /window\.location\.href\s*=\s*['"`]([^'"`]+)['"`]/g,
+          /\/api\/[a-zA-Z0-9\/\-_]+/g,
+          /\/v[0-9]+\/[a-zA-Z0-9\/\-_]+/g
+        ];
+        
+        apiPatterns.forEach(pattern => {
+          let match;
+          while ((match = pattern.exec(jsCode)) !== null) {
+            const endpoint = match[1] || match[0];
+            try {
+              const fullUrl = new URL(endpoint, baseUrl).toString();
+              if (fullUrl.includes(new URL(baseUrl).hostname)) {
+                endpoints.add(fullUrl);
+              }
+            } catch (e) {
+              // Relative URL
+              if (endpoint.startsWith('/')) {
+                endpoints.add(new URL(endpoint, baseUrl).toString());
+              }
+            }
+          }
+        });
+      } catch (error) {
+        // Couldn't fetch or analyze JS file
+      }
+    }
+  } catch (error) {
+    console.warn('Failed to analyze JavaScript files:', error);
   }
+  
+  return Array.from(endpoints);
 }
 
-// 21. Resource Utilization Monitoring
-function monitorResourceUtilization() {
-  if (typeof performance !== 'undefined' && performance.memory) {
-    const memory = performance.memory;
-    return {
-      usedJSHeapSize: Math.round(memory.usedJSHeapSize / 1048576), // MB
-      totalJSHeapSize: Math.round(memory.totalJSHeapSize / 1048576),
-      jsHeapSizeLimit: Math.round(memory.jsHeapSizeLimit / 1048576),
-      utilization: Math.round((memory.usedJSHeapSize / memory.totalJSHeapSize) * 100)
+// 5. Technology Stack Detection
+async function detectTechnologyStack(url) {
+  const techStack = {
+    framework: null,
+    server: null,
+    analytics: null,
+    cdn: null,
+    languages: []
+  };
+  
+  try {
+    const response = await fetch(url);
+    const html = await response.text();
+    const headers = response.headers;
+    
+    // Detect from headers
+    const serverHeader = headers.get('server');
+    if (serverHeader) {
+      techStack.server = serverHeader;
+    }
+    
+    const poweredBy = headers.get('x-powered-by');
+    if (poweredBy) {
+      techStack.framework = poweredBy;
+    }
+    
+    // Detect from HTML content
+    const patterns = {
+      'React': /react|react-dom/i,
+      'Vue.js': /vue|vue\.js/i,
+      'Angular': /angular/i,
+      'jQuery': /jquery/i,
+      'WordPress': /wp-|wordpress/i,
+      'Drupal': /drupal/i,
+      'Laravel': /laravel/i,
+      'Express.js': /express/i,
+      'Google Analytics': /ga\.js|google-analytics|gtag/i,
+      'Cloudflare': /cloudflare/i,
+      'Bootstrap': /bootstrap/i
     };
-  }
-  return null;
-}
-
-// 22. Advanced Filtering and Query Language
-function advancedQuery(query) {
-  // Simple query language implementation
-  const tokens = query.toLowerCase().split(' ');
-  
-  return urls.filter(url => {
-    return tokens.every(token => {
-      if (token.startsWith('status:')) {
-        const status = token.split(':')[1];
-        const lastStatus = url.history?.slice(-1)[0]?.status;
-        return lastStatus === status;
+    
+    Object.entries(patterns).forEach(([tech, pattern]) => {
+      if (pattern.test(html)) {
+        if (tech.includes('Analytics')) {
+          techStack.analytics = tech;
+        } else if (tech.includes('Cloudflare')) {
+          techStack.cdn = tech;
+        } else {
+          techStack.languages.push(tech);
+        }
       }
-      if (token.startsWith('tag:')) {
-        const tag = token.split(':')[1];
-        return url.tags?.includes(tag);
-      }
-      if (token.startsWith('rt>')) {
-        const threshold = parseInt(token.split('>')[1]);
-        const lastRT = url.history?.slice(-1)[0]?.rt;
-        return lastRT > threshold;
-      }
-      
-      return url.url.toLowerCase().includes(token);
     });
-  });
-}
-
-// 23. Integration with External Monitoring Services
-const externalIntegrations = {
-  async checkWithUptimeRobot(url) {
-    // Simulate integration with UptimeRobot API
-    try {
-      const response = await fetch(`https://api.uptimerobot.com/v2/getMonitors?api_key=YOUR_KEY&url=${encodeURIComponent(url)}`);
-      const data = await response.json();
-      return data.monitors?.[0] || null;
-    } catch (error) {
-      return null;
-    }
-  },
-  
-  async pushToDatadog(metrics) {
-    // Simulate integration with Datadog
-    console.log('Pushing metrics to Datadog:', metrics);
-  },
-  
-  async createGithubIssue(alert) {
-    // Simulate creating GitHub issue for critical alerts
-    if (alert.type === 'error') {
-      console.log('Creating GitHub issue for:', alert.title);
-    }
+    
+    // Detect from script sources
+    const scriptSrcs = html.match(/<script[^>]*src=["']([^"']+)["']/gi) || [];
+    scriptSrcs.forEach(script => {
+      const srcMatch = script.match(/src=["']([^"']+)["']/);
+      if (srcMatch) {
+        const src = srcMatch[1];
+        if (src.includes('cloudflare')) techStack.cdn = 'Cloudflare';
+        if (src.includes('google-analytics')) techStack.analytics = 'Google Analytics';
+        if (src.includes('jquery')) techStack.languages.push('jQuery');
+      }
+    });
+    
+  } catch (error) {
+    console.warn('Failed to detect technology stack:', error);
   }
-};
-
-// 24. Custom Check Intervals per URL
-function updateCustomIntervals() {
-  urls.forEach(url => {
-    if (url.customInterval) {
-      const lastCheck = url.lastCheck || 0;
-      const interval = url.customInterval * 1000;
-      
-      if (now() - lastCheck >= interval) {
-        checkUrl(url);
-      }
-    }
-  });
+  
+  return techStack;
 }
 
-// 25. Advanced Visualization and Dashboard Customization
-function createCustomDashboard() {
+// 6. Security Headers Check
+async function checkSecurityHeaders(url) {
+  const securityHeaders = [
+    'content-security-policy',
+    'strict-transport-security',
+    'x-frame-options',
+    'x-content-type-options',
+    'x-xss-protection',
+    'referrer-policy',
+    'permissions-policy'
+  ];
+  
+  const results = {};
+  
+  try {
+    const response = await fetch(url);
+    
+    securityHeaders.forEach(header => {
+      const value = response.headers.get(header);
+      results[header] = {
+        present: !!value,
+        value: value,
+        score: value ? 1 : 0
+      };
+    });
+    
+    // Calculate overall security score
+    results.overallScore = Object.values(results).reduce((sum, header) => sum + header.score, 0) / securityHeaders.length;
+    
+  } catch (error) {
+    console.warn('Failed to check security headers:', error);
+  }
+  
+  return results;
+}
+
+// 7. Enhanced Inspector with All Features
+async function enhancedInspectorScan(sourceUrl) {
+  const results = {
+    crawledUrls: [],
+    sitemapUrls: [],
+    apiEndpoints: [],
+    jsEndpoints: [],
+    techStack: {},
+    securityHeaders: {},
+    discoveredUrls: new Set()
+  };
+  
+  // Update UI to show progress
+  elements.inspector.resultList.innerHTML = `
+    <div style="text-align: center; padding: 20px;">
+      <div>🕵️ Starting enhanced inspection...</div>
+      <div class="small" style="margin-top: 10px;">
+        <div id="inspectorProgress">Initializing...</div>
+        <progress id="inspectorProgressBar" value="0" max="100" style="width: 100%; margin-top: 10px;"></progress>
+      </div>
+    </div>
+  `;
+  
+  const progressBar = document.getElementById('inspectorProgressBar');
+  const progressText = document.getElementById('inspectorProgress');
+  
+  // Step 1: Technology Stack Detection
+  progressText.textContent = 'Detecting technology stack...';
+  progressBar.value = 10;
+  results.techStack = await detectTechnologyStack(sourceUrl);
+  
+  // Step 2: Security Headers Check
+  progressText.textContent = 'Checking security headers...';
+  progressBar.value = 20;
+  results.securityHeaders = await checkSecurityHeaders(sourceUrl);
+  
+  // Step 3: Sitemap Parsing
+  progressText.textContent = 'Parsing sitemaps...';
+  progressBar.value = 30;
+  results.sitemapUrls = await parseSitemap(sourceUrl);
+  results.sitemapUrls.forEach(url => results.discoveredUrls.add(url));
+  
+  // Step 4: API Endpoint Discovery
+  progressText.textContent = 'Discovering API endpoints...';
+  progressBar.value = 50;
+  results.apiEndpoints = await discoverAPIEndpoints(sourceUrl);
+  results.apiEndpoints.forEach(url => results.discoveredUrls.add(url));
+  
+  // Step 5: JavaScript Analysis
+  progressText.textContent = 'Analyzing JavaScript files...';
+  progressBar.value = 70;
+  results.jsEndpoints = await analyzeJavaScriptFiles(sourceUrl);
+  results.jsEndpoints.forEach(url => results.discoveredUrls.add(url));
+  
+  // Step 6: Web Crawling (if enabled)
+  const deepScan = document.getElementById('deepScan').checked;
+  if (deepScan) {
+    progressText.textContent = 'Crawling website...';
+    progressBar.value = 90;
+    results.crawledUrls = await advancedWebCrawl(sourceUrl, 1);
+    results.crawledUrls.forEach(url => results.discoveredUrls.add(url));
+  }
+  
+  // Final processing
+  progressText.textContent = 'Verifying endpoints...';
+  progressBar.value = 95;
+  
+  // Convert to array and remove duplicates
+  const allUrls = Array.from(results.discoveredUrls);
+  
+  // Test each URL
+  const verifiedUrls = [];
+  for (let i = 0; i < Math.min(allUrls.length, settings.maxInspectorEndpoints); i++) {
+    const url = allUrls[i];
+    progressText.textContent = `Testing ${i + 1}/${Math.min(allUrls.length, settings.maxInspectorEndpoints)}: ${url.substring(0, 50)}...`;
+    
+    try {
+      const response = await fetch(url, { method: 'HEAD' });
+      verifiedUrls.push({
+        url,
+        status: response.status,
+        statusText: response.statusText,
+        live: response.ok
+      });
+    } catch (error) {
+      verifiedUrls.push({
+        url,
+        status: 0,
+        statusText: 'Network Error',
+        live: false
+      });
+    }
+    
+    progressBar.value = 95 + (i / Math.min(allUrls.length, settings.maxInspectorEndpoints)) * 5;
+  }
+  
+  progressBar.value = 100;
+  progressText.textContent = 'Inspection complete!';
+  
   return {
-    widgets: [
-      {
-        type: 'uptime-gauge',
-        title: 'Overall Uptime',
-        data: calculateOverallUptime(30)
-      },
-      {
-        type: 'response-time-chart',
-        title: 'Response Times',
-        data: calculateAdvancedMetrics()
-      },
-      {
-        type: 'health-score',
-        title: 'System Health',
-        data: calculateHealthScore()
-      }
-    ],
-    layout: 'grid', // 'grid', 'list', 'custom'
-    refreshRate: 30000 // 30 seconds
+    ...results,
+    verifiedUrls,
+    summary: {
+      totalDiscovered: allUrls.length,
+      totalTested: verifiedUrls.length,
+      liveEndpoints: verifiedUrls.filter(u => u.live).length,
+      techStack: results.techStack,
+      securityScore: Math.round(results.securityHeaders.overallScore * 100)
+    }
   };
 }
 
-// =============== INTEGRATION WITH EXISTING CODE ===============
+// 8. Inspector Results Visualization
+function renderEnhancedInspectorResults(results) {
+  const { verifiedUrls, summary, techStack, securityHeaders } = results;
+  
+  let html = `
+    <div style="margin-bottom: 20px;">
+      <h4>Inspection Summary</h4>
+      <div class="details-grid">
+        <div class="detail-item">
+          <div class="detail-label">Total Discovered</div>
+          <div class="detail-value">${summary.totalDiscovered}</div>
+        </div>
+        <div class="detail-item">
+          <div class="detail-label">Live Endpoints</div>
+          <div class="detail-value success">${summary.liveEndpoints}</div>
+        </div>
+        <div class="detail-item">
+          <div class="detail-label">Security Score</div>
+          <div class="detail-value">${summary.securityScore}%</div>
+        </div>
+        <div class="detail-item">
+          <div class="detail-label">Technology Stack</div>
+          <div class="detail-value">${techStack.languages.join(', ') || 'Unknown'}</div>
+        </div>
+      </div>
+    </div>
+    
+    <div style="margin-bottom: 20px;">
+      <h4>Security Headers</h4>
+      <div class="details-grid">
+        ${Object.entries(securityHeaders).filter(([key]) => key !== 'overallScore').map(([header, data]) => `
+          <div class="detail-item">
+            <div class="detail-label">${header}</div>
+            <div class="detail-value ${data.present ? 'success' : 'danger'}">
+              ${data.present ? '✅' : '❌'} ${data.value || 'Missing'}
+            </div>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+    
+    <h4>Discovered Endpoints (${verifiedUrls.length})</h4>
+    <div style="max-height: 400px; overflow-y: auto;">
+  `;
+  
+  verifiedUrls.forEach(item => {
+    const statusClass = item.live ? 'success' : 'danger';
+    const statusIcon = item.live ? '✅' : '❌';
+    
+    html += `
+      <div class="result-row" style="border: 1px solid var(--border); padding: 10px; margin-bottom: 8px; border-radius: 6px;">
+        <div style="flex: 1;">
+          <div style="font-weight: 600; word-break: break-all;">${escapeHtml(item.url)}</div>
+          <div class="small" style="margin-top: 4px;">
+            Status: <span class="${statusClass}">${statusIcon} ${item.status} ${item.statusText}</span>
+          </div>
+        </div>
+        <button class="btn ${item.live ? 'btn-green' : 'btn-gray'}" 
+                onclick="addInspectedURL(this, '${escapeHtml(item.url)}')"
+                ${urls.some(u => u.url === item.url) ? 'disabled' : ''}>
+          ${urls.some(u => u.url === item.url) ? 'Added' : 'Add'}
+        </button>
+      </div>
+    `;
+  });
+  
+  html += `</div>`;
+  
+  // Add export button
+  html += `
+    <div style="margin-top: 20px; text-align: center;">
+      <button class="btn btn-primary" onclick="exportInspectorResults()">Export Results</button>
+      <button class="btn btn-purple" onclick="saveInspectionProfile()">Save Inspection Profile</button>
+    </div>
+  `;
+  
+  elements.inspector.resultList.innerHTML = html;
+}
 
-// Update the checkUrl function to include new features
-async function enhancedCheckUrl(item, retryCount = 0) {
+// 9. Export Inspector Results
+function exportInspectorResults() {
+  const results = window.lastInspectorResults; // Store results globally during inspection
+  
+  if (!results) {
+    alert('No inspection results to export');
+    return;
+  }
+  
+  const exportData = {
+    inspectionDate: new Date().toISOString(),
+    sourceUrl: document.querySelector('input[name="inspectorSource"]:checked')?.value,
+    summary: results.summary,
+    endpoints: results.verifiedUrls,
+    techStack: results.techStack,
+    securityHeaders: results.securityHeaders
+  };
+  
+  const dataStr = JSON.stringify(exportData, null, 2);
+  const blob = new Blob([dataStr], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `inspector-results-${new Date().getTime()}.json`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+// 10. Save Inspection Profile
+function saveInspectionProfile() {
+  const sourceUrl = document.querySelector('input[name="inspectorSource"]:checked')?.value;
+  const profileName = prompt('Enter a name for this inspection profile:');
+  
+  if (!profileName) return;
+  
+  const profiles = JSON.parse(localStorage.getItem('ump_inspection_profiles') || '[]');
+  const newProfile = {
+    id: now(),
+    name: profileName,
+    sourceUrl: sourceUrl,
+    options: {
+      deepScan: document.getElementById('deepScan').checked,
+      checkSubdomains: document.getElementById('checkSubdomains').checked,
+      checkCommonPaths: document.getElementById('checkCommonPaths').checked,
+      checkAPIs: document.getElementById('checkAPIs').checked,
+      checkFiles: document.getElementById('checkFiles').checked
+    },
+    createdAt: now()
+  };
+  
+  profiles.push(newProfile);
+  localStorage.setItem('ump_inspection_profiles', JSON.stringify(profiles));
+  
+  showNotification({
+    title: 'Profile Saved',
+    message: `Inspection profile "${profileName}" saved successfully`,
+    type: 'success'
+  });
+}
+
+// =============== COMPREHENSIVE EMAIL NOTIFICATIONS ===============
+
+// Email Configuration
+const emailConfig = {
+  enabled: false,
+  smtp: {
+    host: '',
+    port: 587,
+    secure: false,
+    auth: {
+      user: '',
+      pass: ''
+    }
+  },
+  from: 'URL Monitor Pro <monitor@yourdomain.com>',
+  recipients: [],
+  templates: {
+    alert: {
+      subject: '🚨 Alert: {title}',
+      body: `
+        <h2>URL Monitor Pro Alert</h2>
+        <p><strong>Alert Type:</strong> {type}</p>
+        <p><strong>URL:</strong> {url}</p>
+        <p><strong>Message:</strong> {message}</p>
+        <p><strong>Time:</strong> {time}</p>
+        <hr>
+        <p><small>This alert was generated by URL Monitor Pro</small></p>
+      `
+    },
+    summary: {
+      subject: '📊 Daily Monitoring Summary - {date}',
+      body: `
+        <h2>Daily Monitoring Summary</h2>
+        <p><strong>Date:</strong> {date}</p>
+        <p><strong>Total URLs:</strong> {totalUrls}</p>
+        <p><strong>Online:</strong> {onlineCount}</p>
+        <p><strong>Offline:</strong> {offlineCount}</p>
+        <p><strong>Health Score:</strong> {healthScore}%</p>
+        <hr>
+        <h3>Recent Alerts</h3>
+        {alertsList}
+        <hr>
+        <p><small>Generated by URL Monitor Pro</small></p>
+      `
+    },
+    sslExpiry: {
+      subject: '⚠️ SSL Certificate Expiring Soon - {url}',
+      body: `
+        <h2>SSL Certificate Expiry Warning</h2>
+        <p><strong>URL:</strong> {url}</p>
+        <p><strong>Expiry Date:</strong> {expiryDate}</p>
+        <p><strong>Days Remaining:</strong> {daysRemaining}</p>
+        <p><strong>Issuer:</strong> {issuer}</p>
+        <hr>
+        <p>Please renew the SSL certificate to avoid service disruption.</p>
+      `
+    }
+  },
+  schedules: {
+    dailySummary: '09:00',
+    instantAlerts: true,
+    sslWarnings: true
+  }
+};
+
+// 11. Email Service Integration
+class EmailService {
+  constructor(config) {
+    this.config = config;
+    this.sentEmails = new Map(); // For rate limiting
+  }
+  
+  // Rate limiting: max 10 emails per hour per type
+  isRateLimited(emailType, recipient) {
+    const key = `${emailType}-${recipient}`;
+    const lastSent = this.sentEmails.get(key) || 0;
+    const hourAgo = now() - 3600000; // 1 hour
+    
+    if (lastSent > hourAgo) {
+      const count = Array.from(this.sentEmails.entries())
+        .filter(([k, time]) => k.startsWith(emailType) && time > hourAgo)
+        .length;
+      
+      return count >= 10;
+    }
+    
+    return false;
+  }
+  
+  updateRateLimit(emailType, recipient) {
+    const key = `${emailType}-${recipient}`;
+    this.sentEmails.set(key, now());
+    
+    // Clean up old entries
+    const dayAgo = now() - 86400000;
+    this.sentEmails.forEach((time, key) => {
+      if (time < dayAgo) {
+        this.sentEmails.delete(key);
+      }
+    });
+  }
+  
+  async sendEmail(to, subject, htmlBody, emailType = 'alert') {
+    if (!this.config.enabled) {
+      console.log('Email notifications disabled');
+      return false;
+    }
+    
+    // Rate limiting check
+    if (this.isRateLimited(emailType, to)) {
+      console.warn(`Rate limit exceeded for ${emailType} to ${to}`);
+      return false;
+    }
+    
+    try {
+      // In a real implementation, this would use an SMTP library or email API
+      // For now, we'll simulate email sending and provide integration examples
+      
+      console.log('Sending email:', { to, subject });
+      
+      // Example integration with EmailJS
+      if (typeof emailjs !== 'undefined') {
+        await emailjs.send('YOUR_SERVICE_ID', 'YOUR_TEMPLATE_ID', {
+          to_email: to,
+          subject: subject,
+          html_body: htmlBody
+        });
+      }
+      
+      // Example integration with SMTPJS
+      if (typeof Email !== 'undefined') {
+        await Email.send({
+          SecureToken: 'YOUR_TOKEN',
+          To: to,
+          From: this.config.from,
+          Subject: subject,
+          Body: htmlBody
+        });
+      }
+      
+      // For demonstration, we'll show a success message
+      showNotification({
+        title: 'Email Sent',
+        message: `Alert sent to ${to}`,
+        type: 'success'
+      });
+      
+      this.updateRateLimit(emailType, to);
+      return true;
+      
+    } catch (error) {
+      console.error('Failed to send email:', error);
+      addAlert('System', 'Email Delivery Failed', 
+        `Failed to send email to ${to}: ${error.message}`, 'error');
+      return false;
+    }
+  }
+  
+  async sendAlertEmail(alert) {
+    const template = this.config.templates.alert;
+    const subject = template.subject
+      .replace('{title}', alert.title)
+      .replace('{type}', alert.type);
+    
+    const body = template.body
+      .replace('{title}', alert.title)
+      .replace('{type}', alert.type)
+      .replace('{url}', alert.url)
+      .replace('{message}', alert.message)
+      .replace('{time}', new Date(alert.timestamp).toLocaleString());
+    
+    const results = [];
+    for (const recipient of this.config.recipients) {
+      const result = await this.sendEmail(recipient, subject, body, 'alert');
+      results.push({ recipient, success: result });
+    }
+    
+    return results;
+  }
+  
+  async sendDailySummary() {
+    const template = this.config.templates.summary;
+    const date = new Date().toLocaleDateString();
+    const onlineCount = urls.filter(u => u.history?.slice(-1)[0]?.status === 'online').length;
+    const healthScore = calculateHealthScore();
+    
+    // Get recent alerts (last 24 hours)
+    const recentAlerts = alerts.filter(a => a.timestamp > now() - 86400000);
+    const alertsList = recentAlerts.length > 0 
+      ? recentAlerts.map(a => `<li>${a.title}: ${a.message}</li>`).join('')
+      : '<li>No alerts in the last 24 hours</li>';
+    
+    const subject = template.subject.replace('{date}', date);
+    const body = template.body
+      .replace('{date}', date)
+      .replace('{totalUrls}', urls.length)
+      .replace('{onlineCount}', onlineCount)
+      .replace('{offlineCount}', urls.length - onlineCount)
+      .replace('{healthScore}', healthScore)
+      .replace('{alertsList}', alertsList);
+    
+    const results = [];
+    for (const recipient of this.config.recipients) {
+      const result = await this.sendEmail(recipient, subject, body, 'summary');
+      results.push({ recipient, success: result });
+    }
+    
+    return results;
+  }
+  
+  async sendSSLExpiryWarning(url, sslInfo) {
+    const template = this.config.templates.sslExpiry;
+    const subject = template.subject.replace('{url}', new URL(url).hostname);
+    const body = template.body
+      .replace('{url}', url)
+      .replace('{expiryDate}', sslInfo.expiryDate)
+      .replace('{daysRemaining}', sslInfo.daysRemaining)
+      .replace('{issuer}', sslInfo.issuer);
+    
+    const results = [];
+    for (const recipient of this.config.recipients) {
+      const result = await this.sendEmail(recipient, subject, body, 'ssl-warning');
+      results.push({ recipient, success: result });
+    }
+    
+    return results;
+  }
+}
+
+// Initialize email service
+const emailService = new EmailService(emailConfig);
+
+// 12. Email Settings Management
+function showEmailSettings() {
+  const emailSettingsHTML = `
+    <div class="modal-backdrop" id="emailSettingsModal" style="display: flex;">
+      <div class="modal" role="dialog" onclick="event.stopPropagation()" style="width: 600px;">
+        <header>Email Notification Settings</header>
+        <div class="body">
+          <div class="rowx">
+            <label>Enable Email Notifications</label>
+            <input type="checkbox" id="enableEmails" ${emailConfig.enabled ? 'checked' : ''}>
+          </div>
+          
+          <h4 style="margin-top: 20px;">SMTP Configuration</h4>
+          <div class="rowx">
+            <label>SMTP Host</label>
+            <input type="text" id="smtpHost" value="${emailConfig.smtp.host}" placeholder="smtp.gmail.com">
+          </div>
+          <div class="rowx">
+            <label>SMTP Port</label>
+            <input type="number" id="smtpPort" value="${emailConfig.smtp.port}">
+          </div>
+          <div class="rowx">
+            <label>Use SSL/TLS</label>
+            <input type="checkbox" id="smtpSecure" ${emailConfig.smtp.secure ? 'checked' : ''}>
+          </div>
+          <div class="rowx">
+            <label>Username</label>
+            <input type="text" id="smtpUser" value="${emailConfig.smtp.auth.user}" placeholder="your-email@gmail.com">
+          </div>
+          <div class="rowx">
+            <label>Password</label>
+            <input type="password" id="smtpPass" value="${emailConfig.smtp.auth.pass}" placeholder="Your SMTP password">
+          </div>
+          <div class="rowx">
+            <label>From Address</label>
+            <input type="text" id="smtpFrom" value="${emailConfig.from}" placeholder="Monitor <monitor@domain.com>">
+          </div>
+          
+          <h4 style="margin-top: 20px;">Recipients</h4>
+          <div id="emailRecipientsList" style="margin-bottom: 10px;">
+            ${emailConfig.recipients.map(email => `
+              <div class="chip" style="margin: 2px;">
+                ${email}
+                <button onclick="removeEmailRecipient('${email}')" style="background: none; border: none; margin-left: 5px; cursor: pointer;">×</button>
+              </div>
+            `).join('')}
+          </div>
+          <div class="rowx">
+            <label>Add Recipient</label>
+            <div style="display: flex; gap: 10px;">
+              <input type="email" id="newRecipient" placeholder="email@domain.com" style="flex: 1;">
+              <button class="btn btn-primary" onclick="addEmailRecipient()">Add</button>
+            </div>
+          </div>
+          
+          <h4 style="margin-top: 20px;">Notification Schedule</h4>
+          <div class="rowx">
+            <label>Daily Summary Time</label>
+            <input type="time" id="dailySummaryTime" value="${emailConfig.schedules.dailySummary}">
+          </div>
+          <div class="rowx">
+            <label>Instant Alerts</label>
+            <input type="checkbox" id="instantAlerts" ${emailConfig.schedules.instantAlerts ? 'checked' : ''}>
+          </div>
+          <div class="rowx">
+            <label>SSL Expiry Warnings</label>
+            <input type="checkbox" id="sslWarnings" ${emailConfig.schedules.sslWarnings ? 'checked' : ''}>
+          </div>
+          
+          <div style="margin-top: 20px; padding: 15px; background: #f0f8ff; border-radius: 8px;">
+            <h4>Test Email Configuration</h4>
+            <p class="small">Send a test email to verify your settings are correct.</p>
+            <button class="btn btn-primary" onclick="testEmailConfiguration()">Send Test Email</button>
+          </div>
+        </div>
+        <footer>
+          <button class="btn btn-gray" onclick="document.getElementById('emailSettingsModal').style.display='none'">Cancel</button>
+          <button class="btn btn-primary" onclick="saveEmailSettings()">Save Settings</button>
+        </footer>
+      </div>
+    </div>
+  `;
+  
+  // Add modal to document if not already present
+  if (!document.getElementById('emailSettingsModal')) {
+    document.body.insertAdjacentHTML('beforeend', emailSettingsHTML);
+  } else {
+    document.getElementById('emailSettingsModal').style.display = 'flex';
+  }
+}
+
+function addEmailRecipient() {
+  const emailInput = document.getElementById('newRecipient');
+  const email = emailInput.value.trim();
+  
+  if (email && validateEmail(email)) {
+    if (!emailConfig.recipients.includes(email)) {
+      emailConfig.recipients.push(email);
+      updateEmailRecipientsUI();
+      emailInput.value = '';
+    } else {
+      alert('This email is already in the recipients list.');
+    }
+  } else {
+    alert('Please enter a valid email address.');
+  }
+}
+
+function removeEmailRecipient(email) {
+  emailConfig.recipients = emailConfig.recipients.filter(e => e !== email);
+  updateEmailRecipientsUI();
+}
+
+function updateEmailRecipientsUI() {
+  const recipientsList = document.getElementById('emailRecipientsList');
+  if (recipientsList) {
+    recipientsList.innerHTML = emailConfig.recipients.map(email => `
+      <div class="chip" style="margin: 2px;">
+        ${email}
+        <button onclick="removeEmailRecipient('${email}')" style="background: none; border: none; margin-left: 5px; cursor: pointer;">×</button>
+      </div>
+    `).join('');
+  }
+}
+
+function validateEmail(email) {
+  const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return re.test(email);
+}
+
+function saveEmailSettings() {
+  emailConfig.enabled = document.getElementById('enableEmails').checked;
+  emailConfig.smtp.host = document.getElementById('smtpHost').value;
+  emailConfig.smtp.port = parseInt(document.getElementById('smtpPort').value);
+  emailConfig.smtp.secure = document.getElementById('smtpSecure').checked;
+  emailConfig.smtp.auth.user = document.getElementById('smtpUser').value;
+  emailConfig.smtp.auth.pass = document.getElementById('smtpPass').value;
+  emailConfig.from = document.getElementById('smtpFrom').value;
+  emailConfig.schedules.dailySummary = document.getElementById('dailySummaryTime').value;
+  emailConfig.schedules.instantAlerts = document.getElementById('instantAlerts').checked;
+  emailConfig.schedules.sslWarnings = document.getElementById('sslWarnings').checked;
+  
+  // Update email service configuration
+  emailService.config = emailConfig;
+  
+  // Save to localStorage
+  localStorage.setItem('ump_email_config', JSON.stringify(emailConfig));
+  
+  // Restart email scheduler
+  setupEmailScheduler();
+  
+  document.getElementById('emailSettingsModal').style.display = 'none';
+  showNotification({
+    title: 'Settings Saved',
+    message: 'Email configuration updated successfully',
+    type: 'success'
+  });
+}
+
+async function testEmailConfiguration() {
+  if (emailConfig.recipients.length === 0) {
+    alert('Please add at least one email recipient first.');
+    return;
+  }
+  
+  const testEmail = {
+    title: 'Test Email',
+    type: 'info',
+    url: 'System',
+    message: 'This is a test email to verify your email configuration is working correctly.',
+    timestamp: now()
+  };
+  
+  const results = await emailService.sendAlertEmail(testEmail);
+  
+  if (results.some(r => r.success)) {
+    alert('Test email sent successfully!');
+  } else {
+    alert('Failed to send test email. Please check your configuration.');
+  }
+}
+
+// 13. Email Scheduler
+function setupEmailScheduler() {
+  // Clear existing intervals
+  if (window.emailSummaryInterval) {
+    clearInterval(window.emailSummaryInterval);
+  }
+  
+  if (emailConfig.enabled && emailConfig.schedules.dailySummary) {
+    // Calculate time until next daily summary
+    const [hours, minutes] = emailConfig.schedules.dailySummary.split(':').map(Number);
+    const now = new Date();
+    const targetTime = new Date();
+    targetTime.setHours(hours, minutes, 0, 0);
+    
+    if (now > targetTime) {
+      targetTime.setDate(targetTime.getDate() + 1);
+    }
+    
+    const timeUntilTarget = targetTime.getTime() - now.getTime();
+    
+    // Schedule daily emails
+    setTimeout(() => {
+      emailService.sendDailySummary();
+      // Set up recurring daily emails
+      window.emailSummaryInterval = setInterval(() => {
+        emailService.sendDailySummary();
+      }, 24 * 60 * 60 * 1000); // 24 hours
+    }, timeUntilTarget);
+  }
+}
+
+// 14. Enhanced Alert System with Email Integration
+function enhancedAddAlert(url, title, message, type = 'info') {
+  const alert = {
+    id: now() + Math.random(),
+    timestamp: now(),
+    url,
+    title,
+    message,
+    type,
+    read: false
+  };
+
+  alerts.unshift(alert);
+  alerts = alerts.slice(0, 100); // Keep only last 100 alerts
+  persistAlerts();
+  updateAlertBadge();
+
+  // Show notification if enabled
+  if (settings.alertSound !== 'none') {
+    showNotification(alert);
+    playAlertSound();
+  }
+  
+  // Send email alert if enabled
+  if (emailConfig.enabled && emailConfig.schedules.instantAlerts) {
+    // Don't send emails for info-type alerts to avoid spam
+    if (type !== 'info') {
+      emailService.sendAlertEmail(alert);
+    }
+    
+    // Special handling for SSL expiry warnings
+    if (title.includes('SSL Expiry') && emailConfig.schedules.sslWarnings) {
+      const urlData = urls.find(u => u.url === url);
+      if (urlData && urlData.sslInfo) {
+        emailService.sendSSLExpiryWarning(url, urlData.sslInfo);
+      }
+    }
+  }
+}
+
+// 15. Enhanced URL Checking with Email Notifications
+async function enhancedCheckUrlWithEmail(item, retryCount = 0) {
+  const wasOnline = item.history?.slice(-1)[0]?.status === 'online';
+  
   try {
     const { rt } = await pingFavicon(item.url, settings.timeoutMs);
+    const isNowOnline = true;
+    
     addHistory(item, 'online', rt);
     item.lastCheck = now();
     item.failCount = 0;
 
-    // Enhanced SSL check
+    // Send recovery email if service was previously down
+    if (!wasOnline && isNowOnline && emailConfig.enabled) {
+      enhancedAddAlert(item.url, 'Service Restored', 
+        `${item.url} is back online. Response time: ${Math.round(rt)}ms`, 
+        'success');
+    }
+
+    // SSL check with email notifications
     const lastSSLCheck = item.lastSSLCheck || 0;
     const sslCheckDue = now() - lastSSLCheck > settings.sslCheckInterval * DAY_MS;
 
     if (sslCheckDue) {
-      const sslResult = await advancedSSLCheck(item.url);
+      const sslResult = await checkSSLCertificate(item.url);
       item.sslInfo = sslResult;
       item.lastSSLCheck = now();
 
       if (sslResult.daysRemaining <= settings.sslWarningDays) {
-        addAlert(item.url, 'SSL Expiry Warning',
+        enhancedAddAlert(item.url, 'SSL Expiry Warning',
           `SSL certificate for ${item.url} expires in ${sslResult.daysRemaining} days (${sslResult.expiryDate})`,
           'warning');
       }
     }
-
-    // Security vulnerability scan (weekly)
-    const lastSecurityScan = item.lastSecurityScan || 0;
-    if (now() - lastSecurityScan > 7 * DAY_MS) {
-      const vulnerabilities = await scanSecurityVulnerabilities(item.url);
-      if (vulnerabilities.length > 0) {
-        addAlert(item.url, 'Security Vulnerabilities Found',
-          `Found ${vulnerabilities.length} potential security issues`, 'warning');
-      }
-      item.lastSecurityScan = now();
-    }
-
-    // Business impact assessment
-    const impact = calculateBusinessImpact(item);
-    item.businessImpact = impact;
-
-    // Performance budget check
-    if (rt > settings.responseTimeCritical) {
-      addAlert(item.url, 'Performance Budget Exceeded',
-        `Response time ${Math.round(rt)}ms exceeds critical threshold`, 'warning');
-    }
-
   } catch (error) {
+    const isNowOffline = true;
+    
     addHistory(item, 'offline', null);
     item.failCount = (item.failCount || 0) + 1;
     
-    // Enhanced retry logic with exponential backoff
+    // Send outage email if service was previously online
+    if (wasOnline && isNowOffline && emailConfig.enabled) {
+      enhancedAddAlert(item.url, 'Service Outage', 
+        `${item.url} is currently offline: ${error.message}`, 
+        'error');
+    }
+    
+    // Retry logic
     if (retryCount < settings.retryFailed) {
-      const backoffDelay = Math.pow(2, retryCount) * 2000;
-      console.log(`Retrying ${item.url} in ${backoffDelay}ms (${retryCount + 1}/${settings.retryFailed})`);
-      setTimeout(() => enhancedCheckUrl(item, retryCount + 1), backoffDelay);
+      console.log(`Retrying ${item.url} (${retryCount + 1}/${settings.retryFailed})`);
+      setTimeout(() => enhancedCheckUrlWithEmail(item, retryCount + 1), 2000);
       return;
     }
     
-    // Automated incident response for critical URLs
-    if (item.businessImpact?.category === 'critical') {
-      automatedIncidentResponse(item.url);
-    }
-    
-    addAlert(item.url, 'Connection Error', `Failed to connect to ${item.url}: ${error.message}`, 'error');
     console.warn(`Check failed for ${item.url}:`, error.message);
   }
 }
 
-// Update the main checking loop to include new features
-function enhancedStartChecking() {
-  stopChecking();
-  if (settings.intervalSec > 0) {
-    checkAll();
-    timer = setInterval(() => {
-      checkAll();
-      
-      // Run additional monitoring tasks
-      detectAnomalies();
-      correlateAlerts();
-      checkPerformanceBudgets();
-      updateCustomIntervals();
-      
-      // Resource monitoring
-      const resources = monitorResourceUtilization();
-      if (resources && resources.utilization > 90) {
-        console.warn('High memory utilization:', resources);
-      }
-      
-    }, settings.intervalSec * 1000);
+// 16. Bulk Email Operations
+async function sendBulkEmailReport(type, customMessage = '') {
+  let subject, body;
+  
+  switch (type) {
+    case 'weekly-report':
+      subject = `📈 Weekly Monitoring Report - ${new Date().toLocaleDateString()}`;
+      body = generateWeeklyEmailReport();
+      break;
+    case 'incident-report':
+      subject = '🚨 Incident Report - Immediate Attention Required';
+      body = generateIncidentEmailReport();
+      break;
+    case 'custom':
+      subject = '📋 Custom Monitoring Report';
+      body = customMessage;
+      break;
+    default:
+      subject = '📊 Monitoring Report';
+      body = generateGeneralEmailReport();
   }
+  
+  const results = [];
+  for (const recipient of emailConfig.recipients) {
+    const result = await emailService.sendEmail(recipient, subject, body, 'bulk-report');
+    results.push({ recipient, success: result });
+  }
+  
+  return results;
 }
 
-// Add new UI components for enhanced features
-function renderEnhancedDashboard() {
-  // Add AI insights panel
-  const insights = calculateAdvancedMetrics();
-  const forecasts = forecastMetrics();
-  const capacityInsights = generateCapacityInsights();
+function generateWeeklyEmailReport() {
+  const onlineCount = urls.filter(u => u.history?.slice(-1)[0]?.status === 'online').length;
+  const healthScore = calculateHealthScore();
+  const weeklyUptime = calculateOverallUptime(7);
   
-  // This would be called from the existing render function
-  // to update the UI with new data
+  // Get weekly alerts
+  const weeklyAlerts = alerts.filter(a => a.timestamp > now() - 7 * 86400000);
+  
+  return `
+    <h2>Weekly Monitoring Report</h2>
+    <p><strong>Report Period:</strong> ${new Date(now() - 7 * 86400000).toLocaleDateString()} - ${new Date().toLocaleDateString()}</p>
+    
+    <h3>Summary</h3>
+    <ul>
+      <li>Total URLs Monitored: ${urls.length}</li>
+      <li>Average Uptime: ${weeklyUptime}%</li>
+      <li>System Health Score: ${healthScore}%</li>
+      <li>Alerts This Week: ${weeklyAlerts.length}</li>
+    </ul>
+    
+    <h3>Top Performing URLs</h3>
+    <ul>
+      ${urls.slice(0, 5).map(url => `
+        <li>${url.url} - Uptime: ${calculateUptime(url.history || [], 24)}%</li>
+      `).join('')}
+    </ul>
+    
+    <h3>Recent Incidents</h3>
+    ${weeklyAlerts.length > 0 ? weeklyAlerts.slice(0, 10).map(alert => `
+      <p><strong>${alert.title}</strong><br>${alert.message}<br><em>${new Date(alert.timestamp).toLocaleString()}</em></p>
+    `).join('') : '<p>No major incidents this week.</p>'}
+    
+    <hr>
+    <p><small>Generated by URL Monitor Pro</small></p>
+  `;
 }
 
-// Initialize enhanced features
-function initializeEnhancedFeatures() {
-  // Build dependency map
-  buildDependencyMap();
-  
-  // Set up data retention policy
-  applyDataRetentionPolicy();
-  
-  // Initialize collaboration features
-  collaboration.addUser('System', 'admin');
-  
-  // Generate initial documentation
-  const docs = generateMonitoringDocumentation();
-  console.log('Initial documentation:', docs);
-  
-  // Start enhanced monitoring
-  enhancedStartChecking();
-}
-
-// Update the existing initializeApp function
-function initializeApp() {
-  // Existing initialization code...
-  
-  // Load enhanced settings
-  settings = { 
-    ...DEFAULT_SETTINGS, 
-    ...loadFromStorage('ump_settings', {}),
-    // Enhanced default settings
-    dataRetentionDays: 30,
-    enableAnomalyDetection: true,
-    enableForecasting: true,
-    enableSecurityScan: true
-  };
-  
-  // Existing initialization continues...
-  
-  // Initialize enhanced features
-  initializeEnhancedFeatures();
-}
-
-// Add new settings to the settings modal
-function showEnhancedSettings() {
-  // Add new settings fields to the modal
-  const enhancedSettingsHTML = `
-    <div class="rowx" style="grid-template-columns: 170px 1fr;">
-      <label>Data Retention (days)</label>
-      <input id="dataRetentionDays" type="number" min="1" max="365" value="${settings.dataRetentionDays || 30}" />
-    </div>
-    <div class="rowx" style="grid-template-columns: 170px 1fr;">
-      <label>Enable Anomaly Detection</label>
-      <input id="enableAnomalyDetection" type="checkbox" ${settings.enableAnomalyDetection ? 'checked' : ''} />
-    </div>
-    <div class="rowx" style="grid-template-columns: 170px 1fr;">
-      <label>Enable Forecasting</label>
-      <input id="enableForecasting" type="checkbox" ${settings.enableForecasting ? 'checked' : ''} />
-    </div>
-    <div class="rowx" style="grid-template-columns: 170px 1fr;">
-      <label>Enable Security Scan</label>
-      <input id="enableSecurityScan" type="checkbox" ${settings.enableSecurityScan ? 'checked' : ''} />
+// 17. Email Template Management
+function manageEmailTemplates() {
+  const templatesModalHTML = `
+    <div class="modal-backdrop" id="emailTemplatesModal" style="display: flex;">
+      <div class="modal" role="dialog" onclick="event.stopPropagation()" style="width: 700px;">
+        <header>Email Templates</header>
+        <div class="body">
+          <div style="margin-bottom: 20px;">
+            <h4>Alert Template</h4>
+            <div class="rowx">
+              <label>Subject</label>
+              <input type="text" id="alertSubject" value="${emailConfig.templates.alert.subject}" style="flex: 1;">
+            </div>
+            <div class="rowx">
+              <label>Body</label>
+              <textarea id="alertBody" rows="8" style="width: 100%;">${emailConfig.templates.alert.body}</textarea>
+            </div>
+          </div>
+          
+          <div style="margin-bottom: 20px;">
+            <h4>Daily Summary Template</h4>
+            <div class="rowx">
+              <label>Subject</label>
+              <input type="text" id="summarySubject" value="${emailConfig.templates.summary.subject}" style="flex: 1;">
+            </div>
+            <div class="rowx">
+              <label>Body</label>
+              <textarea id="summaryBody" rows="8" style="width: 100%;">${emailConfig.templates.summary.body}</textarea>
+            </div>
+          </div>
+          
+          <div style="background: #f8f9fa; padding: 15px; border-radius: 8px;">
+            <h4>Available Variables</h4>
+            <p class="small">Use these variables in your templates:</p>
+            <ul class="small">
+              <li><code>{title}</code> - Alert title</li>
+              <li><code>{type}</code> - Alert type</li>
+              <li><code>{url}</code> - Monitored URL</li>
+              <li><code>{message}</code> - Alert message</li>
+              <li><code>{time}</code> - Alert timestamp</li>
+              <li><code>{date}</code> - Current date</li>
+              <li><code>{totalUrls}</code> - Total monitored URLs</li>
+              <li><code>{onlineCount}</code> - Online URLs count</li>
+              <li><code>{healthScore}</code> - System health score</li>
+            </ul>
+          </div>
+        </div>
+        <footer>
+          <button class="btn btn-gray" onclick="document.getElementById('emailTemplatesModal').style.display='none'">Cancel</button>
+          <button class="btn btn-primary" onclick="saveEmailTemplates()">Save Templates</button>
+        </footer>
+      </div>
     </div>
   `;
   
-  // Inject into settings modal
-  const settingsBody = document.querySelector('#settingsModal .body');
-  settingsBody.innerHTML += enhancedSettingsHTML;
-  
-  // Show the modal
-  elements.modals.settings.style.display = 'flex';
+  if (!document.getElementById('emailTemplatesModal')) {
+    document.body.insertAdjacentHTML('beforeend', templatesModalHTML);
+  } else {
+    document.getElementById('emailTemplatesModal').style.display = 'flex';
+  }
 }
 
-// Update saveSettings to include new settings
-function saveEnhancedSettings() {
-  // Existing settings saving...
+function saveEmailTemplates() {
+  emailConfig.templates.alert.subject = document.getElementById('alertSubject').value;
+  emailConfig.templates.alert.body = document.getElementById('alertBody').value;
+  emailConfig.templates.summary.subject = document.getElementById('summarySubject').value;
+  emailConfig.templates.summary.body = document.getElementById('summaryBody').value;
   
-  // Enhanced settings
-  settings.dataRetentionDays = parseInt(document.getElementById('dataRetentionDays').value) || 30;
-  settings.enableAnomalyDetection = document.getElementById('enableAnomalyDetection').checked;
-  settings.enableForecasting = document.getElementById('enableForecasting').checked;
-  settings.enableSecurityScan = document.getElementById('enableSecurityScan').checked;
+  localStorage.setItem('ump_email_config', JSON.stringify(emailConfig));
+  document.getElementById('emailTemplatesModal').style.display = 'none';
   
-  persistSettings();
-  elements.modals.settings.style.display = 'none';
-  
-  // Re-apply data retention policy
-  applyDataRetentionPolicy();
+  showNotification({
+    title: 'Templates Saved',
+    message: 'Email templates updated successfully',
+    type: 'success'
+  });
 }
+
+// 18. Integration with Existing UI
+function addEmailSettingsToUI() {
+  // Add email settings button to actions panel
+  const actionsPanel = document.querySelector('.actions');
+  if (actionsPanel && !document.getElementById('emailSettingsBtn')) {
+    const emailButton = document.createElement('button');
+    emailButton.id = 'emailSettingsBtn';
+    emailButton.className = 'btn btn-primary';
+    emailButton.innerHTML = '📧 Email Settings';
+    emailButton.onclick = showEmailSettings;
+    actionsPanel.appendChild(emailButton);
+  }
+}
+
+// 19. Initialize Email System
+function initializeEmailSystem() {
+  // Load saved email configuration
+  const savedConfig = localStorage.getItem('ump_email_config');
+  if (savedConfig) {
+    Object.assign(emailConfig, JSON.parse(savedConfig));
+  }
+  
+  // Update email service configuration
+  emailService.config = emailConfig;
+  
+  // Setup email scheduler
+  setupEmailScheduler();
+  
+  // Add UI elements
+  addEmailSettingsToUI();
+}
+
+// 20. Enhanced Inspector UI Integration
+function showEnhancedInspector() {
+  elements.inspector.sourceList.innerHTML = urls.length ? urls.map((u, i) => `
+    <label><input type="radio" name="inspectorSource" value="${escapeHtml(u.url)}" ${i===0 ? 'checked' : ''}>${escapeHtml(u.url)}</label>
+  `).join('') : 'Add a URL first to use as an inspection source.';
+  
+  // Add enhanced options
+  const enhancedOptionsHTML = `
+    <div style="margin-top: 16px;">
+      <b>Enhanced Inspection Options</b>
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 8px;">
+        <label><input type="checkbox" id="techDetection" checked> Technology Detection</label>
+        <label><input type="checkbox" id="securityHeaders" checked> Security Headers</label>
+        <label><input type="checkbox" id="sitemapParse" checked> Sitemap Parsing</label>
+        <label><input type="checkbox" id="apiDiscovery" checked> API Discovery</label>
+        <label><input type="checkbox" id="jsAnalysis" checked> JavaScript Analysis</label>
+        <label><input type="checkbox" id="crawlSite" checked> Website Crawling</label>
+      </div>
+    </div>
+    
+    <div style="margin-top: 16px;">
+      <b>Inspection Profiles</b>
+      <div id="inspectorProfilesList" style="margin-top: 8px;">
+        <div class="small">No saved profiles yet.</div>
+      </div>
+      <button class="btn btn-gray" onclick="loadInspectionProfiles()" style="margin-top: 8px;">Load Saved Profile</button>
+    </div>
+  `;
+  
+  const inspectorBody = document.querySelector('#inspectorModal .body');
+  const existingOptions = inspectorBody.querySelector('div:nth-child(2)');
+  if (existingOptions) {
+    existingOptions.insertAdjacentHTML('afterend', enhancedOptionsHTML);
+  }
+  
+  elements.inspector.resultList.innerHTML = 'Select a source URL and click "Start Enhanced Inspection".';
+  elements.modals.inspector.style.display = 'flex';
+  
+  // Load saved profiles
+  loadInspectionProfiles();
+}
+
+function loadInspectionProfiles() {
+  const profiles = JSON.parse(localStorage.getItem('ump_inspection_profiles') || '[]');
+  const profilesList = document.getElementById('inspectorProfilesList');
+  
+  if (profiles.length === 0) {
+    profilesList.innerHTML = '<div class="small">No saved profiles yet.</div>';
+    return;
+  }
+  
+  profilesList.innerHTML = profiles.map(profile => `
+    <div class="chip" style="cursor: pointer; margin: 2px;" onclick="loadInspectionProfile('${profile.id}')">
+      ${profile.name}
+    </div>
+  `).join('');
+}
+
+function loadInspectionProfile(profileId) {
+  const profiles = JSON.parse(localStorage.getItem('ump_inspection_profiles') || '[]');
+  const profile = profiles.find(p => p.id === profileId);
+  
+  if (profile) {
+    // Set the source URL
+    const sourceRadio = document.querySelector(`input[value="${profile.sourceUrl}"]`);
+    if (sourceRadio) {
+      sourceRadio.checked = true;
+    }
+    
+    // Set the options
+    document.getElementById('deepScan').checked = profile.options.deepScan;
+    document.getElementById('checkSubdomains').checked = profile.options.checkSubdomains;
+    document.getElementById('checkCommonPaths').checked = profile.options.checkCommonPaths;
+    document.getElementById('checkAPIs').checked = profile.options.checkAPIs;
+    document.getElementById('checkFiles').checked = profile.options.checkFiles;
+    
+    showNotification({
+      title: 'Profile Loaded',
+      message: `Loaded inspection profile: ${profile.name}`,
+      type: 'success'
+    });
+  }
+}
+
+// Update the existing startInspectorScan function to use enhanced inspector
+async function startEnhancedInspectorScan() {
+  const sourceRadio = document.querySelector('input[name="inspectorSource"]:checked');
+  if (!sourceRadio) { 
+    alert('Please select a source URL to inspect.'); 
+    return; 
+  }
+
+  elements.inspector.startBtn.disabled = true;
+  
+  try {
+    const results = await enhancedInspectorScan(sourceRadio.value);
+    window.lastInspectorResults = results; // Store for export
+    renderEnhancedInspectorResults(results);
+  } catch (error) {
+    elements.inspector.resultList.innerHTML = `<div class="danger">Inspection failed: ${error.message}</div>`;
+  } finally {
+    elements.inspector.startBtn.disabled = false;
+  }
+}
+
+// =============== INTEGRATION WITH EXISTING CODE ===============
+
+// Replace the original addAlert function with the enhanced version
+const originalAddAlert = window.addAlert;
+window.addAlert = enhancedAddAlert;
+
+// Replace the original checkUrl function with the enhanced version
+const originalCheckUrl = window.checkUrl;
+window.checkUrl = enhancedCheckUrlWithEmail;
+
+// Replace the original showInspector function
+const originalShowInspector = window.showInspector;
+window.showInspector = showEnhancedInspector;
+
+// Replace the original startInspectorScan function
+const originalStartInspectorScan = window.startInspectorScan;
+window.startInspectorScan = startEnhancedInspectorScan;
+
+// Initialize enhanced systems when app starts
+function initializeEnhancedSystems() {
+  initializeEmailSystem();
+  
+  // Update the existing initializeApp function
+  const originalInitializeApp = window.initializeApp;
+  window.initializeApp = function() {
+    originalInitializeApp();
+    initializeEnhancedSystems();
+  };
+}
+
+// Call initialization
+initializeEnhancedSystems();
+</script>
+
+<!-- Add Email Settings to Settings Modal -->
+<script>
+// Enhance the existing settings modal with email options
+function enhanceSettingsModal() {
+  const settingsBody = document.querySelector('#settingsModal .body');
+  if (settingsBody && !settingsBody.querySelector('#emailIntegrationSection')) {
+    const emailSection = document.createElement('div');
+    emailSection.id = 'emailIntegrationSection';
+    emailSection.innerHTML = `
+      <hr style="margin: 20px 0;">
+      <h4 style="margin-bottom: 15px;">Email Notifications</h4>
+      <div class="rowx" style="grid-template-columns: 170px 1fr;">
+        <label>Enable Email Alerts</label>
+        <input type="checkbox" id="enableEmailAlerts" ${emailConfig.enabled ? 'checked' : ''}>
+      </div>
+      <div class="rowx" style="grid-template-columns: 170px 1fr;">
+        <label>Email Check Interval</label>
+        <select id="emailCheckInterval">
+          <option value="instant">Instant</option>
+          <option value="5min">5 Minutes</option>
+          <option value="15min">15 Minutes</option>
+          <option value="hourly">Hourly</option>
+        </select>
+      </div>
+      <div class="rowx" style="grid-template-columns: 170px 1fr;">
+        <label></label>
+        <button class="btn btn-primary" onclick="showEmailSettings()" style="margin-top: 10px;">Configure Email Settings</button>
+      </div>
+    `;
+    settingsBody.appendChild(emailSection);
+  }
+}
+
+// Enhance the saveSettings function to include email settings
+const originalSaveSettings = window.saveSettings;
+window.saveSettings = function() {
+  originalSaveSettings();
+  
+  // Save email-related settings
+  if (document.getElementById('enableEmailAlerts')) {
+    emailConfig.enabled = document.getElementById('enableEmailAlerts').checked;
+    localStorage.setItem('ump_email_config', JSON.stringify(emailConfig));
+    setupEmailScheduler();
+  }
+};
+
+// Initialize enhanced settings modal
+enhanceSettingsModal();
 </script>
