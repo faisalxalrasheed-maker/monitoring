@@ -1,4 +1,3 @@
-
 <!doctype html>
 <html>
 <head>
@@ -129,6 +128,13 @@
     .export-option.selected { border-color: var(--primary); background: #e3f2fd; }
     .dark-mode { --bg: #1e1e1e; --panel: #2d2d2d; --chip: #3d3d3d; --border: #444; color: #f0f0f0; }
     .theme-toggle { position: fixed; bottom: 20px; right: 20px; background: var(--primary); color: white; border: none; border-radius: 50%; width: 50px; height: 50px; display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 100; box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
+    
+    /* FIX: Styles for new sort controls */
+    .sort-controls { display: flex; gap: 8px; align-items: center; margin-left: auto; }
+    .sort-link { color: var(--muted); cursor: pointer; font-size: 13px; font-weight: 500; text-decoration: none; }
+    .sort-link:hover { color: var(--primary); }
+    .sort-link.active { color: var(--primary); font-weight: 700; }
+
     @media (max-width: 600px) { 
       .row { flex-wrap: wrap; } 
       .right { width: 100%; justify-content: flex-end; } 
@@ -140,7 +146,6 @@
 </head>
 <body>
 
-<!-- Login Screen -->
 <div id="loginModal" class="modal-backdrop">
     <div class="modal" style="width: 400px;">
       <header>Login to URL Monitor</header>
@@ -155,7 +160,6 @@
     </div>
 </div>
 
-<!-- Main Application -->
 <div id="appContainer">
     <div class="wrap">
     <h1>🔍 URL Monitor Pro</h1>
@@ -188,9 +192,14 @@
 
     <div id="monitoringTab" class="tab-content active">
       <div class="section">
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap: wrap; margin-bottom:8px;">
               <h3 style="margin:0;">Monitored URLs</h3>
-              <div class="small">History retained for last 24 hours</div>
+              <div class="sort-controls">
+                  <span class="small">Sort by:</span>
+                  <a id="sort-status" class="sort-link" onclick="sortURLs('status')">Status</a>
+                  <a id="sort-rt" class="sort-link" onclick="sortURLs('rt')">Response Time</a>
+                  <a id="sort-uptime" class="sort-link" onclick="sortURLs('uptime')">Uptime</a>
+              </div>
           </div>
           
           <div class="filters">
@@ -223,6 +232,7 @@
             <button class="btn btn-gray" onclick="selectAllURLs()">Select All</button>
             <button class="btn btn-gray" onclick="deselectAllURLs()">Deselect All</button>
             <button class="btn btn-primary" onclick="checkSelectedURLs()">Check Selected</button>
+            <button class="btn btn-purple" onclick="showBulkTagModal()">Tag Selected</button>
             <button class="btn btn-red" onclick="deleteSelectedURLs()">Delete Selected</button>
           </div>
           
@@ -236,6 +246,26 @@
               <h3 style="margin:0;">Alert History</h3>
               <button class="btn btn-gray" onclick="clearAlerts()">Clear All</button>
           </div>
+          <div class="filters">
+            <div class="filter-group">
+                <label>Type:</label>
+                <select id="alertTypeFilter" class="filter-select">
+                    <option value="all">All Types</option>
+                    <option value="error">Error</option>
+                    <option value="warning">Warning</option>
+                    <option value="info">Info</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label>Date:</label>
+                <select id="alertDateFilter" class="filter-select">
+                    <option value="all">All Time</option>
+                    <option value="24h">Last 24 hours</option>
+                    <option value="7d">Last 7 days</option>
+                    <option value="30d">Last 30 days</option>
+                </select>
+            </div>
+          </div>
           <div id="alertList" class="grid">No alerts yet</div>
       </div>
     </div>
@@ -245,20 +275,36 @@
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
               <h3 style="margin:0;">Export Monitoring Data</h3>
           </div>
+          <div class="filters">
+            <div class="filter-group">
+                <label>Filter by Status:</label>
+                <select id="exportStatusFilter" class="filter-select">
+                    <option value="all">All</option>
+                    <option value="online">Online Only</option>
+                    <option value="offline">Offline Only</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label>Filter by Tags:</label>
+                <select id="exportTagFilter" class="filter-select">
+                    <option value="all">All Tags</option>
+                    </select>
+            </div>
+          </div>
           <div class="export-options">
-            <div class="export-option selected" onclick="selectExportOption(this, 'csv')">
+            <div class="export-option selected" data-format="csv" onclick="selectExportOption(this, 'csv')">
               <div><strong>CSV Format</strong></div>
               <div class="small">Export as comma-separated values</div>
             </div>
-            <div class="export-option" onclick="selectExportOption(this, 'json')">
+            <div class="export-option" data-format="json" onclick="selectExportOption(this, 'json')">
               <div><strong>JSON Format</strong></div>
               <div class="small">Export as structured JSON data</div>
             </div>
-            <div class="export-option" onclick="selectExportOption(this, 'pdf')">
+            <div class="export-option" data-format="pdf" onclick="selectExportOption(this, 'pdf')">
               <div><strong>PDF Report</strong></div>
               <div class="small">Generate a PDF summary report</div>
             </div>
-            <div class="export-option" onclick="selectExportOption(this, 'html')">
+            <div class="export-option" data-format="html" onclick="selectExportOption(this, 'html')">
               <div><strong>HTML Dashboard</strong></div>
               <div class="small">Export as standalone HTML dashboard</div>
             </div>
@@ -276,7 +322,10 @@
       <div class="section">
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
               <h3 style="margin:0;">Monitoring Reports</h3>
-              <button class="btn btn-primary" onclick="generateReport()">Generate Report</button>
+              <div>
+                <button class="btn btn-gray" onclick="shareReport()">Share Report</button>
+                <button class="btn btn-primary" onclick="generateReport()">Generate Report</button>
+              </div>
           </div>
           <div id="reportsContainer">
             <div class="details-panel">
@@ -310,7 +359,6 @@
             <div style="margin-top: 20px;">
               <h4>Performance Trends</h4>
               <div class="chart-container" id="performanceChart">
-                <!-- Chart will be rendered here -->
                 <div style="text-align: center; padding: 40px 0; color: var(--muted);">
                   Performance chart will appear here when data is available
                 </div>
@@ -328,7 +376,6 @@
     </div>
 </div>
 
-<!-- Settings Modal -->
 <div id="settingsModal" class="modal-backdrop" onclick="this.style.display='none'">
   <div class="modal" role="dialog" onclick="event.stopPropagation()">
     <header>Settings</header>
@@ -347,6 +394,8 @@
           <div class="rowx" style="grid-template-columns: 170px 1fr;"><label>Response Time Warning (ms)</label><input id="responseTimeWarning" type="number" min="100" value="1000" /></div>
           <div class="rowx" style="grid-template-columns: 170px 1fr;"><label>Response Time Critical (ms)</label><input id="responseTimeCritical" type="number" min="100" value="3000" /></div>
           <div class="rowx" style="grid-template-columns: 170px 1fr;"><label>Max Endpoints (Inspector)</label><input id="maxEndpoints" type="number" min="5" /></div>
+          <div class="rowx" style="grid-template-columns: 170px 1fr;"><label>SSL Check Interval (days)</label><input id="sslCheckInterval" type="number" min="1" value="1" /></div>
+          <div class="rowx" style="grid-template-columns: 170px 1fr;"><label>SSL Warning Days</label><input id="sslWarningDays" type="number" min="1" value="30" /></div>
           <div class="rowx" style="grid-template-columns: 170px 1fr;"><label>Uptime Warning Threshold</label><input id="uptimeWarning" type="number" min="50" max="100" value="95" />%</div>
           <div class="rowx" style="grid-template-columns: 170px 1fr;"><label>Enable Performance Charts</label><input id="enableCharts" type="checkbox" checked /></div>
       </div>
@@ -376,7 +425,6 @@
 </div>
 
 
-<!-- Inspector Modal -->
 <div id="inspectorModal" class="modal-backdrop" onclick="this.style.display='none'">
     <div class="modal" role="dialog" onclick="event.stopPropagation()">
       <header>Auto Inspector</header>
@@ -407,7 +455,6 @@
     </div>
   </div>
 
-<!-- URL Details Modal -->
 <div id="urlDetailsModal" class="modal-backdrop" onclick="this.style.display='none'">
   <div class="modal" role="dialog" onclick="event.stopPropagation()" style="width: 800px;">
     <header id="urlDetailsHeader">URL Details</header>
@@ -432,7 +479,6 @@
   </div>
 </div>
 
-<!-- Theme Toggle -->
 <button class="theme-toggle" onclick="toggleDarkMode()">🌙</button>
 
   <script>
@@ -1052,21 +1098,39 @@
   }
 
   // 4. URL Grouping and Tagging (existing)
+  // FIX: Modified to populate both monitoring and export tag filters.
   function updateTagsList() {
     allTags.clear();
     urls.forEach(url => {
-      if (url.tags && url.tags.length) {
-        url.tags.forEach(tag => allTags.add(tag));
-      }
+        if (url.tags && url.tags.length) {
+            url.tags.forEach(tag => allTags.add(tag));
+        }
     });
-    
-    elements.tagFilter.innerHTML = '<option value="all">All Tags</option>';
-    allTags.forEach(tag => {
-      elements.tagFilter.innerHTML += `<option value="${tag}">${tag}</option>`;
+
+    const tagOptions = '<option value="all">All Tags</option>' + [...allTags].map(tag => `<option value="${tag}">${tag}</option>`).join('');
+
+    if (elements.tagFilter) elements.tagFilter.innerHTML = tagOptions;
+
+    // Populate the export filter as well
+    const exportTagFilter = document.getElementById('exportTagFilter');
+    if (exportTagFilter) exportTagFilter.innerHTML = tagOptions;
+  }
+
+  // FIX: New function to update the visual state of the sort controls.
+  function renderSortIndicators() {
+    $$('.sort-link').forEach(link => {
+        link.classList.remove('active');
+        link.textContent = link.textContent.replace(/ [▲▼]$/, '');
     });
+    const activeLink = $(`#sort-${currentSort.key}`);
+    if (activeLink) {
+        activeLink.classList.add('active');
+        activeLink.textContent += currentSort.direction === 'asc' ? ' ▲' : ' ▼';
+    }
   }
 
   // 5. Filter URLs (Modified to include sorting)
+  // FIX: Modified to call the new sort indicator rendering function.
   function filterURLs() {
     const searchTerm = elements.searchUrls.value.toLowerCase();
     const statusFilter = elements.statusFilter.value;
@@ -1103,6 +1167,7 @@
     filteredUrls = applySorting(filteredUrls);
 
     renderURLList(filteredUrls);
+    renderSortIndicators();
   }
 
   // 6. Batch Operations (Added Bulk Tag Editor)
@@ -1180,7 +1245,7 @@
         ];
       });
 
-      data = [headers, ...rows].map(row => row.map(cell => `"${cell}"`).join(',')).join('\n');
+      data = [headers, ...rows].map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(',')).join('\n');
       mimeType = 'text/csv';
       filename = 'url-monitor-export.csv';
     } else if (format === 'json') {
@@ -1189,8 +1254,8 @@
         urls: urlsToExport.map(url => ({
           url: url.url,
           status: url.history?.slice(-1)[0]?.status || 'unknown',
-          sslInfo: includeSSL ? url.sslInfo || null : null,
-          history: includeHistory ? (url.history || []) : []
+          sslInfo: includeSSL ? url.sslInfo || null : undefined,
+          history: includeHistory ? (url.history || []) : undefined
         }))
       }, null, 2);
       mimeType = 'application/json';
@@ -1239,7 +1304,7 @@
     
     elements.modals.urlDetails.style.display = 'flex';
     document.getElementById('urlDetailsHeader').textContent = `Details: ${url}`;
-    document.getElementById('deleteUrlBtn').setAttribute('onclick', `deleteURLFromModal('${escapeHtml(url)}')`);
+    document.getElementById('deleteUrlBtn').setAttribute('onclick', `deleteURLFromModal()`);
     
     const lastStatus = urlData.history?.slice(-1)[0] || {};
     const uptime24h = calculateUptime(urlData.history || [], 24);
@@ -1521,9 +1586,14 @@
 
   // 17. Enhanced URL adding with tags (existing)
   function addURL(newUrl, skipCheck = false, tags = []) {
-    const finalUrl = typeof newUrl === 'string' ? normalizeUrl(newUrl) : null;
+    let finalUrl = null;
+    if (typeof newUrl === 'string') {
+        finalUrl = normalizeUrl(newUrl);
+    }
+
     if (!finalUrl) {
-      showAddURLModal();
+      // Only show the prompt if addURL was called without a URL (e.g., from the button)
+      if (newUrl === undefined) showAddURLModal();
       return false;
     }
     
@@ -1551,7 +1621,7 @@
       
       updateTagsList();
       return true;
-    } else if (typeof newUrl !== 'string') {
+    } else if (newUrl !== undefined) {
       alert('This URL is already being monitored.');
     }
     return false;
@@ -1588,7 +1658,7 @@
     } else {
       selectedURLs.delete(url);
     }
-    render();
+    // No re-render needed, just checkbox state change
   }
   
   // =============== UI / Rendering ===============
@@ -1714,20 +1784,24 @@
 
   // =============== Actions / Event Handlers ===============
   const deleteURL = (url) => { 
-    urls = urls.filter(u => u.url !== url); 
-    selectedURLs.delete(url);
-    persistUrls(); 
-    render(); 
+    if (confirm(`Are you sure you want to delete ${url}?`)) {
+      urls = urls.filter(u => u.url !== url); 
+      selectedURLs.delete(url);
+      persistUrls(); 
+      render(); 
+    }
   };
 
   const showSettings = () => {
     Object.keys(elements.inputs).forEach(key => {
-      if (elements.inputs[key].type === 'checkbox') {
-        elements.inputs[key].checked = settings[key] ?? DEFAULT_SETTINGS[key];
+      const inputElement = elements.inputs[key];
+      if (!inputElement) return; // Prevent errors if element is missing
+      if (inputElement.type === 'checkbox') {
+        inputElement.checked = settings[key] ?? DEFAULT_SETTINGS[key];
       } else if (key === 'maxEndpoints') {
-        elements.inputs[key].value = settings.maxInspectorEndpoints ?? DEFAULT_SETTINGS.maxInspectorEndpoints;
+        inputElement.value = settings.maxInspectorEndpoints ?? DEFAULT_SETTINGS.maxInspectorEndpoints;
       } else {
-        elements.inputs[key].value = settings[key] ?? DEFAULT_SETTINGS[key];
+        inputElement.value = settings[key] ?? DEFAULT_SETTINGS[key];
       }
     });
     // Set account info (Feature 4)
@@ -1776,7 +1850,7 @@
 
     document.querySelectorAll('.tab').forEach(tab => {
       tab.classList.remove('active');
-      if (tab.textContent.toLowerCase().includes(tabName.toLowerCase())) {
+      if (tab.getAttribute('onclick').includes(`'${tabName}'`)) {
           tab.classList.add('active');
       }
     });
@@ -1802,8 +1876,9 @@
     });
     
     // Feature 11: Alert Filter Initialization
-    document.getElementById('alertTypeFilter').addEventListener('change', renderAlerts);
-    document.getElementById('alertDateFilter').addEventListener('change', renderAlerts);
+    // FIX: This will no longer cause an error because the elements now exist.
+    if(elements.alertTypeFilter) elements.alertTypeFilter.addEventListener('change', renderAlerts);
+    if(elements.alertDateFilter) elements.alertDateFilter.addEventListener('change', renderAlerts);
 
     document.body.classList.toggle('dark-mode', settings.darkMode);
     const themeToggle = document.querySelector('.theme-toggle');
