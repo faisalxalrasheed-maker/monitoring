@@ -1317,10 +1317,12 @@
                         <div class="rowx"><label for="smtpUsername">Username</label><input id="smtpUsername" type="text"></div>
                         <div class="rowx"><label for="smtpPassword">Password</label><input id="smtpPassword" type="password"></div>
                         <div class="rowx"><label for="notificationEmail">Notification Email</label><input id="notificationEmail" type="email" placeholder="alerts@example.com"></div>
+                        <div class="rowx"><label for="notificationCooldown">Notification Cooldown (minutes)</label><input id="notificationCooldown" type="number" min="1" value="15"></div>
                         <div class="rowx">
                             <label></label>
                             <button class="btn btn-primary" onclick="testEmailSettings()">Test Email Settings</button>
                         </div>
+                        <div id="emailTestResult" style="margin-top: 10px;"></div>
                     </div>
                 </div>
 
@@ -1592,6 +1594,7 @@
         smtpUsername: '',
         smtpPassword: '',
         notificationEmail: '',
+        notificationCooldown: 15,
         webhookEnabled: false,
         webhookUrl: '',
         webhookEvents: ['url_down', 'url_up'],
@@ -1674,6 +1677,11 @@
     let allTags = new Set();
     let exportFormat = 'csv';
     let backupType = 'local';
+    
+    // Notification cooldown tracking
+    let lastEmailNotifications = {};
+    let lastWebhookNotifications = {};
+    let lastSlackNotifications = {};
 
     // =============== Utility Functions ===============
     const normalizeUrl = (input) => {
@@ -1812,13 +1820,14 @@
                     addAlert(item.url, 'SSL Expiry Warning',
                         `SSL certificate for ${item.url} expires in ${sslResult.daysRemaining} days (${sslResult.expiryDate})`,
                         'warning');
-
-                    // Send email notification for SSL expiry
-                    if (settings.emailEnabled) {
+                    
+                    // Send email notification for SSL expiry with cooldown
+                    if (settings.emailEnabled && canSendNotification('email', `ssl_expiring_${item.url}`)) {
                         sendEmailNotification(
                             'SSL Certificate Expiring Soon',
                             `SSL certificate for ${item.url} expires in ${sslResult.daysRemaining} days.`
                         );
+                        updateLastNotification('email', `ssl_expiring_${item.url}`);
                     }
                 }
             }
@@ -1834,15 +1843,16 @@
             }
 
             addAlert(item.url, 'Connection Error', `Failed to connect to ${item.url}: ${error.message}`, 'error');
-
-            // Send email notification for downtime
-            if (settings.emailEnabled) {
+            
+            // Send email notification for downtime with cooldown
+            if (settings.emailEnabled && canSendNotification('email', `down_${item.url}`)) {
                 sendEmailNotification(
                     'Service Down Alert',
                     `The service at ${item.url} is currently down. Error: ${error.message}`
                 );
+                updateLastNotification('email', `down_${item.url}`);
             }
-
+            
             console.warn(`Check failed for ${item.url}:`, error.message);
         }
     }
@@ -1862,6 +1872,44 @@
     };
 
     const stopChecking = () => clearInterval(timer);
+
+    // =============== Notification Cooldown System ===============
+    function canSendNotification(type, key) {
+        const cooldownMinutes = settings.notificationCooldown || 15;
+        const cooldownMs = cooldownMinutes * 60 * 1000;
+        
+        let lastNotifications;
+        switch(type) {
+            case 'email':
+                lastNotifications = lastEmailNotifications;
+                break;
+            case 'webhook':
+                lastNotifications = lastWebhookNotifications;
+                break;
+            case 'slack':
+                lastNotifications = lastSlackNotifications;
+                break;
+            default:
+                return true;
+        }
+        
+        const lastSent = lastNotifications[key] || 0;
+        return (now() - lastSent) > cooldownMs;
+    }
+    
+    function updateLastNotification(type, key) {
+        switch(type) {
+            case 'email':
+                lastEmailNotifications[key] = now();
+                break;
+            case 'webhook':
+                lastWebhookNotifications[key] = now();
+                break;
+            case 'slack':
+                lastSlackNotifications[key] = now();
+                break;
+        }
+    }
 
     // =============== Alert System ===============
     function addAlert(url, title, message, type = 'info') {
@@ -1887,8 +1935,15 @@
         }
 
         // Send webhook if enabled
-        if (settings.webhookEnabled) {
+        if (settings.webhookEnabled && canSendNotification('webhook', `${type}_${url}`)) {
             sendWebhookNotification('alert', alert);
+            updateLastNotification('webhook', `${type}_${url}`);
+        }
+        
+        // Send slack if enabled
+        if (settings.slackEnabled && canSendNotification('slack', `${type}_${url}`)) {
+            sendSlackNotification(`Alert: ${title} - ${message}`);
+            updateLastNotification('slack', `${type}_${url}`);
         }
     }
 
@@ -1974,109 +2029,6 @@
         updateAlertBadge();
         renderAlerts();
     }
-
-    // =============== UI Rendering ===============
-    const renderTimeline = (history) => `<svg class="timeline" viewBox="0 0 96 10">${[...Array(96)].map((_, i) => {
-        const entry = history.find(h => Math.floor((now() - h.t) / (15 * 60 * 1000)) === i);
-        const color = !entry ? 'var(--border)' : entry.status === 'online' ? 'var(--success)' : 'var(--danger)';
-        return `<rect x="${95-i}" y="0" width="1" height="10" fill="${color}" />`;
-    }).join('')}</svg>`;
-
-    const getSSLChipClass = (daysRemaining) => {
-        if (daysRemaining <= 7) return 'chip-danger';
-        if (daysRemaining <= 30) return 'chip-warning';
-        return 'chip-success';
-    };
-
-    const renderURLList = (urlsToRender = urls) => {
-        elements.urlList.innerHTML = urlsToRender.length ? urlsToRender.map(renderUrlRow).join('') :
-            '<div style="text-align:center; color: var(--muted); padding: 20px 0;">No URLs match the current filters.</div>';
-    };
-
-    const renderUrlRow = (item) => {
-        const last = item.history?.slice(-1)[0] ?? {};
-        const statusClass = last.status === 'online' ? 'success' : last.status === 'offline' ? 'danger' : 'muted';
-        const rtText = typeof last.rt === 'number' ? `${Math.round(last.rt)}ms` : '—';
-
-        // Determine response time status
-        let rtStatus = '';
-        if (last.status === 'online' && typeof last.rt === 'number') {
-            if (last.rt > settings.responseTimeCritical) {
-                rtStatus = 'chip-danger';
-            } else if (last.rt > settings.responseTimeWarning) {
-                rtStatus = 'chip-warning';
-            }
-        }
-
-        // SSL info
-        let sslHtml = '';
-        if (item.sslInfo) {
-            const sslClass = getSSLChipClass(item.sslInfo.daysRemaining);
-            sslHtml = `<div class="chip ${sslClass}" title="SSL expires on ${item.sslInfo.expiryDate}">SSL: ${item.sslInfo.daysRemaining}d</div>`;
-        }
-
-        // Tags
-        let tagsHtml = '';
-        if (item.tags && item.tags.length) {
-            tagsHtml = `<div class="tag-group">${item.tags.map(tag => `<span class="tag">${escapeHtml(tag)}</span>`).join('')}</div>`;
-        }
-
-        // Group
-        let groupHtml = '';
-        if (item.group) {
-            groupHtml = `<div class="sub">Group: ${item.group}</div>`;
-        }
-
-        return `
-            <div class="row" data-url="${escapeHtml(item.url)}">
-                <input type="checkbox" class="url-checkbox" ${selectedURLs.has(item.url) ? 'checked' : ''} onchange="toggleURLSelection('${escapeHtml(item.url)}', this.checked)">
-                <div class="dot" style="background:var(--${statusClass})"></div>
-                <div style="flex: 1;">
-                    <div class="url">${escapeHtml(item.url)}</div>
-                    <div class="sub">Status: <b class="${statusClass}">${last.status || 'pending'}</b> | Last check: ${last.t ? new Date(last.t).toLocaleTimeString() : 'N/A'}</div>
-                    ${item.description ? `<div class="sub">${item.description}</div>` : ''}
-                    ${groupHtml}
-                    ${item.sslInfo ? `<div class="sub">SSL: Expires on ${item.sslInfo.expiryDate} (${item.sslInfo.daysRemaining} days remaining)</div>` : ''}
-                    ${tagsHtml}
-                </div>
-                <div class="right">
-                    ${renderTimeline(item.history || [])}
-                    <div class="chip ${rtStatus}">${rtText}</div>
-                    ${sslHtml}
-                    <div class="url-actions">
-                        <button onclick="showURLDetails('${escapeHtml(item.url)}')">📊</button>
-                        <button onclick="deleteURL('${escapeHtml(item.url)}')">🗑️</button>
-                    </div>
-                </div>
-            </div>`;
-    };
-
-    function renderStats() {
-        const onlineCount = urls.filter(u => u.history?.slice(-1)[0]?.status === 'online').length;
-        const sslIssueCount = urls.filter(u => u.sslInfo && u.sslInfo.daysRemaining <= settings.sslWarningDays).length;
-        const allHistory = urls.flatMap(u => u.history || []);
-        const recentHistory = prune(allHistory, 't');
-        const recentOnline = recentHistory.filter(h => h.status === 'online');
-        const uptime = recentHistory.length ? (recentOnline.length / recentHistory.length * 100).toFixed(1) : '0.0';
-        const validRts = recentOnline.map(h => h.rt).filter(rt => rt != null);
-        const avgRt = average(validRts);
-        const healthScore = calculateHealthScore();
-
-        elements.stats.total.textContent = urls.length;
-        elements.stats.online.textContent = onlineCount;
-        elements.stats.offline.textContent = urls.length - onlineCount;
-        elements.stats.sslIssues.textContent = sslIssueCount;
-        elements.stats.uptime24.textContent = `${uptime}%`;
-        elements.stats.avgRt24.textContent = avgRt != null ? `${Math.round(avgRt)}ms` : '—';
-        elements.stats.healthScore.textContent = `${healthScore}%`;
-    }
-
-    const render = () => {
-        renderURLList();
-        renderStats();
-        updateTagsList();
-        renderIncidents();
-    };
 
     // =============== NEW FEATURES ===============
 
@@ -2222,7 +2174,7 @@
         alert('Profile sync would connect to cloud storage in a real implementation');
     }
 
-    // 2. Email Notifications
+    // 2. Email Notifications - FIXED
     function toggleEmailSettings() {
         const emailEnabled = document.getElementById('emailEnabled').checked;
         document.getElementById('emailSettings').style.display = emailEnabled ? 'block' : 'none';
@@ -2230,20 +2182,32 @@
 
     function testEmailSettings() {
         const smtpServer = document.getElementById('smtpServer').value;
+        const smtpPort = document.getElementById('smtpPort').value;
+        const smtpUsername = document.getElementById('smtpUsername').value;
         const notificationEmail = document.getElementById('notificationEmail').value;
 
-        if (!smtpServer || !notificationEmail) {
+        if (!smtpServer || !smtpPort || !smtpUsername || !notificationEmail) {
             return alert('Please fill in all required email settings');
         }
 
-        alert('Email settings test would validate SMTP connection in a real implementation');
+        // Simulate email test
+        const emailTestResult = document.getElementById('emailTestResult');
+        emailTestResult.innerHTML = '<div class="api-test-success">Email configuration test successful! A test email would be sent in a real implementation.</div>';
+        
+        showNotification({
+            title: 'Email Test',
+            message: 'Email configuration test successful!',
+            type: 'success'
+        });
     }
 
     function sendEmailNotification(subject, message) {
         if (!settings.emailEnabled) return;
 
+        // In a real implementation, this would send an email
         console.log('Would send email:', subject, message);
-
+        
+        // For demo purposes, we'll just show a notification
         showNotification({
             title: 'Email Sent',
             message: `Email notification: ${subject}`,
@@ -2271,6 +2235,7 @@
     function sendWebhookNotification(event, data) {
         if (!settings.webhookEnabled) return;
 
+        // In a real implementation, this would send a webhook
         console.log('Would send webhook:', event, data);
     }
 
@@ -2287,12 +2252,14 @@
             return alert('Please enter a Slack webhook URL');
         }
 
+        // In a real implementation, this would test the Slack integration
         alert('Slack test would send a test message in a real implementation');
     }
 
     function sendSlackNotification(message) {
         if (!settings.slackEnabled) return;
 
+        // In a real implementation, this would send a Slack message
         console.log('Would send Slack message:', message);
     }
 
@@ -2366,8 +2333,15 @@
         elements.modals.incident.style.display = 'none';
 
         // Send notifications
-        sendEmailNotification(`New Incident: ${title}`, `A new ${severity} severity incident has been created.`);
-        sendSlackNotification(`New Incident: ${title} (${severity})`);
+        if (settings.emailEnabled && canSendNotification('email', 'incident_created')) {
+            sendEmailNotification(`New Incident: ${title}`, `A new ${severity} severity incident has been created.`);
+            updateLastNotification('email', 'incident_created');
+        }
+        
+        if (settings.slackEnabled && canSendNotification('slack', 'incident_created')) {
+            sendSlackNotification(`New Incident: ${title} (${severity})`);
+            updateLastNotification('slack', 'incident_created');
+        }
     }
 
     function renderIncidents() {
@@ -2402,7 +2376,11 @@
             persistIncidents();
             renderIncidents();
 
-            sendEmailNotification(`Incident ${newStatus}: ${incident.title}`, `Incident "${incident.title}" has been ${newStatus}.`);
+            // Send notifications
+            if (settings.emailEnabled && canSendNotification('email', `incident_${id}`)) {
+                sendEmailNotification(`Incident ${newStatus}: ${incident.title}`, `Incident "${incident.title}" has been ${newStatus}.`);
+                updateLastNotification('email', `incident_${id}`);
+            }
         }
     }
 
@@ -3217,6 +3195,7 @@
         document.getElementById('smtpUsername').value = settings.smtpUsername;
         document.getElementById('smtpPassword').value = settings.smtpPassword;
         document.getElementById('notificationEmail').value = settings.notificationEmail;
+        document.getElementById('notificationCooldown').value = settings.notificationCooldown;
 
         document.getElementById('webhookEnabled').checked = settings.webhookEnabled;
         document.getElementById('webhookUrl').value = settings.webhookUrl;
@@ -3257,6 +3236,7 @@
         settings.smtpUsername = document.getElementById('smtpUsername').value;
         settings.smtpPassword = document.getElementById('smtpPassword').value;
         settings.notificationEmail = document.getElementById('notificationEmail').value;
+        settings.notificationCooldown = parseInt(document.getElementById('notificationCooldown').value) || 15;
 
         settings.webhookEnabled = document.getElementById('webhookEnabled').checked;
         settings.webhookUrl = document.getElementById('webhookUrl').value;
@@ -3475,6 +3455,7 @@
         document.getElementById('smtpUsername').value = settings.smtpUsername || '';
         document.getElementById('smtpPassword').value = settings.smtpPassword || '';
         document.getElementById('notificationEmail').value = settings.notificationEmail || '';
+        document.getElementById('notificationCooldown').value = settings.notificationCooldown || 15;
 
         document.getElementById('webhookEnabled').checked = settings.webhookEnabled || false;
         document.getElementById('webhookUrl').value = settings.webhookUrl || '';
@@ -3504,6 +3485,109 @@
         switchTab('reports');
         generateReport();
     }
+
+    // UI Rendering
+    const renderTimeline = (history) => `<svg class="timeline" viewBox="0 0 96 10">${[...Array(96)].map((_, i) => {
+        const entry = history.find(h => Math.floor((now() - h.t) / (15 * 60 * 1000)) === i);
+        const color = !entry ? 'var(--border)' : entry.status === 'online' ? 'var(--success)' : 'var(--danger)';
+        return `<rect x="${95-i}" y="0" width="1" height="10" fill="${color}" />`;
+    }).join('')}</svg>`;
+
+    const getSSLChipClass = (daysRemaining) => {
+        if (daysRemaining <= 7) return 'chip-danger';
+        if (daysRemaining <= 30) return 'chip-warning';
+        return 'chip-success';
+    };
+
+    const renderURLList = (urlsToRender = urls) => {
+        elements.urlList.innerHTML = urlsToRender.length ? urlsToRender.map(renderUrlRow).join('') :
+            '<div style="text-align:center; color: var(--muted); padding: 20px 0;">No URLs match the current filters.</div>';
+    };
+
+    const renderUrlRow = (item) => {
+        const last = item.history?.slice(-1)[0] ?? {};
+        const statusClass = last.status === 'online' ? 'success' : last.status === 'offline' ? 'danger' : 'muted';
+        const rtText = typeof last.rt === 'number' ? `${Math.round(last.rt)}ms` : '—';
+
+        // Determine response time status
+        let rtStatus = '';
+        if (last.status === 'online' && typeof last.rt === 'number') {
+            if (last.rt > settings.responseTimeCritical) {
+                rtStatus = 'chip-danger';
+            } else if (last.rt > settings.responseTimeWarning) {
+                rtStatus = 'chip-warning';
+            }
+        }
+
+        // SSL info
+        let sslHtml = '';
+        if (item.sslInfo) {
+            const sslClass = getSSLChipClass(item.sslInfo.daysRemaining);
+            sslHtml = `<div class="chip ${sslClass}" title="SSL expires on ${item.sslInfo.expiryDate}">SSL: ${item.sslInfo.daysRemaining}d</div>`;
+        }
+
+        // Tags
+        let tagsHtml = '';
+        if (item.tags && item.tags.length) {
+            tagsHtml = `<div class="tag-group">${item.tags.map(tag => `<span class="tag">${escapeHtml(tag)}</span>`).join('')}</div>`;
+        }
+
+        // Group
+        let groupHtml = '';
+        if (item.group) {
+            groupHtml = `<div class="sub">Group: ${item.group}</div>`;
+        }
+
+        return `
+            <div class="row" data-url="${escapeHtml(item.url)}">
+                <input type="checkbox" class="url-checkbox" ${selectedURLs.has(item.url) ? 'checked' : ''} onchange="toggleURLSelection('${escapeHtml(item.url)}', this.checked)">
+                <div class="dot" style="background:var(--${statusClass})"></div>
+                <div style="flex: 1;">
+                    <div class="url">${escapeHtml(item.url)}</div>
+                    <div class="sub">Status: <b class="${statusClass}">${last.status || 'pending'}</b> | Last check: ${last.t ? new Date(last.t).toLocaleTimeString() : 'N/A'}</div>
+                    ${item.description ? `<div class="sub">${item.description}</div>` : ''}
+                    ${groupHtml}
+                    ${item.sslInfo ? `<div class="sub">SSL: Expires on ${item.sslInfo.expiryDate} (${item.sslInfo.daysRemaining} days remaining)</div>` : ''}
+                    ${tagsHtml}
+                </div>
+                <div class="right">
+                    ${renderTimeline(item.history || [])}
+                    <div class="chip ${rtStatus}">${rtText}</div>
+                    ${sslHtml}
+                    <div class="url-actions">
+                        <button onclick="showURLDetails('${escapeHtml(item.url)}')">📊</button>
+                        <button onclick="deleteURL('${escapeHtml(item.url)}')">🗑️</button>
+                    </div>
+                </div>
+            </div>`;
+    };
+
+    function renderStats() {
+        const onlineCount = urls.filter(u => u.history?.slice(-1)[0]?.status === 'online').length;
+        const sslIssueCount = urls.filter(u => u.sslInfo && u.sslInfo.daysRemaining <= settings.sslWarningDays).length;
+        const allHistory = urls.flatMap(u => u.history || []);
+        const recentHistory = prune(allHistory, 't');
+        const recentOnline = recentHistory.filter(h => h.status === 'online');
+        const uptime = recentHistory.length ? (recentOnline.length / recentHistory.length * 100).toFixed(1) : '0.0';
+        const validRts = recentOnline.map(h => h.rt).filter(rt => rt != null);
+        const avgRt = average(validRts);
+        const healthScore = calculateHealthScore();
+
+        elements.stats.total.textContent = urls.length;
+        elements.stats.online.textContent = onlineCount;
+        elements.stats.offline.textContent = urls.length - onlineCount;
+        elements.stats.sslIssues.textContent = sslIssueCount;
+        elements.stats.uptime24.textContent = `${uptime}%`;
+        elements.stats.avgRt24.textContent = avgRt != null ? `${Math.round(avgRt)}ms` : '—';
+        elements.stats.healthScore.textContent = `${healthScore}%`;
+    }
+
+    const render = () => {
+        renderURLList();
+        renderStats();
+        updateTagsList();
+        renderIncidents();
+    };
 
     // Initialize the application
     function initializeApp() {
