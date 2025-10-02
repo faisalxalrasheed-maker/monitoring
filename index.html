@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1027,93 +1028,6 @@
             margin-top: 0;
         }
 
-        /* SSL Certificate Details Styles */
-        .ssl-details {
-            margin-top: 15px;
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            padding: 15px;
-            background: #f8f9fa;
-        }
-
-        .ssl-details h4 {
-            margin-top: 0;
-            border-bottom: 1px solid var(--border);
-            padding-bottom: 8px;
-        }
-
-        .ssl-status {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            margin-bottom: 15px;
-        }
-
-        .ssl-status-indicator {
-            width: 12px;
-            height: 12px;
-            border-radius: 50%;
-        }
-
-        .ssl-status-valid {
-            background: var(--success);
-        }
-
-        .ssl-status-warning {
-            background: var(--warn);
-        }
-
-        .ssl-status-expired {
-            background: var(--danger);
-        }
-
-        .ssl-details-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-            gap: 10px;
-        }
-
-        .ssl-detail-item {
-            margin-bottom: 8px;
-        }
-
-        .ssl-detail-label {
-            font-weight: 600;
-            color: var(--muted);
-            font-size: 12px;
-        }
-
-        .ssl-detail-value {
-            font-size: 14px;
-            word-break: break-word;
-        }
-
-        .ssl-cert-chain {
-            margin-top: 15px;
-        }
-
-        .cert-item {
-            padding: 8px;
-            border: 1px solid var(--border);
-            border-radius: 4px;
-            margin-bottom: 8px;
-            background: white;
-        }
-
-        .cert-item:last-child {
-            margin-bottom: 0;
-        }
-
-        .cert-subject {
-            font-weight: 600;
-            margin-bottom: 4px;
-        }
-
-        .cert-issuer {
-            color: var(--muted);
-            font-size: 12px;
-        }
-
         @media (max-width: 600px) {
             .row {
                 flex-wrap: wrap;
@@ -1144,9 +1058,6 @@
             .actions button {
                 width: 100%;
                 max-width: 300px;
-            }
-            .ssl-details-grid {
-                grid-template-columns: 1fr;
             }
         }
     </style>
@@ -1276,7 +1187,132 @@
             </div>
         </div>
 
-        <!-- Other tabs remain the same -->
+        <div id="alertsTab" class="tab-content">
+            <div class="section">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                    <h3 style="margin:0;">Alert History</h3>
+                    <button class="btn btn-gray" onclick="clearAlerts()">Clear All</button>
+                </div>
+                <div id="alertList" class="grid">No alerts yet</div>
+            </div>
+        </div>
+
+        <div id="incidentsTab" class="tab-content">
+            <div class="section">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                    <h3 style="margin:0;">Incident Management</h3>
+                    <button class="btn btn-primary" onclick="createIncident()">+ New Incident</button>
+                </div>
+                <div id="incidentList" class="grid">No incidents recorded</div>
+            </div>
+        </div>
+
+        <div id="exportTab" class="tab-content">
+            <div class="section">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                    <h3 style="margin:0;">Export Monitoring Data</h3>
+                </div>
+                <div class="export-options">
+                    <div class="export-option selected" onclick="selectExportOption(this, 'csv')">
+                        <div><strong>CSV Format</strong></div>
+                        <div class="small">Export as comma-separated values</div>
+                    </div>
+                    <div class="export-option" onclick="selectExportOption(this, 'json')">
+                        <div><strong>JSON Format</strong></div>
+                        <div class="small">Export as structured JSON data</div>
+                    </div>
+                    <div class="export-option" onclick="selectExportOption(this, 'pdf')">
+                        <div><strong>PDF Report</strong></div>
+                        <div class="small">Generate a PDF summary report</div>
+                    </div>
+                    <div class="export-option" onclick="selectExportOption(this, 'html')">
+                        <div><strong>HTML Dashboard</strong></div>
+                        <div class="small">Export as standalone HTML dashboard</div>
+                    </div>
+                </div>
+                <div style="margin-bottom: 16px;">
+                    <label><input type="checkbox" id="includeHistory" checked> Include historical data</label>
+                    <label style="margin-left: 16px;"><input type="checkbox" id="includeSSL" checked> Include SSL information</label>
+                </div>
+                <button class="btn btn-primary" onclick="exportData()">Export Data</button>
+                <div id="exportResult" style="margin-top: 16px;"></div>
+
+                <div style="margin-top: 20px; border-top: 1px solid var(--border); padding-top: 20px;">
+                    <h4>Backup & Restore</h4>
+                    <div class="backup-options">
+                        <div class="backup-option selected" onclick="selectBackupOption(this, 'local')">
+                            <div><strong>Local Backup</strong></div>
+                            <div class="small">Save to your device</div>
+                        </div>
+                        <div class="backup-option" onclick="selectBackupOption(this, 'cloud')">
+                            <div><strong>Cloud Backup</strong></div>
+                            <div class="small">Save to cloud storage</div>
+                        </div>
+                        <div class="backup-option" onclick="selectBackupOption(this, 'scheduled')">
+                            <div><strong>Scheduled Backup</strong></div>
+                            <div class="small">Automatic backups</div>
+                        </div>
+                    </div>
+                    <div style="margin-top: 15px;">
+                        <button class="btn btn-primary" onclick="createBackup()">Create Backup</button>
+                        <button class="btn btn-gray" onclick="restoreBackup()">Restore Backup</button>
+                    </div>
+                    <div id="backupStatus" class="backup-status"></div>
+                </div>
+            </div>
+        </div>
+
+        <div id="reportsTab" class="tab-content">
+            <div class="section">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                    <h3 style="margin:0;">Monitoring Reports</h3>
+                    <button class="btn btn-primary" onclick="generateReport()">Generate Report</button>
+                </div>
+                <div id="reportsContainer">
+                    <div class="details-panel">
+                        <h4>System Health Overview</h4>
+                        <div class="details-grid">
+                            <div class="detail-item">
+                                <div class="detail-label">Overall Health Score</div>
+                                <div class="detail-value">
+                                    <span class="health-indicator" id="overallHealthIndicator"></span>
+                                    <span id="overallHealthScore">0%</span>
+                                </div>
+                                <div class="progress-bar">
+                                    <div class="progress-fill" id="healthProgress" style="width: 0%"></div>
+                                </div>
+                            </div>
+                            <div class="detail-item">
+                                <div class="detail-label">Uptime (7 days)</div>
+                                <div class="detail-value" id="uptime7Days">0%</div>
+                            </div>
+                            <div class="detail-item">
+                                <div class="detail-label">Avg Response Time</div>
+                                <div class="detail-value" id="avgResponseTime">—</div>
+                            </div>
+                            <div class="detail-item">
+                                <div class="detail-label">Total Checks (24h)</div>
+                                <div class="detail-value" id="totalChecks24h">0</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div style="margin-top: 20px;">
+                        <h4>Performance Trends</h4>
+                        <div class="chart-container" id="performanceChart">
+                            <div style="text-align: center; padding: 40px 0; color: var(--muted);">
+                                Performance chart will appear here when data is available
+                            </div>
+                        </div>
+                    </div>
+
+                    <div style="margin-top: 20px;">
+                        <h4>Endpoint Health Details</h4>
+                        <div id="endpointHealthList"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
 
         <div id="integrationsTab" class="tab-content">
             <div class="section">
@@ -1374,7 +1410,42 @@
             </div>
         </div>
 
-        <!-- Other tabs remain the same -->
+        <div id="apiTab" class="tab-content">
+            <div class="section">
+                <h3 style="margin:0 0 15px 0;">API Access</h3>
+
+                <div class="api-docs">
+                    <h4>API Documentation</h4>
+                    <p>Use the following endpoints to integrate with external systems:</p>
+
+                    <div class="api-endpoint">GET /api/status</div>
+                    <p>Returns current status of all monitored URLs</p>
+
+                    <div class="api-endpoint">GET /api/status/{url}</div>
+                    <p>Returns status of a specific URL</p>
+
+                    <div class="api-endpoint">POST /api/check</div>
+                    <p>Trigger an immediate check of all URLs</p>
+
+                    <div class="api-endpoint">GET /api/alerts</div>
+                    <p>Returns recent alerts</p>
+                </div>
+
+                <div style="margin-top: 20px;">
+                    <h4>API Key</h4>
+                    <div class="rowx">
+                        <label for="apiKey">Your API Key:</label>
+                        <div class="api-key" id="apiKeyDisplay">Generate API key to enable access</div>
+                    </div>
+                    <div class="rowx">
+                        <label></label>
+                        <button class="btn btn-primary" onclick="generateApiKey()">Generate API Key</button>
+                        <button class="btn btn-gray" onclick="testApi()">Test API</button>
+                    </div>
+                    <div id="apiTestResult"></div>
+                </div>
+            </div>
+        </div>
 
     </div>
 </div>
@@ -1406,6 +1477,99 @@
     </div>
 </div>
 
+<!-- Profile Manager Modal -->
+<div id="profileModal" class="modal-backdrop" onclick="closeModal('profileModal')">
+    <div class="modal" role="dialog" onclick="event.stopPropagation()">
+        <header>Profile Management</header>
+        <div class="body">
+            <div class="rowx"><label for="newProfileName">New Profile Name</label><input id="newProfileName" type="text" placeholder="Enter profile name"></div>
+            <button class="btn btn-primary" onclick="createProfile()">Create New Profile</button>
+
+            <div style="margin-top: 20px;">
+                <h4>Existing Profiles</h4>
+                <div id="profileList" class="grid"></div>
+            </div>
+        </div>
+        <footer>
+            <button class="btn btn-gray" onclick="closeModal('profileModal')">Close</button>
+        </footer>
+    </div>
+</div>
+
+<!-- Add URL Modal -->
+<div id="addUrlModal" class="modal-backdrop" onclick="closeModal('addUrlModal')">
+    <div class="modal" role="dialog" onclick="event.stopPropagation()" style="width: 500px;">
+        <header>Add New URL</header>
+        <div class="body">
+            <div class="rowx"><label for="newUrl">URL</label><input id="newUrl" type="text" placeholder="https://example.com"></div>
+            <div class="rowx"><label for="urlTags">Tags</label><input id="urlTags" type="text" placeholder="production, api, frontend"></div>
+            <div class="rowx"><label for="urlGroup">Group</label><input id="urlGroup" type="text" placeholder="Production Services"></div>
+            <div class="rowx"><label for="customInterval">Custom Check Interval (sec)</label><input id="customInterval" type="number" min="10" placeholder="Use global setting"></div>
+            <div class="rowx"><label for="expectedStatus">Expected Status Code</label><input id="expectedStatus" type="number" min="100" max="599" value="200"></div>
+            <div class="rowx"><label for="urlDescription">Description</label><input id="urlDescription" type="text" placeholder="Optional description"></div>
+        </div>
+        <footer>
+            <button class="btn btn-gray" onclick="closeModal('addUrlModal')">Cancel</button>
+            <button class="btn btn-primary" onclick="addNewURL()">Add URL</button>
+        </footer>
+    </div>
+</div>
+
+<!-- Incident Modal -->
+<div id="incidentModal" class="modal-backdrop" onclick="closeModal('incidentModal')">
+    <div class="modal" role="dialog" onclick="event.stopPropagation()" style="width: 600px;">
+        <header id="incidentModalHeader">Create Incident</header>
+        <div class="body">
+            <div class="rowx"><label for="incidentTitle">Title</label><input id="incidentTitle" type="text" placeholder="Brief description of the incident"></div>
+            <div class="rowx"><label for="incidentUrls">Affected URLs</label><select id="incidentUrls" multiple style="height: 100px;"></select></div>
+            <div class="rowx"><label for="incidentSeverity">Severity</label>
+                <select id="incidentSeverity">
+                    <option value="low">Low</option>
+                    <option value="medium">Medium</option>
+                    <option value="high">High</option>
+                    <option value="critical">Critical</option>
+                </select>
+            </div>
+            <div class="rowx"><label for="incidentDescription">Description</label><textarea id="incidentDescription" rows="4" placeholder="Detailed description of the incident"></textarea></div>
+        </div>
+        <footer>
+            <button class="btn btn-gray" onclick="closeModal('incidentModal')">Cancel</button>
+            <button class="btn btn-primary" onclick="saveIncident()">Save Incident</button>
+        </footer>
+    </div>
+</div>
+
+<!-- Inspector Modal -->
+<div id="inspectorModal" class="modal-backdrop" onclick="closeModal('inspectorModal')">
+    <div class="modal" role="dialog" onclick="event.stopPropagation()">
+        <header>Auto Inspector</header>
+        <div class="body">
+            <div>
+                <b>1. Select a URL to inspect for related endpoints</b>
+                <div id="inspectorSourceList" class="grid" style="max-height: 150px; overflow-y: auto; border: 1px solid #eee; padding: 8px; border-radius: 8px; margin-top: 8px;"></div>
+            </div>
+            <div style="margin-top: 16px;">
+                <b>Inspection Options</b>
+                <div style="display: flex; flex-wrap: wrap; gap: 10px; margin-top: 8px;">
+                    <label><input type="checkbox" id="deepScan" checked> Deep Scan (slower)</label>
+                    <label><input type="checkbox" id="checkSubdomains" checked> Check Subdomains</label>
+                    <label><input type="checkbox" id="checkCommonPaths" checked> Common Paths</label>
+                    <label><input type="checkbox" id="checkAPIs" checked> API Endpoints</label>
+                    <label><input type="checkbox" id="checkFiles" checked> Common Files</label>
+                </div>
+            </div>
+            <div id="inspectorResults" style="margin-top: 16px; border-top: 1px solid var(--border); padding-top: 16px;">
+                <b>2. Found Endpoints</b>
+                <div id="inspectorResultList" style="margin-top: 8px;">Select a source URL and click "Start Inspection".</div>
+            </div>
+        </div>
+        <footer>
+            <button class="btn btn-gray" onclick="closeModal('inspectorModal')">Close</button>
+            <button id="startScanBtn" class="btn btn-primary" onclick="startInspectorScan()">Start Inspection</button>
+        </footer>
+    </div>
+</div>
+
 <!-- URL Details Modal -->
 <div id="urlDetailsModal" class="modal-backdrop" onclick="closeModal('urlDetailsModal')">
     <div class="modal" role="dialog" onclick="event.stopPropagation()" style="width: 800px;">
@@ -1421,7 +1585,27 @@
     </div>
 </div>
 
-<!-- Other modals remain the same -->
+<!-- Status Page Preview -->
+<div id="statusPageModal" class="modal-backdrop" onclick="closeModal('statusPageModal')">
+    <div class="modal" role="dialog" onclick="event.stopPropagation()" style="width: 800px;">
+        <header>Status Page Preview</header>
+        <div class="body">
+            <div class="status-page-preview">
+                <h3 style="text-align: center; margin-bottom: 20px;">System Status</h3>
+                <div id="statusPageContent">
+                    <!-- Status page content will be populated here -->
+                </div>
+            </div>
+            <div style="margin-top: 20px;">
+                <p class="small">Share this URL for public access: <span id="statusPageUrl" style="font-family: monospace;"></span></p>
+                <button class="btn btn-primary" onclick="copyStatusPageUrl()">Copy URL</button>
+            </div>
+        </div>
+        <footer>
+            <button class="btn btn-gray" onclick="closeModal('statusPageModal')">Close</button>
+        </footer>
+    </div>
+</div>
 
 <!-- Theme Toggle -->
 <button class="theme-toggle" onclick="toggleDarkMode()">🌙</button>
@@ -1623,102 +1807,30 @@
         });
     }
 
-    // =============== FIXED SSL CERTIFICATE CHECK ===============
     async function checkSSLCertificate(url) {
         return new Promise((resolve) => {
             try {
                 const hostname = new URL(url).hostname;
-                
-                // Generate more realistic certificate information based on the domain
+                // Simulate SSL expiry with random dates
                 const today = new Date();
-                const issuedDate = new Date(today);
-                issuedDate.setDate(today.getDate() - 180); // Issued 6 months ago
-                
+                const daysToExpiry = Math.floor(Math.random() * 60) + 1;
                 const expiryDate = new Date(today);
-                // Set expiry to be between 7 and 365 days from now
-                const daysToExpiry = Math.floor(Math.random() * 358) + 7;
                 expiryDate.setDate(today.getDate() + daysToExpiry);
-                
-                // Generate realistic certificate details based on domain
-                const isPopularDomain = hostname.includes('google.com') || 
-                                      hostname.includes('microsoft.com') || 
-                                      hostname.includes('apple.com') ||
-                                      hostname.includes('amazon.com');
-                
-                const isGovDomain = hostname.includes('.gov') || hostname.includes('.edu');
-                
-                let issuer, signatureAlgorithm, publicKeyAlgorithm, keySize;
-                
-                if (isPopularDomain) {
-                    issuer = "DigiCert Inc";
-                    signatureAlgorithm = "SHA256-RSA";
-                    publicKeyAlgorithm = "RSA";
-                    keySize = 2048;
-                } else if (isGovDomain) {
-                    issuer = "Entrust";
-                    signatureAlgorithm = "ECDSA-SHA384";
-                    publicKeyAlgorithm = "ECDSA";
-                    keySize = 256;
-                } else {
-                    issuer = "Let's Encrypt";
-                    signatureAlgorithm = "ECDSA-SHA256";
-                    publicKeyAlgorithm = "ECDSA";
-                    keySize = 256;
-                }
-                
-                // Generate certificate chain
-                const certificateChain = [
-                    {
-                        subject: `CN=${hostname}`,
-                        issuer: issuer,
-                        validFrom: issuedDate.toISOString().split('T')[0],
-                        validTo: expiryDate.toISOString().split('T')[0],
-                        serialNumber: "0x" + Math.random().toString(16).substring(2, 10).toUpperCase()
-                    },
-                    {
-                        subject: `CN=${issuer}`,
-                        issuer: issuer,
-                        validFrom: new Date(issuedDate.getFullYear() - 2, 0, 1).toISOString().split('T')[0],
-                        validTo: new Date(issuedDate.getFullYear() + 8, 11, 31).toISOString().split('T')[0],
-                        serialNumber: "0x" + Math.random().toString(16).substring(2, 10).toUpperCase()
-                    }
-                ];
-                
-                // Calculate days remaining
-                const daysRemaining = Math.floor((expiryDate - today) / (1000 * 60 * 60 * 24));
-                
+
                 resolve({
                     valid: true,
-                    daysRemaining: daysRemaining,
+                    daysRemaining: daysToExpiry,
                     expiryDate: expiryDate.toISOString().split('T')[0],
-                    issuedDate: issuedDate.toISOString().split('T')[0],
-                    issuer: issuer,
-                    subject: `CN=${hostname}`,
-                    signatureAlgorithm: signatureAlgorithm,
-                    publicKeyAlgorithm: publicKeyAlgorithm,
-                    keySize: keySize,
+                    issuer: "Simulated CA",
                     protocol: "TLS 1.3",
-                    san: [`DNS:${hostname}`, `DNS:www.${hostname}`],
-                    certificateChain: certificateChain,
-                    ocsp: "stapled",
-                    crl: "CRL Distribution Points: Yes",
-                    extendedValidation: isPopularDomain || isGovDomain,
-                    certificateTransparency: true
+                    signatureAlgorithm: "SHA256-RSA"
                 });
             } catch (error) {
                 resolve({
                     valid: false,
                     daysRemaining: 0,
                     expiryDate: null,
-                    issuedDate: null,
                     issuer: null,
-                    subject: null,
-                    signatureAlgorithm: null,
-                    publicKeyAlgorithm: null,
-                    keySize: null,
-                    protocol: null,
-                    san: [],
-                    certificateChain: [],
                     error: error.message
                 });
             }
@@ -1947,12 +2059,6 @@
         return 'chip-success';
     };
 
-    const getSSLStatusClass = (daysRemaining) => {
-        if (daysRemaining <= 7) return 'ssl-status-expired';
-        if (daysRemaining <= 30) return 'ssl-status-warning';
-        return 'ssl-status-valid';
-    };
-
     const renderURLList = (urlsToRender = urls) => {
         elements.urlList.innerHTML = urlsToRender.length ? urlsToRender.map(renderUrlRow).join('') :
             '<div style="text-align:center; color: var(--muted); padding: 20px 0;">No URLs match the current filters.</div>';
@@ -2045,7 +2151,149 @@
 
     // =============== NEW FEATURES ===============
 
-    // 1. Email Notifications - FIXED
+    // 1. Profile Management
+    function initializeProfiles() {
+        profiles = loadFromStorage('profiles', {});
+        if (Object.keys(profiles).length === 0) {
+            profiles = {
+                'default': {
+                    name: 'Default Profile',
+                    created: Date.now(),
+                    urls: [],
+                    settings: {...DEFAULT_SETTINGS},
+                    alerts: [],
+                    incidents: []
+                }
+            };
+            persistProfiles();
+        }
+
+        // Set current profile
+        currentProfile = 'default';
+
+        // Populate profile selector
+        updateProfileSelector();
+    }
+
+    function updateProfileSelector() {
+        elements.profileSelect.innerHTML = '';
+        Object.keys(profiles).forEach(profileId => {
+            const option = document.createElement('option');
+            option.value = profileId;
+            option.textContent = profiles[profileId].name;
+            if (profileId === currentProfile) option.selected = true;
+            elements.profileSelect.appendChild(option);
+        });
+    }
+
+    function switchProfile(profileId) {
+        // Save current state
+        if (currentProfile) {
+            profiles[currentProfile].urls = urls;
+            profiles[currentProfile].settings = settings;
+            profiles[currentProfile].alerts = alerts;
+            profiles[currentProfile].incidents = incidents;
+        }
+
+        // Load new profile
+        currentProfile = profileId;
+        urls = profiles[profileId].urls || [];
+        settings = {...DEFAULT_SETTINGS, ...profiles[profileId].settings};
+        alerts = profiles[profileId].alerts || [];
+        incidents = profiles[profileId].incidents || [];
+        apiKey = loadFromStorage('apiKey', null);
+
+        // Update UI
+        render();
+        updateAlertBadge();
+        updateTagsList();
+        startChecking();
+
+        persistProfiles();
+    }
+
+    function showProfileManager() {
+        // Populate profile list
+        const profileList = document.getElementById('profileList');
+        profileList.innerHTML = '';
+
+        Object.keys(profiles).forEach(profileId => {
+            const profile = profiles[profileId];
+            const profileElement = document.createElement('div');
+            profileElement.className = 'row';
+            profileElement.innerHTML = `
+                <div style="flex: 1;">
+                    <div class="url">${profile.name}</div>
+                    <div class="sub">URLs: ${profile.urls?.length || 0} | Created: ${new Date(profile.created).toLocaleDateString()}</div>
+                </div>
+                <div class="right">
+                    <button onclick="switchProfile('${profileId}')">Switch</button>
+                    <button onclick="renameProfile('${profileId}')">Rename</button>
+                    <button onclick="deleteProfile('${profileId}')">Delete</button>
+                </div>
+            `;
+            profileList.appendChild(profileElement);
+        });
+
+        elements.modals.profile.style.display = 'flex';
+    }
+
+    function createProfile() {
+        const name = document.getElementById('newProfileName').value;
+        if (!name) return alert('Please enter a profile name');
+
+        const profileId = 'profile_' + Date.now();
+        profiles[profileId] = {
+            name: name,
+            created: Date.now(),
+            urls: [],
+            settings: {...DEFAULT_SETTINGS},
+            alerts: [],
+            incidents: []
+        };
+
+        persistProfiles();
+        updateProfileSelector();
+        document.getElementById('newProfileName').value = '';
+
+        // Switch to new profile
+        switchProfile(profileId);
+    }
+
+    function renameProfile(profileId) {
+        const newName = prompt('Enter new profile name:', profiles[profileId].name);
+        if (newName) {
+            profiles[profileId].name = newName;
+            persistProfiles();
+            updateProfileSelector();
+            showProfileManager();
+        }
+    }
+
+    function deleteProfile(profileId) {
+        if (Object.keys(profiles).length <= 1) {
+            return alert('You cannot delete the last profile');
+        }
+
+        if (confirm(`Are you sure you want to delete profile "${profiles[profileId].name}"?`)) {
+            delete profiles[profileId];
+            persistProfiles();
+
+            // Switch to another profile
+            const remainingProfiles = Object.keys(profiles);
+            if (remainingProfiles.length > 0) {
+                switchProfile(remainingProfiles[0]);
+            }
+
+            showProfileManager();
+        }
+    }
+
+    function syncProfiles() {
+        alert('Profile sync would connect to cloud storage in a real implementation');
+    }
+
+    // 2. Email Notifications - FIXED
     function toggleEmailSettings() {
         const emailEnabled = document.getElementById('emailEnabled').checked;
         document.getElementById('emailSettings').style.display = emailEnabled ? 'block' : 'none';
@@ -2106,7 +2354,7 @@
         });
     }
 
-    // 2. Webhook Integrations
+    // 3. Webhook Integrations
     function toggleWebhookSettings() {
         const webhookEnabled = document.getElementById('webhookEnabled').checked;
         document.getElementById('webhookSettings').style.display = webhookEnabled ? 'block' : 'none';
@@ -2150,7 +2398,7 @@
         // });
     }
 
-    // 3. Slack Integration
+    // 4. Slack Integration
     function toggleSlackSettings() {
         const slackEnabled = document.getElementById('slackEnabled').checked;
         document.getElementById('slackSettings').style.display = slackEnabled ? 'block' : 'none';
@@ -2272,7 +2520,407 @@
         });
     }
 
-    // =============== SSL CERTIFICATE DETAILS VIEW ===============
+    // 5. API Access
+    function generateApiKey() {
+        apiKey = 'ump_' + Math.random().toString(36).substring(2) + '_' + Date.now().toString(36);
+        document.getElementById('apiKeyDisplay').textContent = apiKey;
+        persistApiKey();
+
+        showNotification({
+            title: 'API Key Generated',
+            message: 'New API key has been generated successfully',
+            type: 'success'
+        });
+    }
+
+    function testApi() {
+        if (!apiKey) {
+            return alert('Please generate an API key first');
+        }
+
+        const testResult = document.getElementById('apiTestResult');
+        testResult.innerHTML = '<div class="api-test-success">API test would be implemented in a real application</div>';
+    }
+
+    // 6. Incident Management
+    function createIncident() {
+        // Populate URLs dropdown
+        const incidentUrls = document.getElementById('incidentUrls');
+        incidentUrls.innerHTML = '';
+        urls.forEach(url => {
+            const option = document.createElement('option');
+            option.value = url.url;
+            option.textContent = url.url;
+            incidentUrls.appendChild(option);
+        });
+
+        document.getElementById('incidentModalHeader').textContent = 'Create Incident';
+        document.getElementById('incidentTitle').value = '';
+        document.getElementById('incidentDescription').value = '';
+        document.getElementById('incidentSeverity').value = 'medium';
+
+        elements.modals.incident.style.display = 'flex';
+    }
+
+    function saveIncident() {
+        const title = document.getElementById('incidentTitle').value;
+        const description = document.getElementById('incidentDescription').value;
+        const severity = document.getElementById('incidentSeverity').value;
+        const selectedUrls = Array.from(document.getElementById('incidentUrls').selectedOptions).map(opt => opt.value);
+
+        if (!title) {
+            return alert('Please enter an incident title');
+        }
+
+        const incident = {
+            id: Date.now().toString(),
+            title: title,
+            description: description,
+            severity: severity,
+            urls: selectedUrls,
+            status: 'open',
+            createdAt: Date.now(),
+            updatedAt: Date.now()
+        };
+
+        incidents.unshift(incident);
+        persistIncidents();
+        renderIncidents();
+
+        elements.modals.incident.style.display = 'none';
+
+        // Send notifications
+        sendEmailNotification(`New Incident: ${title}`, `A new ${severity} severity incident has been created.`);
+        sendSlackNotification(`New Incident: ${title} (${severity})`);
+        sendTeamsNotification({
+            url: selectedUrls.join(', '),
+            title: `New Incident: ${title}`,
+            message: `A new ${severity} severity incident has been created: ${description}`,
+            type: 'info'
+        });
+    }
+
+    function renderIncidents() {
+        if (incidents.length === 0) {
+            elements.incidentList.innerHTML = '<div style="text-align:center; color: var(--muted); padding: 20px 0;">No incidents recorded.</div>';
+            return;
+        }
+
+        elements.incidentList.innerHTML = incidents.map(incident => `
+            <div class="incident-item ${incident.status === 'resolved' ? 'incident-resolved' : ''}">
+                <div style="display: flex; justify-content: between; align-items: center;">
+                    <h4 style="margin: 0; flex: 1;">${incident.title}</h4>
+                    <span class="chip ${incident.severity === 'critical' ? 'chip-danger' : incident.severity === 'high' ? 'chip-warning' : 'chip'}">${incident.severity}</span>
+                </div>
+                <div class="sub">Created: ${new Date(incident.createdAt).toLocaleString()} | Status: ${incident.status}</div>
+                <p>${incident.description}</p>
+                <div class="incident-actions">
+                    <button class="btn btn-gray" onclick="updateIncidentStatus('${incident.id}', '${incident.status === 'open' ? 'resolved' : 'open'}')">
+                        ${incident.status === 'open' ? 'Resolve' : 'Reopen'}
+                    </button>
+                    <button class="btn btn-red" onclick="deleteIncident('${incident.id}')">Delete</button>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    function updateIncidentStatus(id, newStatus) {
+        const incident = incidents.find(i => i.id === id);
+        if (incident) {
+            incident.status = newStatus;
+            incident.updatedAt = Date.now();
+            persistIncidents();
+            renderIncidents();
+
+            sendEmailNotification(`Incident ${newStatus}: ${incident.title}`, `Incident "${incident.title}" has been ${newStatus}.`);
+            sendTeamsNotification({
+                url: incident.urls.join(', '),
+                title: `Incident ${newStatus}: ${incident.title}`,
+                message: `Incident "${incident.title}" has been ${newStatus}.`,
+                type: newStatus === 'resolved' ? 'success' : 'warning'
+            });
+        }
+    }
+
+    function deleteIncident(id) {
+        if (confirm('Are you sure you want to delete this incident?')) {
+            incidents = incidents.filter(i => i.id !== id);
+            persistIncidents();
+            renderIncidents();
+        }
+    }
+
+    // 7. Backup and Restore
+    function selectBackupOption(element, type) {
+        document.querySelectorAll('.backup-option').forEach(opt => opt.classList.remove('selected'));
+        element.classList.add('selected');
+        backupType = type;
+    }
+
+    function createBackup() {
+        const backupData = {
+            version: '1.0',
+            timestamp: Date.now(),
+            profile: currentProfile,
+            data: {
+                urls: urls,
+                settings: settings,
+                alerts: alerts,
+                incidents: incidents,
+                profiles: profiles
+            }
+        };
+
+        const dataStr = JSON.stringify(backupData, null, 2);
+        const blob = new Blob([dataStr], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `url-monitor-backup-${new Date().toISOString().split('T')[0]}.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+
+        const backupStatus = document.getElementById('backupStatus');
+        backupStatus.innerHTML = '<span class="backup-success">Backup created successfully</span>';
+
+        setTimeout(() => {
+            backupStatus.innerHTML = '';
+        }, 3000);
+    }
+
+    function restoreBackup() {
+        const fileInput = document.createElement('input');
+        fileInput.type = 'file';
+        fileInput.accept = '.json';
+        fileInput.onchange = (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                try {
+                    const backupData = JSON.parse(event.target.result);
+
+                    if (confirm('Restoring backup will replace all current data. Are you sure?')) {
+                        urls = backupData.data.urls || [];
+                        settings = {...DEFAULT_SETTINGS, ...backupData.data.settings};
+                        alerts = backupData.data.alerts || [];
+                        incidents = backupData.data.incidents || [];
+                        profiles = backupData.data.profiles || profiles;
+
+                        persistUrls();
+                        persistSettings();
+                        persistAlerts();
+                        persistIncidents();
+                        persistProfiles();
+
+                        render();
+                        updateAlertBadge();
+                        updateTagsList();
+                        startChecking();
+
+                        const backupStatus = document.getElementById('backupStatus');
+                        backupStatus.innerHTML = '<span class="backup-success">Backup restored successfully</span>';
+
+                        setTimeout(() => {
+                            backupStatus.innerHTML = '';
+                        }, 3000);
+                    }
+                } catch (error) {
+                    alert('Error restoring backup: ' + error.message);
+                }
+            };
+            reader.readAsText(file);
+        };
+        fileInput.click();
+    }
+
+    // 8. Status Page
+    function showStatusPage() {
+        if (!settings.enableStatusPage) {
+            return alert('Please enable status page in settings first');
+        }
+
+        // Generate status page URL
+        const statusPageUrl = `${window.location.origin}${window.location.pathname}#status-${currentProfile}`;
+        document.getElementById('statusPageUrl').textContent = statusPageUrl;
+
+        // Generate status page content
+        const statusPageContent = document.getElementById('statusPageContent');
+        statusPageContent.innerHTML = '';
+
+        urls.forEach(url => {
+            const lastStatus = url.history?.slice(-1)[0] || {};
+            const statusItem = document.createElement('div');
+            statusItem.className = 'status-page-item';
+            statusItem.innerHTML = `
+                <div>
+                    <strong>${url.url}</strong>
+                    <div class="sub">${url.description || 'No description'}</div>
+                </div>
+                <div class="chip ${lastStatus.status === 'online' ? 'chip-success' : 'chip-danger'}">
+                    ${lastStatus.status === 'online' ? 'Operational' : 'Outage'}
+                </div>
+            `;
+            statusPageContent.appendChild(statusItem);
+        });
+
+        elements.modals.statusPage.style.display = 'flex';
+    }
+
+    function copyStatusPageUrl() {
+        const statusPageUrl = document.getElementById('statusPageUrl').textContent;
+        navigator.clipboard.writeText(statusPageUrl).then(() => {
+            showNotification({
+                title: 'URL Copied',
+                message: 'Status page URL copied to clipboard',
+                type: 'success'
+            });
+        });
+    }
+
+    // 9. Enhanced URL Adding
+    function showAddURLModal() {
+        elements.modals.addUrl.style.display = 'flex';
+    }
+
+    function addNewURL() {
+        const url = document.getElementById('newUrl').value;
+        const tags = document.getElementById('urlTags').value.split(',').map(t => t.trim()).filter(t => t);
+        const group = document.getElementById('urlGroup').value;
+        const customInterval = document.getElementById('customInterval').value;
+        const expectedStatus = document.getElementById('expectedStatus').value;
+        const description = document.getElementById('urlDescription').value;
+
+        if (!url) {
+            return alert('Please enter a URL');
+        }
+
+        const normalizedUrl = normalizeUrl(url);
+        if (!normalizedUrl) {
+            return alert('Please enter a valid URL');
+        }
+
+        if (urls.some(u => u.url === normalizedUrl)) {
+            return alert('This URL is already being monitored.');
+        }
+
+        const newUrl = {
+            url: normalizedUrl,
+            history: [],
+            spikes: [],
+            tags: tags,
+            group: group || null,
+            customInterval: customInterval ? parseInt(customInterval) : null,
+            expectedStatus: expectedStatus ? parseInt(expectedStatus) : 200,
+            description: description || null,
+            lastCheck: null,
+            failCount: 0
+        };
+
+        urls.push(newUrl);
+        persistUrls();
+        render();
+        updateTagsList();
+
+        // Check the new URL
+        checkUrl(newUrl).then(() => {
+            persistUrls();
+            render();
+        });
+
+        elements.modals.addUrl.style.display = 'none';
+
+        // Reset form
+        document.getElementById('newUrl').value = '';
+        document.getElementById('urlTags').value = '';
+        document.getElementById('urlGroup').value = '';
+        document.getElementById('customInterval').value = '';
+        document.getElementById('expectedStatus').value = '200';
+        document.getElementById('urlDescription').value = '';
+    }
+
+    // 10. Auto Backup
+    function setupAutoBackup() {
+        if (backupTimer) {
+            clearInterval(backupTimer);
+        }
+
+        if (settings.autoBackup > 0) {
+            const intervalMs = settings.autoBackup * 60 * 60 * 1000;
+            backupTimer = setInterval(() => {
+                createBackup();
+            }, intervalMs);
+        }
+    }
+
+    // =============== Additional Features ===============
+
+    // Filter URLs
+    function filterURLs() {
+        const searchTerm = elements.searchUrls.value.toLowerCase();
+        const statusFilter = elements.statusFilter.value;
+        const tagFilter = elements.tagFilter.value;
+        const sslFilter = elements.sslFilter.value;
+
+        const filteredUrls = urls.filter(url => {
+            // Search filter
+            if (searchTerm && !url.url.toLowerCase().includes(searchTerm)) return false;
+
+            // Status filter
+            if (statusFilter !== 'all') {
+                const lastStatus = url.history?.slice(-1)[0]?.status;
+                if (statusFilter === 'online' && lastStatus !== 'online') return false;
+                if (statusFilter === 'offline' && lastStatus !== 'offline') return false;
+            }
+
+            // Tag filter
+            if (tagFilter !== 'all' && (!url.tags || !url.tags.includes(tagFilter))) return false;
+
+            // SSL filter
+            if (sslFilter !== 'all') {
+                if (sslFilter === 'expiring' && (!url.sslInfo || url.sslInfo.daysRemaining > settings.sslWarningDays)) return false;
+                if (sslFilter === 'valid' && (!url.sslInfo || url.sslInfo.daysRemaining <= settings.sslWarningDays)) return false;
+            }
+
+            return true;
+        });
+
+        renderURLList(filteredUrls);
+    }
+
+    // Batch Operations
+    function selectAllURLs() {
+        selectedURLs = new Set(urls.map(url => url.url));
+        render();
+    }
+
+    function deselectAllURLs() {
+        selectedURLs.clear();
+        render();
+    }
+
+    function checkSelectedURLs() {
+        const selected = urls.filter(url => selectedURLs.has(url.url));
+        Promise.all(selected.map(checkUrl)).then(() => {
+            persistUrls();
+            render();
+        });
+    }
+
+    function deleteSelectedURLs() {
+        if (selectedURLs.size === 0) return;
+        if (confirm(`Are you sure you want to delete ${selectedURLs.size} URL(s)?`)) {
+            urls = urls.filter(url => !selectedURLs.has(url.url));
+            selectedURLs.clear();
+            persistUrls();
+            render();
+        }
+    }
+
+    // URL Details View
     function showURLDetails(url) {
         const urlData = urls.find(u => u.url === url);
         if (!urlData) return;
@@ -2317,82 +2965,27 @@
         `;
 
         if (urlData.sslInfo) {
-            const sslStatusClass = getSSLStatusClass(urlData.sslInfo.daysRemaining);
-            const statusText = urlData.sslInfo.daysRemaining <= 7 ? 'Expired' : 
-                              urlData.sslInfo.daysRemaining <= 30 ? 'Expiring Soon' : 'Valid';
-            
             detailsHTML += `
-                <div class="ssl-details">
+                <div style="margin-top: 20px;">
                     <h4>SSL Certificate Information</h4>
-                    
-                    <div class="ssl-status">
-                        <div class="ssl-status-indicator ${sslStatusClass}"></div>
-                        <div><strong>Status: ${statusText}</strong> (${urlData.sslInfo.daysRemaining} days remaining)</div>
-                    </div>
-                    
-                    <div class="ssl-details-grid">
-                        <div class="ssl-detail-item">
-                            <div class="ssl-detail-label">Issued Date</div>
-                            <div class="ssl-detail-value">${urlData.sslInfo.issuedDate || '—'}</div>
+                    <div class="details-grid">
+                        <div class="detail-item">
+                            <div class="detail-label">Valid</div>
+                            <div class="detail-value">${urlData.sslInfo.valid ? 'Yes' : 'No'}</div>
                         </div>
-                        <div class="ssl-detail-item">
-                            <div class="ssl-detail-label">Expiry Date</div>
-                            <div class="ssl-detail-value">${urlData.sslInfo.expiryDate || '—'}</div>
+                        <div class="detail-item">
+                            <div class="detail-label">Days Remaining</div>
+                            <div class="detail-value">${urlData.sslInfo.daysRemaining}</div>
                         </div>
-                        <div class="ssl-detail-item">
-                            <div class="ssl-detail-label">Issuer</div>
-                            <div class="ssl-detail-value">${urlData.sslInfo.issuer || '—'}</div>
+                        <div class="detail-item">
+                            <div class="detail-label">Expiry Date</div>
+                            <div class="detail-value">${urlData.sslInfo.expiryDate || '—'}</div>
                         </div>
-                        <div class="ssl-detail-item">
-                            <div class="ssl-detail-label">Subject</div>
-                            <div class="ssl-detail-value">${urlData.sslInfo.subject || '—'}</div>
-                        </div>
-                        <div class="ssl-detail-item">
-                            <div class="ssl-detail-label">Signature Algorithm</div>
-                            <div class="ssl-detail-value">${urlData.sslInfo.signatureAlgorithm || '—'}</div>
-                        </div>
-                        <div class="ssl-detail-item">
-                            <div class="ssl-detail-label">Public Key Algorithm</div>
-                            <div class="ssl-detail-value">${urlData.sslInfo.publicKeyAlgorithm || '—'}</div>
-                        </div>
-                        <div class="ssl-detail-item">
-                            <div class="ssl-detail-label">Key Size</div>
-                            <div class="ssl-detail-value">${urlData.sslInfo.keySize || '—'} bits</div>
-                        </div>
-                        <div class="ssl-detail-item">
-                            <div class="ssl-detail-label">Protocol</div>
-                            <div class="ssl-detail-value">${urlData.sslInfo.protocol || '—'}</div>
-                        </div>
-                        <div class="ssl-detail-item">
-                            <div class="ssl-detail-label">Extended Validation</div>
-                            <div class="ssl-detail-value">${urlData.sslInfo.extendedValidation ? 'Yes' : 'No'}</div>
-                        </div>
-                        <div class="ssl-detail-item">
-                            <div class="ssl-detail-label">Certificate Transparency</div>
-                            <div class="ssl-detail-value">${urlData.sslInfo.certificateTransparency ? 'Yes' : 'No'}</div>
+                        <div class="detail-item">
+                            <div class="detail-label">Issuer</div>
+                            <div class="detail-value">${urlData.sslInfo.issuer || '—'}</div>
                         </div>
                     </div>
-                    
-                    ${urlData.sslInfo.san && urlData.sslInfo.san.length > 0 ? `
-                        <div class="ssl-detail-item">
-                            <div class="ssl-detail-label">Subject Alternative Names</div>
-                            <div class="ssl-detail-value">${urlData.sslInfo.san.join(', ')}</div>
-                        </div>
-                    ` : ''}
-                    
-                    ${urlData.sslInfo.certificateChain && urlData.sslInfo.certificateChain.length > 0 ? `
-                        <div class="ssl-cert-chain">
-                            <div class="ssl-detail-label">Certificate Chain</div>
-                            ${urlData.sslInfo.certificateChain.map(cert => `
-                                <div class="cert-item">
-                                    <div class="cert-subject">${cert.subject}</div>
-                                    <div class="cert-issuer">Issued by: ${cert.issuer}</div>
-                                    <div class="small">Valid: ${cert.validFrom} to ${cert.validTo}</div>
-                                    <div class="small">Serial: ${cert.serialNumber}</div>
-                                </div>
-                            `).join('')}
-                        </div>
-                    ` : ''}
                 </div>
             `;
         }
@@ -2448,7 +3041,394 @@
         return average(validRTs);
     }
 
-    // =============== Settings Management ===============
+    // Export options selection
+    function selectExportOption(element, format) {
+        document.querySelectorAll('.export-option').forEach(opt => opt.classList.remove('selected'));
+        element.classList.add('selected');
+        exportFormat = format;
+    }
+
+    // Enhanced export functionality
+    function exportData() {
+        const includeHistory = document.getElementById('includeHistory').checked;
+        const includeSSL = document.getElementById('includeSSL').checked;
+
+        let data, mimeType, filename;
+
+        if (exportFormat === 'csv') {
+            // Create CSV content
+            const headers = ['URL', 'Status', 'Last Check', 'Response Time', 'Uptime (24h)', 'SSL Days Remaining', 'SSL Expiry Date'];
+            const rows = urls.map(url => {
+                const lastStatus = url.history?.slice(-1)[0] || {};
+                const uptime24h = calculateUptime(url.history || [], 24);
+                return [
+                    url.url,
+                    lastStatus.status || 'unknown',
+                    lastStatus.t ? new Date(lastStatus.t).toLocaleString() : 'N/A',
+                    lastStatus.rt || 'N/A',
+                    `${uptime24h}%`,
+                    url.sslInfo?.daysRemaining || 'N/A',
+                    url.sslInfo?.expiryDate || 'N/A'
+                ];
+            });
+
+            data = [headers, ...rows].map(row => row.map(cell => `"${cell}"`).join(',')).join('\n');
+            mimeType = 'text/csv';
+            filename = 'url-monitor-export.csv';
+        } else if (exportFormat === 'json') {
+            // JSON format
+            data = JSON.stringify({
+                exportedAt: new Date().toISOString(),
+                settings: settings,
+                urls: urls.map(url => ({
+                    url: url.url,
+                    tags: url.tags || [],
+                    status: url.history?.slice(-1)[0]?.status || 'unknown',
+                    lastCheck: url.history?.slice(-1)[0]?.t || null,
+                    responseTime: url.history?.slice(-1)[0]?.rt || null,
+                    uptime24h: calculateUptime(url.history || [], 24),
+                    sslInfo: includeSSL ? url.sslInfo || null : null,
+                    history: includeHistory ? (url.history || []) : []
+                }))
+            }, null, 2);
+            mimeType = 'application/json';
+            filename = 'url-monitor-export.json';
+        } else if (exportFormat === 'pdf') {
+            alert('PDF export would be implemented with a library like jsPDF in a real application');
+            return;
+        } else if (exportFormat === 'html') {
+            // Create a standalone HTML dashboard
+            data = generateHTMLDashboard();
+            mimeType = 'text/html';
+            filename = 'url-monitor-dashboard.html';
+        }
+
+        // Create download link
+        const blob = new Blob([data], { type: mimeType });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+
+        // Show success message
+        const exportResult = document.getElementById('exportResult');
+        exportResult.innerHTML = `<div class="success">Data exported successfully as ${filename}</div>`;
+        setTimeout(() => {
+            exportResult.innerHTML = '';
+        }, 3000);
+    }
+
+    // Generate HTML Dashboard for export
+    function generateHTMLDashboard() {
+        const onlineCount = urls.filter(u => u.history?.slice(-1)[0]?.status === 'online').length;
+        const healthScore = calculateHealthScore();
+
+        return `
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>URL Monitor Dashboard</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; margin: 20px 0; }
+        .stat { background: #f5f5f5; padding: 14px; border-radius: 10px; text-align: center; }
+        .url-list { margin-top: 20px; }
+        .url-item { border: 1px solid #eee; padding: 10px; margin-bottom: 10px; border-radius: 5px; }
+        .online { border-left: 4px solid green; }
+        .offline { border-left: 4px solid red; }
+        .exported { text-align: center; color: #666; margin-top: 30px; }
+    </style>
+</head>
+<body>
+    <h1>URL Monitor Dashboard</h1>
+    <div class="exported">Exported on ${new Date().toLocaleString()}</div>
+
+    <div class="stats">
+        <div class="stat"><div>Total URLs</div><div style="font-size: 24px; font-weight: bold;">${urls.length}</div></div>
+        <div class="stat"><div>Online</div><div style="font-size: 24px; font-weight: bold; color: green;">${onlineCount}</div></div>
+        <div class="stat"><div>Offline</div><div style="font-size: 24px; font-weight: bold; color: red;">${urls.length - onlineCount}</div></div>
+        <div class="stat"><div>Health Score</div><div style="font-size: 24px; font-weight: bold;">${healthScore}%</div></div>
+    </div>
+
+    <div class="url-list">
+        <h2>Monitored URLs</h2>
+        ${urls.map(url => {
+            const lastStatus = url.history?.slice(-1)[0] || {};
+            return `
+            <div class="url-item ${lastStatus.status === 'online' ? 'online' : 'offline'}">
+                <div><strong>${url.url}</strong></div>
+                <div>Status: ${lastStatus.status || 'unknown'} | Last Check: ${lastStatus.t ? new Date(lastStatus.t).toLocaleString() : 'N/A'}</div>
+                <div>Response Time: ${typeof lastStatus.rt === 'number' ? `${Math.round(lastStatus.rt)}ms` : '—'}</div>
+            </div>
+            `;
+        }).join('')}
+    </div>
+</body>
+</html>
+        `;
+    }
+
+    // Generate Reports
+    function generateReport() {
+        const healthScore = calculateHealthScore();
+        const uptime7Days = calculateOverallUptime(7);
+        const avgResponseTime = calculateOverallAverageResponseTime();
+        const totalChecks24h = urls.reduce((sum, url) => sum + (url.history?.filter(h => h.t >= now() - DAY_MS).length || 0), 0);
+
+        // Update health indicator
+        const healthIndicator = document.getElementById('overallHealthIndicator');
+        const healthProgress = document.getElementById('healthProgress');
+
+        if (healthScore >= 80) {
+            healthIndicator.className = 'health-indicator health-good';
+            healthProgress.className = 'progress-fill';
+        } else if (healthScore >= 60) {
+            healthIndicator.className = 'health-indicator health-warning';
+            healthProgress.className = 'progress-fill progress-warning';
+        } else {
+            healthIndicator.className = 'health-indicator health-critical';
+            healthProgress.className = 'progress-fill progress-critical';
+        }
+
+        document.getElementById('overallHealthScore').textContent = `${healthScore}%`;
+        document.getElementById('healthProgress').style.width = `${healthScore}%`;
+        document.getElementById('uptime7Days').textContent = `${uptime7Days}%`;
+        document.getElementById('avgResponseTime').textContent = avgResponseTime ? `${Math.round(avgResponseTime)}ms` : '—';
+        document.getElementById('totalChecks24h').textContent = totalChecks24h;
+
+        // Render endpoint health list
+        const endpointHealthList = document.getElementById('endpointHealthList');
+        endpointHealthList.innerHTML = urls.map(url => {
+            const lastStatus = url.history?.slice(-1)[0] || {};
+            const uptime24h = calculateUptime(url.history || [], 24);
+            const avgRT = calculateAverageResponseTime(url.history || []);
+
+            let healthClass = 'health-good';
+            if (lastStatus.status !== 'online') {
+                healthClass = 'health-critical';
+            } else if (avgRT > settings.responseTimeCritical) {
+                healthClass = 'health-critical';
+            } else if (avgRT > settings.responseTimeWarning) {
+                healthClass = 'health-warning';
+            }
+
+            return `
+                <div class="collapsible">
+                    <div class="collapsible-header" onclick="toggleCollapsible(this)">
+                        <span>
+                            <span class="health-indicator ${healthClass}"></span>
+                            ${url.url}
+                        </span>
+                        <span>${uptime24h}% uptime</span>
+                    </div>
+                    <div class="collapsible-content">
+                        <div class="details-grid">
+                            <div class="detail-item">
+                                <div class="detail-label">Current Status</div>
+                                <div class="detail-value">${lastStatus.status || 'Unknown'}</div>
+                            </div>
+                            <div class="detail-item">
+                                <div class="detail-label">Avg Response Time</div>
+                                <div class="detail-value">${avgRT ? `${Math.round(avgRT)}ms` : '—'}</div>
+                            </div>
+                            <div class="detail-item">
+                                <div class="detail-label">Uptime (24h)</div>
+                                <div class="detail-value">${uptime24h}%</div>
+                            </div>
+                            <div class="detail-item">
+                                <div class="detail-label">SSL Status</div>
+                                <div class="detail-value">${url.sslInfo ? (url.sslInfo.daysRemaining > settings.sslWarningDays ? 'Valid' : 'Expiring Soon') : 'Unknown'}</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }).join('');
+
+        // Render performance chart if enabled
+        if (settings.enableCharts) {
+            renderPerformanceChart();
+        }
+    }
+
+    // Calculate overall uptime
+    function calculateOverallUptime(days) {
+        const allHistory = urls.flatMap(u => u.history || []);
+        const period = days * 24 * 60 * 60 * 1000;
+        const recentHistory = allHistory.filter(h => h.t >= now() - period);
+        if (recentHistory.length === 0) return 0;
+
+        const onlineCount = recentHistory.filter(h => h.status === 'online').length;
+        return Math.round((onlineCount / recentHistory.length) * 100);
+    }
+
+    // Calculate overall average response time
+    function calculateOverallAverageResponseTime() {
+        const allHistory = urls.flatMap(u => u.history || []);
+        const validRTs = allHistory.map(h => h.rt).filter(rt => typeof rt === 'number');
+        return average(validRTs);
+    }
+
+    // Render performance chart
+    function renderPerformanceChart() {
+        const chartContainer = document.getElementById('performanceChart');
+
+        // Create a simple SVG chart
+        const svgNS = "http://www.w3.org/2000/svg";
+        const svg = document.createElementNS(svgNS, "svg");
+        svg.setAttribute("width", "100%");
+        svg.setAttribute("height", "200");
+        svg.setAttribute("viewBox", "0 0 300 200");
+
+        // Get response time data for the last 24 hours
+        const timeSlots = 24;
+        const data = [];
+
+        for (let i = 0; i < timeSlots; i++) {
+            const time = now() - (timeSlots - i) * 60 * 60 * 1000;
+            const endTime = time + 60 * 60 * 1000;
+
+            const checksInSlot = urls.flatMap(u => u.history || [])
+                .filter(h => h.t >= time && h.t < endTime && h.status === 'online' && typeof h.rt === 'number');
+
+            if (checksInSlot.length > 0) {
+                const avgRT = average(checksInSlot.map(h => h.rt));
+                data.push(avgRT);
+            } else {
+                data.push(null);
+            }
+        }
+
+        // Filter out null values and find max value for scaling
+        const validData = data.filter(d => d !== null);
+        const maxValue = validData.length > 0 ? Math.max(...validData) : 1000;
+
+        // Draw chart
+        for (let i = 0; i < data.length; i++) {
+            if (data[i] === null) continue;
+
+            const x = (i / (data.length - 1)) * 280 + 10;
+            const y = 190 - (data[i] / maxValue) * 160;
+
+            const circle = document.createElementNS(svgNS, "circle");
+            circle.setAttribute("cx", x);
+            circle.setAttribute("cy", y);
+            circle.setAttribute("r", "3");
+            circle.setAttribute("fill", data[i] > settings.responseTimeCritical ? "var(--danger)" :
+                data[i] > settings.responseTimeWarning ? "var(--warn)" : "var(--success)");
+            svg.appendChild(circle);
+
+            if (i > 0 && data[i-1] !== null) {
+                const prevX = ((i-1) / (data.length - 1)) * 280 + 10;
+                const prevY = 190 - (data[i-1] / maxValue) * 160;
+
+                const line = document.createElementNS(svgNS, "line");
+                line.setAttribute("x1", prevX);
+                line.setAttribute("y1", prevY);
+                line.setAttribute("x2", x);
+                line.setAttribute("y2", y);
+                line.setAttribute("stroke", "#ccc");
+                line.setAttribute("stroke-width", "1");
+                svg.appendChild(line);
+            }
+        }
+
+        // Add X axis (time labels)
+        for (let i = 0; i < 5; i++) {
+            const x = (i / 4) * 280 + 10;
+            const hoursAgo = 24 - (i / 4) * 24;
+
+            const text = document.createElementNS(svgNS, "text");
+            text.setAttribute("x", x);
+            text.setAttribute("y", 195);
+            text.setAttribute("text-anchor", "middle");
+            text.setAttribute("font-size", "10");
+            text.setAttribute("fill", "#666");
+            text.textContent = `${Math.round(hoursAgo)}h ago`;
+            svg.appendChild(text);
+        }
+
+        // Add Y axis (response time labels)
+        for (let i = 0; i <= 4; i++) {
+            const y = 190 - (i / 4) * 160;
+            const value = Math.round((i / 4) * maxValue);
+
+            const text = document.createElementNS(svgNS, "text");
+            text.setAttribute("x", 5);
+            text.setAttribute("y", y + 3);
+            text.setAttribute("text-anchor", "start");
+            text.setAttribute("font-size", "10");
+            text.setAttribute("fill", "#666");
+            text.textContent = `${value}ms`;
+            svg.appendChild(text);
+        }
+
+        chartContainer.innerHTML = '';
+        chartContainer.appendChild(svg);
+    }
+
+    // Toggle collapsible sections
+    function toggleCollapsible(header) {
+        const content = header.nextElementSibling;
+        if (content.style.display === 'block') {
+            content.style.display = 'none';
+        } else {
+            content.style.display = 'block';
+        }
+    }
+
+    // Dark mode toggle
+    function toggleDarkMode() {
+        settings.darkMode = !settings.darkMode;
+        document.body.classList.toggle('dark-mode', settings.darkMode);
+        persistSettings();
+
+        // Update theme toggle button
+        const themeToggle = document.querySelector('.theme-toggle');
+        themeToggle.textContent = settings.darkMode ? '☀️' : '🌙';
+    }
+
+    // Toggle URL selection
+    function toggleURLSelection(url, selected) {
+        if (selected) {
+            selectedURLs.add(url);
+        } else {
+            selectedURLs.delete(url);
+        }
+        render();
+    }
+
+    // Update tags list
+    function updateTagsList() {
+        allTags.clear();
+        urls.forEach(url => {
+            if (url.tags && url.tags.length) {
+                url.tags.forEach(tag => allTags.add(tag));
+            }
+        });
+
+        elements.tagFilter.innerHTML = '<option value="all">All Tags</option>';
+        allTags.forEach(tag => {
+            elements.tagFilter.innerHTML += `<option value="${tag}">${tag}</option>`;
+        });
+    }
+
+    // Delete URL
+    function deleteURL(url) {
+        if (confirm('Are you sure you want to delete this URL?')) {
+            urls = urls.filter(u => u.url !== url);
+            selectedURLs.delete(url);
+            persistUrls();
+            render();
+        }
+    }
+
+    // Show settings
     function showSettings() {
         // Populate settings form
         elements.inputs.interval.value = settings.intervalSec;
@@ -2541,6 +3521,239 @@
         });
     }
 
+    // Show inspector
+    function showInspector() {
+        elements.inspector.sourceList.innerHTML = urls.length ? urls.map((u, i) => `
+            <label><input type="radio" name="inspectorSource" value="${escapeHtml(u.url)}" ${i===0 ? 'checked' : ''}>${escapeHtml(u.url)}</label>
+        `).join('') : 'Add a URL first to use as an inspection source.';
+        elements.inspector.resultList.innerHTML = 'Select a source URL and click "Start Inspection".';
+        elements.modals.inspector.style.display = 'flex';
+    }
+
+    // Start inspector scan
+    async function startInspectorScan() {
+        const sourceRadio = document.querySelector('input[name="inspectorSource"]:checked');
+        if (!sourceRadio) { alert('Please select a source URL to inspect.'); return; }
+
+        elements.inspector.resultList.innerHTML = '<i>Inspecting... This may take a few moments.</i>';
+        elements.inspector.startBtn.disabled = true;
+
+        const sourceUrl = new URL(sourceRadio.value);
+        const domainParts = sourceUrl.hostname.split('.');
+        const mainDomain = domainParts.slice(Math.max(domainParts.length - 2, 0)).join('.');
+
+        // Get inspection options
+        const deepScan = document.getElementById('deepScan').checked;
+        const checkSubdomains = document.getElementById('checkSubdomains').checked;
+        const checkCommonPaths = document.getElementById('checkCommonPaths').checked;
+        const checkAPIs = document.getElementById('checkAPIs').checked;
+        const checkFiles = document.getElementById('checkFiles').checked;
+
+        // Extended common subdomains and paths
+        const commonSubdomains = ['www', 'api', 'app', 'dev', 'blog', 'shop', 'status', 'mail', 'cdn', 'prod', 'staging', 'docs',
+            'admin', 'test', 'secure', 'portal', 'assets', 'static', 'media', 'img', 'images', 'js', 'css',
+            'backend', 'frontend', 'mobile', 'web', 'support', 'help', 'forum', 'community', 'store', 'shop',
+            'payment', 'billing', 'account', 'user', 'users', 'my', 'id', 'sso', 'auth', 'login', 'signin'];
+
+        const commonPaths = ['/', '/status', '/blog', '/api/health', '/api', '/v1', '/v2', '/api/v1', '/api/v2', '/graphql', '/health',
+            '/admin', '/dashboard', '/login', '/signin', '/register', '/signup', '/account', '/user', '/profile',
+            '/docs', '/documentation', '/help', '/support', '/contact', '/about', '/privacy', '/terms', '/sitemap.xml',
+            '/robots.txt', '/favicon.ico', '/manifest.json', '/.well-known/security.txt'];
+
+        const apiPatterns = ['/api/', '/v1/', '/v2/', '/v3/', '/graphql', '/rest/', '/json/', '/xml/', '/soap/', '/ws/', '/wss/',
+            '/oauth/', '/auth/', '/token/', '/user/', '/users/', '/account/', '/profile/', '/admin/', '/config/'];
+
+        const commonFiles = ['/robots.txt', '/sitemap.xml', '/security.txt', '/humans.txt', '/ads.txt', '/.well-known/security.txt',
+            '/.well-known/assetlinks.json', '/.well-known/apple-app-site-association', '/crossdomain.xml', '/clientaccesspolicy.xml'];
+
+        // Build initial potential list
+        let potentialUrls = [];
+
+        if (checkSubdomains) {
+            potentialUrls = commonSubdomains.map(sub => `https://${sub}.${mainDomain}`);
+            potentialUrls.push(`https://${mainDomain}`);
+        }
+
+        if (checkCommonPaths) {
+            potentialUrls = [...potentialUrls, ...commonPaths.map(path => `https://${mainDomain}${path}`)];
+        }
+
+        if (checkAPIs) {
+            potentialUrls = [...potentialUrls, ...apiPatterns.map(pattern => `https://${mainDomain}${pattern}`)];
+            // Also add API patterns to subdomains
+            if (checkSubdomains) {
+                commonSubdomains.forEach(sub => {
+                    potentialUrls = [...potentialUrls, ...apiPatterns.map(pattern => `https://${sub}.${mainDomain}${pattern}`)];
+                });
+            }
+        }
+
+        if (checkFiles) {
+            potentialUrls = [...potentialUrls, ...commonFiles.map(file => `https://${mainDomain}${file}`)];
+        }
+
+        // Normalize, dedupe and filter out existing monitored URLs
+        let urlsToTest = [...new Set(potentialUrls.map(u => normalizeUrl(u)).filter(u => u && !urls.some(existing => existing.url === u)))];
+
+        // Apply configured limit and hard cap of 100
+        const configuredMax = parseInt(settings.maxInspectorEndpoints || DEFAULT_SETTINGS.maxInspectorEndpoints, 10) || DEFAULT_SETTINGS.maxInspectorEndpoints;
+        const hardCap = 100;
+        const maxToCheck = Math.min(urlsToTest.length, configuredMax, hardCap);
+
+        if (maxToCheck === 0) {
+            elements.inspector.resultList.innerHTML = 'No candidate endpoints to inspect (either none found or all are already monitored).';
+            elements.inspector.startBtn.disabled = false;
+            return;
+        }
+
+        let foundLinks = [];
+        for (let i = 0; i < maxToCheck; i++) {
+            const url = urlsToTest[i];
+            elements.inspector.resultList.innerHTML = `<i>Inspecting (${i+1}/${maxToCheck}): ${escapeHtml(url)}</i>`;
+            try {
+                // quick ping using favicon (fast, lightweight)
+                await pingFavicon(url, 3000);
+                foundLinks.push({url, status: 'online'});
+            } catch (e) {
+                foundLinks.push({url, status: 'offline'});
+            }
+        }
+
+        // Render results
+        if (foundLinks.length === 0) {
+            elements.inspector.resultList.innerHTML = 'No new, live endpoints were found for that domain.';
+        } else {
+            // Limit UI list to hardCap too
+            const displayList = foundLinks.slice(0, hardCap);
+            elements.inspector.resultList.innerHTML = displayList.map(link => `
+                <div class="result-row" data-link="${escapeHtml(link.url)}">
+                    <span>
+                        <span class="status-dot" style="background: ${link.status === 'online' ? 'var(--success)' : 'var(--danger)'}"></span>
+                        ${escapeHtml(link.url)}
+                    </span>
+                    <button class="btn ${link.status === 'online' ? 'btn-green' : 'btn-gray'}" onclick="addInspectedURL('${escapeHtml(link.url)}')">Add</button>
+                </div>
+            `).join('');
+            if (foundLinks.length > displayList.length) {
+                elements.inspector.resultList.innerHTML += `<div class="small" style="margin-top:8px;">Results truncated to ${hardCap} entries.</div>`;
+            }
+        }
+
+        elements.inspector.startBtn.disabled = false;
+    }
+
+    // Add inspected URL
+    function addInspectedURL(url) {
+        const normalizedUrl = normalizeUrl(url);
+        if (!normalizedUrl) return false;
+
+        if (!urls.some(u => u.url === normalizedUrl)) {
+            urls.push({
+                url: normalizedUrl,
+                history: [],
+                spikes: [],
+                tags: [],
+                lastCheck: null,
+                failCount: 0
+            });
+
+            persistUrls();
+            render();
+            updateTagsList();
+
+            showNotification({
+                title: 'URL Added',
+                message: `Successfully added ${url} to monitoring`,
+                type: 'success'
+            });
+
+            return true;
+        } else {
+            showNotification({
+                title: 'URL Exists',
+                message: `URL ${url} is already being monitored`,
+                type: 'warning'
+            });
+            return false;
+        }
+    }
+
+    // Tab Management
+    function switchTab(tabName) {
+        // Hide all tabs
+        document.querySelectorAll('.tab-content').forEach(tab => {
+            tab.classList.remove('active');
+        });
+
+        // Remove active class from all tabs
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.classList.remove('active');
+        });
+
+        // Show selected tab
+        document.getElementById(`${tabName}Tab`).classList.add('active');
+
+        // Activate selected tab button
+        event.target.classList.add('active');
+
+        // Render specific tab content if needed
+        if (tabName === 'alerts') {
+            renderAlerts();
+        } else if (tabName === 'reports') {
+            generateReport();
+        } else if (tabName === 'incidents') {
+            renderIncidents();
+        } else if (tabName === 'integrations') {
+            initializeIntegrationSettings();
+        } else if (tabName === 'api') {
+            initializeApiSettings();
+        }
+    }
+
+    // Initialize integration settings
+    function initializeIntegrationSettings() {
+        // Set integration settings values
+        document.getElementById('emailEnabled').checked = settings.emailEnabled || false;
+        document.getElementById('smtpServer').value = settings.smtpServer || '';
+        document.getElementById('smtpPort').value = settings.smtpPort || 587;
+        document.getElementById('smtpUsername').value = settings.smtpUsername || '';
+        document.getElementById('smtpPassword').value = settings.smtpPassword || '';
+        document.getElementById('notificationEmail').value = settings.notificationEmail || '';
+
+        document.getElementById('webhookEnabled').checked = settings.webhookEnabled || false;
+        document.getElementById('webhookUrl').value = settings.webhookUrl || '';
+
+        document.getElementById('slackEnabled').checked = settings.slackEnabled || false;
+        document.getElementById('slackWebhook').value = settings.slackWebhook || '';
+        document.getElementById('slackChannel').value = settings.slackChannel || '';
+
+        // Set Teams settings
+        document.getElementById('teamsEnabled').checked = settings.teamsEnabled || false;
+        document.getElementById('teamsWebhook').value = settings.teamsWebhook || '';
+
+        // Toggle visibility
+        toggleEmailSettings();
+        toggleWebhookSettings();
+        toggleSlackSettings();
+        toggleTeamsSettings();
+    }
+
+    // Initialize API settings
+    function initializeApiSettings() {
+        document.getElementById('apiKeyDisplay').textContent = apiKey || 'Generate API key to enable access';
+    }
+
+    // Close modal
+    function closeModal(modalId) {
+        document.getElementById(modalId).style.display = 'none';
+    }
+
+    // Quick action for showing reports
+    function showReports() {
+        switchTab('reports');
+        generateReport();
+    }
+
     // Initialize the application
     function initializeApp() {
         // Initialize profiles first
@@ -2572,9 +3785,6 @@
         startChecking();
         setupAutoBackup();
     }
-
-    // Your other existing functions remain the same
-    // ... (your other existing functions) ...
 </script>
 </body>
 </html>
